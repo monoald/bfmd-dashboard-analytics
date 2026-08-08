@@ -132,7 +132,7 @@ export default async function AnalyticsPage({
           <TimeSeriesChart
             title="Conversion rate over time"
             data={data.charts.conversionRateOverTime}
-            formatValue={formatPercent}
+            formatValue="percent"
           />
         )}
         {data.errors.conversionFunnel ? (
@@ -189,7 +189,7 @@ export default async function AnalyticsPage({
           <TimeSeriesChart
             title="Total sales over time"
             data={data.charts.salesOverTime}
-            formatValue={formatCurrency}
+            formatValue="currency"
           />
         )}
         {data.errors.salesBreakdown ? (
@@ -227,7 +227,7 @@ export default async function AnalyticsPage({
           <TimeSeriesChart
             title="Average order value over time"
             data={data.charts.aovOverTime}
-            formatValue={formatCurrency}
+            formatValue="currency"
           />
         )}
         {data.errors.salesByProduct ? (
