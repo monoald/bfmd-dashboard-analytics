@@ -11,13 +11,13 @@ export function Sparkline({ data }: SparklineProps) {
 
   const points = data.map((value, index) => ({ index, value }));
   return (
-    <ResponsiveContainer width={80} height={32}>
+    <ResponsiveContainer width="100%" height={36}>
       <LineChart data={points}>
         <Line
           type="monotone"
           dataKey="value"
-          stroke="#2563eb"
-          strokeWidth={2}
+          stroke="var(--analytics-accent)"
+          strokeWidth={1.5}
           dot={false}
         />
       </LineChart>

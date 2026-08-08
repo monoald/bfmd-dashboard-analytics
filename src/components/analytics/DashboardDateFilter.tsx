@@ -22,16 +22,16 @@ export function DashboardDateFilter() {
   }
 
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-1.5">
       {OPTIONS.map((option) => (
         <button
           key={option.key}
           type="button"
           onClick={() => handleSelect(option.key)}
-          className={`px-3 py-1.5 rounded-lg text-sm border ${
+          className={`rounded-md border px-2.5 py-1 text-[11px] font-medium ${
             activeRange === option.key
-              ? "bg-gray-900 text-white border-gray-900"
-              : "bg-white text-gray-700 border-gray-200"
+              ? "border-(--analytics-accent) bg-(--analytics-accent-dim) text-(--analytics-accent)"
+              : "border-(--analytics-border) bg-(--analytics-surface) text-(--analytics-t2)"
           }`}
         >
           {option.label}

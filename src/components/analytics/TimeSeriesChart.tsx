@@ -10,6 +10,7 @@ import {
   YAxis,
 } from "recharts";
 import type { TimeSeriesData } from "@/lib/analytics/types";
+import { CARD_CLASS, LABEL_CLASS } from "./theme";
 
 export type TimeSeriesValueFormat = "currency" | "percent";
 
@@ -61,27 +62,39 @@ export function TimeSeriesChart({
   const format = resolveFormatter(formatValue);
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-      <p className="text-sm text-gray-500 mb-2">{title}</p>
+    <div className={CARD_CLASS}>
+      <p className={`${LABEL_CLASS} mb-3`}>{title}</p>
       <ResponsiveContainer width="100%" height={240}>
         <AreaChart data={series}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-          <YAxis tickFormatter={format} tick={{ fontSize: 12 }} />
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="var(--analytics-border)"
+          />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: 10, fill: "var(--analytics-t2)" }}
+            stroke="var(--analytics-border)"
+          />
+          <YAxis
+            tickFormatter={format}
+            tick={{ fontSize: 10, fill: "var(--analytics-t2)" }}
+            stroke="var(--analytics-border)"
+          />
           <Tooltip formatter={(value) => format(Number(value))} />
           <Area
             type="monotone"
             dataKey="currentPeriod"
-            stroke="#2563eb"
+            stroke="var(--analytics-accent)"
             strokeWidth={2}
-            fill="#2563eb"
-            fillOpacity={0.1}
+            fill="var(--analytics-accent)"
+            fillOpacity={0.15}
           />
           <Area
             type="monotone"
             dataKey="previousPeriod"
-            stroke="#2563eb"
-            strokeWidth={2}
+            stroke="var(--analytics-t2)"
+            strokeWidth={1.5}
             strokeDasharray="4 4"
             fill="transparent"
           />

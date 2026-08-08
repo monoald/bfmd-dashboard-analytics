@@ -117,6 +117,43 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Analytics dashboard palette (dark-navy/teal), system-theme aware */
+:root {
+  --analytics-bg: #eef2fa;
+  --analytics-surface: #ffffff;
+  --analytics-border: #d8e1f2;
+  --analytics-accent: #00897b;
+  --analytics-accent-dim: rgba(0, 137, 123, 0.08);
+  --analytics-accent-glow: rgba(0, 137, 123, 0.18);
+  --analytics-up: #1b9e6e;
+  --analytics-up-dim: rgba(27, 158, 110, 0.1);
+  --analytics-down: #c83b3b;
+  --analytics-down-dim: rgba(200, 59, 59, 0.1);
+  --analytics-amber: #b86e00;
+  --analytics-t1: #111f3a;
+  --analytics-t2: #6272a4;
+  --analytics-t3: #d0dced;
+  --analytics-radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --analytics-bg: #06080f;
+    --analytics-surface: #0c1120;
+    --analytics-border: #18243d;
+    --analytics-accent: #00bfa5;
+    --analytics-accent-dim: rgba(0, 191, 165, 0.1);
+    --analytics-accent-glow: rgba(0, 191, 165, 0.22);
+    --analytics-up: #30d18a;
+    --analytics-up-dim: rgba(48, 209, 138, 0.12);
+    --analytics-down: #f06a6a;
+    --analytics-down-dim: rgba(240, 106, 106, 0.12);
+    --analytics-amber: #f0a500;
+    --analytics-t1: #cdd8ee;
+    --analytics-t2: #5b6d90;
+    --analytics-t3: #202e48;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

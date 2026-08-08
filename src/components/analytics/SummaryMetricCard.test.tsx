@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { SummaryMetricCard } from "./SummaryMetricCard";
 
 describe("SummaryMetricCard", () => {
-  it("renders title, value, and a green upward change", () => {
+  it("renders title, value, and an upward change badge", () => {
     render(
       <SummaryMetricCard
         title="Gross sales"
@@ -16,11 +16,11 @@ describe("SummaryMetricCard", () => {
 
     expect(screen.getByText("Gross sales")).toBeInTheDocument();
     expect(screen.getByText("$74,800.00")).toBeInTheDocument();
-    const change = screen.getByText("+26%");
-    expect(change).toHaveClass("text-green-600");
+    const change = screen.getByText("↑ 26%");
+    expect(change).toHaveClass("text-(--analytics-up)");
   });
 
-  it("renders a red downward change", () => {
+  it("renders a downward change badge", () => {
     render(
       <SummaryMetricCard
         title="AOV"
@@ -31,7 +31,7 @@ describe("SummaryMetricCard", () => {
       />,
     );
 
-    const change = screen.getByText("-6%");
-    expect(change).toHaveClass("text-red-600");
+    const change = screen.getByText("↓ 6%");
+    expect(change).toHaveClass("text-(--analytics-down)");
   });
 });
