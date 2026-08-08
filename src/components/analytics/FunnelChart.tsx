@@ -31,7 +31,7 @@ function stepHeight(step: FunnelStep): number {
   return CHART_HEIGHT - (clamped / 100) * CHART_HEIGHT;
 }
 
-function buildFunnelPoints(steps: FunnelStep[]): string {
+function buildTopEdgePoints(steps: FunnelStep[]): [number, number][] {
   const segmentWidth = CHART_WIDTH / steps.length;
   const rampHalf = (segmentWidth * RAMP_FRACTION) / 2;
   const heights = steps.map(stepHeight);
@@ -43,10 +43,19 @@ function buildFunnelPoints(steps: FunnelStep[]): string {
     points.push([boundary + rampHalf, heights[i + 1]]);
   }
   points.push([CHART_WIDTH, heights[heights.length - 1]]);
-  points.push([CHART_WIDTH, CHART_HEIGHT]);
-  points.push([0, CHART_HEIGHT]);
+  return points;
+}
 
+function toPointsAttr(points: [number, number][]): string {
   return points.map(([x, y]) => `${x},${y}`).join(" ");
+}
+
+function buildFunnelPoints(steps: FunnelStep[]): string {
+  return toPointsAttr([
+    ...buildTopEdgePoints(steps),
+    [CHART_WIDTH, CHART_HEIGHT],
+    [0, CHART_HEIGHT],
+  ]);
 }
 
 function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
@@ -63,6 +72,14 @@ function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
       <polygon
         points={buildFunnelPoints(steps)}
         fill="var(--analytics-accent)"
+      />
+      <polyline
+        points={toPointsAttr(buildTopEdgePoints(steps))}
+        fill="none"
+        stroke="color-mix(in srgb, var(--analytics-accent), white 35%)"
+        strokeWidth={2}
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
       />
       {steps.slice(0, -1).map((step, i) => {
         const boundary = (i + 1) * segmentWidth;
@@ -143,7 +160,7 @@ export function FunnelChart({ title, steps, headline }: FunnelChartProps) {
               <p className="text-[15px] font-bold tabular-nums text-(--analytics-t1)">
                 {step.percentage}%
               </p>
-              <p className="text-[12px] font-semibold tabular-nums text-(--analytics-t2)">
+              <p className="text-[12px] font-semibold tabular-nums text-(--analytics-t1)">
                 {step.sessions.toLocaleString()}
               </p>
               {change && (
