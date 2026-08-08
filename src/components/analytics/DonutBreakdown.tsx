@@ -19,7 +19,13 @@ export function DonutBreakdown({ title, data }: DonutBreakdownProps) {
       <div className="flex items-center gap-4">
         <ResponsiveContainer width={140} height={140}>
           <PieChart>
-            <Pie data={data} dataKey="value" nameKey="name" innerRadius={45} outerRadius={65}>
+            <Pie
+              data={data}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={45}
+              outerRadius={65}
+            >
               {data.map((entry, index) => (
                 <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
               ))}
@@ -29,9 +35,14 @@ export function DonutBreakdown({ title, data }: DonutBreakdownProps) {
         <ul className="text-sm space-y-1">
           {data.map((item, index) => (
             <li key={item.name} className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+              <span
+                className="w-2 h-2 rounded-full"
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              />
               <span>{item.name}</span>
-              <span className="text-gray-400">{total === 0 ? 0 : Math.round((item.value / total) * 100)}%</span>
+              <span className="text-gray-400">
+                {total === 0 ? 0 : Math.round((item.value / total) * 100)}%
+              </span>
             </li>
           ))}
         </ul>

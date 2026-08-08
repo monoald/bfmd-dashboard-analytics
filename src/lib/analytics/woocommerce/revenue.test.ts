@@ -35,22 +35,34 @@ function rawResponse(grossSales: number) {
 
 describe("getRevenueStats", () => {
   it("fetches both current and previous periods with the resolved interval", async () => {
-    vi.mocked(fetchWc).mockResolvedValueOnce(rawResponse(100)).mockResolvedValueOnce(rawResponse(80));
+    vi.mocked(fetchWc)
+      .mockResolvedValueOnce(rawResponse(100))
+      .mockResolvedValueOnce(rawResponse(80));
 
     await getRevenueStats(range);
 
     expect(fetchWc).toHaveBeenCalledWith(
       "/wc-analytics/reports/revenue/stats",
-      expect.objectContaining({ interval: "day", after: range.current.start.toISOString(), before: range.current.end.toISOString() })
+      expect.objectContaining({
+        interval: "day",
+        after: range.current.start.toISOString(),
+        before: range.current.end.toISOString(),
+      }),
     );
     expect(fetchWc).toHaveBeenCalledWith(
       "/wc-analytics/reports/revenue/stats",
-      expect.objectContaining({ interval: "day", after: range.previous.start.toISOString(), before: range.previous.end.toISOString() })
+      expect.objectContaining({
+        interval: "day",
+        after: range.previous.start.toISOString(),
+        before: range.previous.end.toISOString(),
+      }),
     );
   });
 
   it("maps WC subtotal fields to typed intervals and sums totals, including average order value", async () => {
-    vi.mocked(fetchWc).mockResolvedValueOnce(rawResponse(100)).mockResolvedValueOnce(rawResponse(80));
+    vi.mocked(fetchWc)
+      .mockResolvedValueOnce(rawResponse(100))
+      .mockResolvedValueOnce(rawResponse(80));
 
     const result = await getRevenueStats(range);
 

@@ -13,7 +13,13 @@ export function Sparkline({ data }: SparklineProps) {
   return (
     <ResponsiveContainer width={80} height={32}>
       <LineChart data={points}>
-        <Line type="monotone" dataKey="value" stroke="#2563eb" strokeWidth={2} dot={false} />
+        <Line
+          type="monotone"
+          dataKey="value"
+          stroke="#2563eb"
+          strokeWidth={2}
+          dot={false}
+        />
       </LineChart>
     </ResponsiveContainer>
   );

@@ -20,7 +20,10 @@ describe("formatBucketLabel", () => {
 
 describe("alignSeries", () => {
   it("pairs sorted current and previous buckets positionally and fills gaps with 0", () => {
-    const current = new Map([["20260801", 10], ["20260802", 20]]);
+    const current = new Map([
+      ["20260801", 10],
+      ["20260802", 20],
+    ]);
     const previous = new Map([["20260725", 5]]);
 
     const result = alignSeries(current, previous, "day");

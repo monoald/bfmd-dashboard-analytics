@@ -16,8 +16,14 @@ const range: ResolvedDateRange = {
 describe("getTopProductsByRevenue", () => {
   it("maps product rows to NamedValue, ordered by revenue descending", async () => {
     vi.mocked(fetchWc).mockResolvedValue([
-      { extended_info: { name: "Cocoa Flavanols" }, subtotals: { net_revenue: 236.4567 } },
-      { extended_info: { name: "Magnesium Sleep Aid" }, subtotals: { net_revenue: 51.2 } },
+      {
+        extended_info: { name: "Cocoa Flavanols" },
+        subtotals: { net_revenue: 236.4567 },
+      },
+      {
+        extended_info: { name: "Magnesium Sleep Aid" },
+        subtotals: { net_revenue: 51.2 },
+      },
     ]);
 
     const result = await getTopProductsByRevenue(range);
@@ -28,7 +34,12 @@ describe("getTopProductsByRevenue", () => {
     ]);
     expect(fetchWc).toHaveBeenCalledWith(
       "/wc-analytics/reports/revenue/products",
-      expect.objectContaining({ orderby: "net_revenue", order: "desc", per_page: "10", extended_info: "true" })
+      expect.objectContaining({
+        orderby: "net_revenue",
+        order: "desc",
+        per_page: "10",
+        extended_info: "true",
+      }),
     );
   });
 

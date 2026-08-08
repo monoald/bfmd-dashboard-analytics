@@ -4,7 +4,11 @@ import type { ResolvedDateRange } from "../types";
 vi.mock("./client", () => ({ runGa4Report: vi.fn() }));
 
 import { runGa4Report } from "./client";
-import { getSessionsByDevice, getSessionsByLocation, getSessionsOverTime } from "./sessions";
+import {
+  getSessionsByDevice,
+  getSessionsByLocation,
+  getSessionsOverTime,
+} from "./sessions";
 
 const range: ResolvedDateRange = {
   key: "7d",
@@ -16,12 +20,18 @@ const range: ResolvedDateRange = {
 describe("getSessionsOverTime", () => {
   it("fetches current and previous sessions by date and aligns them into a TimeSeriesData series", async () => {
     vi.mocked(runGa4Report)
-      .mockResolvedValueOnce([{ dimensionValues: ["20260801"], metricValues: [100] }])
-      .mockResolvedValueOnce([{ dimensionValues: ["20260725"], metricValues: [80] }]);
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260801"], metricValues: [100] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260725"], metricValues: [80] },
+      ]);
 
     const result = await getSessionsOverTime(range);
 
-    expect(result).toEqual([{ date: "Aug 1", currentPeriod: 100, previousPeriod: 80 }]);
+    expect(result).toEqual([
+      { date: "Aug 1", currentPeriod: 100, previousPeriod: 80 },
+    ]);
   });
 });
 
@@ -47,7 +57,7 @@ describe("getSessionsByLocation", () => {
       Array.from({ length: 12 }, (_, i) => ({
         dimensionValues: [`Region${i}`, `City${i}`],
         metricValues: [12 - i],
-      }))
+      })),
     );
 
     const result = await getSessionsByLocation(range);

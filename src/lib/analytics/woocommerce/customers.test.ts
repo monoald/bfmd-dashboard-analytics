@@ -16,7 +16,12 @@ const range: ResolvedDateRange = {
 describe("getReturningCustomerRate", () => {
   it("computes the percentage of customers with more than one order", async () => {
     vi.mocked(fetchWc)
-      .mockResolvedValueOnce([{ id: 1, orders_count: 2 }, { id: 2, orders_count: 1 }, { id: 3, orders_count: 3 }, { id: 4, orders_count: 1 }])
+      .mockResolvedValueOnce([
+        { id: 1, orders_count: 2 },
+        { id: 2, orders_count: 1 },
+        { id: 3, orders_count: 3 },
+        { id: 4, orders_count: 1 },
+      ])
       .mockResolvedValueOnce([{ id: 5, orders_count: 1 }]);
 
     const result = await getReturningCustomerRate(range);

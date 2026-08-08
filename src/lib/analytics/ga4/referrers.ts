@@ -2,7 +2,9 @@ import { runGa4Report } from "./client";
 import { toIsoDate } from "./format";
 import type { NamedValue, ResolvedDateRange } from "../types";
 
-export async function getSocialReferrerRevenue(range: ResolvedDateRange): Promise<NamedValue[]> {
+export async function getSocialReferrerRevenue(
+  range: ResolvedDateRange,
+): Promise<NamedValue[]> {
   const rows = await runGa4Report({
     dimensions: ["sessionSourceMedium"],
     metrics: ["purchaseRevenue"],

@@ -12,7 +12,7 @@ describe("RankedList", () => {
           { name: "Magnesium Sleep Aid", value: 5134.49 },
         ]}
         formatValue={(v) => `$${v.toFixed(2)}`}
-      />
+      />,
     );
 
     const rows = screen.getAllByRole("listitem");

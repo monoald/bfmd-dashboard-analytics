@@ -11,7 +11,7 @@ describe("DonutBreakdown", () => {
           { name: "Mobile", value: 75 },
           { name: "Desktop", value: 25 },
         ]}
-      />
+      />,
     );
 
     expect(screen.getByText("Sessions by device type")).toBeInTheDocument();

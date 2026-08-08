@@ -12,7 +12,8 @@ const OPTIONS: { key: DateRangeKey; label: string }[] = [
 export function DashboardDateFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeRange = (searchParams.get("range") as DateRangeKey | null) ?? "today";
+  const activeRange =
+    (searchParams.get("range") as DateRangeKey | null) ?? "today";
 
   function handleSelect(key: DateRangeKey) {
     const params = new URLSearchParams(searchParams.toString());
@@ -28,7 +29,9 @@ export function DashboardDateFilter() {
           type="button"
           onClick={() => handleSelect(option.key)}
           className={`px-3 py-1.5 rounded-lg text-sm border ${
-            activeRange === option.key ? "bg-gray-900 text-white border-gray-900" : "bg-white text-gray-700 border-gray-200"
+            activeRange === option.key
+              ? "bg-gray-900 text-white border-gray-900"
+              : "bg-white text-gray-700 border-gray-200"
           }`}
         >
           {option.label}

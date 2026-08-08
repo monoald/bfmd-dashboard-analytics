@@ -1,10 +1,16 @@
 import type { TimeSeriesData } from "../types";
 
 export function toIsoDate(date: Date): string {
-  return date.toISOString().slice(0, 10);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
 }
 
-export function formatBucketLabel(rawDate: string, interval: "hour" | "day"): string {
+export function formatBucketLabel(
+  rawDate: string,
+  interval: "hour" | "day",
+): string {
   if (interval === "hour") {
     const hour = Number(rawDate.slice(8, 10));
     const period = hour >= 12 ? "PM" : "AM";
@@ -14,14 +20,27 @@ export function formatBucketLabel(rawDate: string, interval: "hour" | "day"): st
 
   const month = Number(rawDate.slice(4, 6));
   const day = Number(rawDate.slice(6, 8));
-  const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
   return `${monthNames[month - 1]} ${day}`;
 }
 
 export function alignSeries(
   currentMap: Map<string, number>,
   previousMap: Map<string, number>,
-  interval: "hour" | "day"
+  interval: "hour" | "day",
 ): TimeSeriesData[] {
   const currentKeys = [...currentMap.keys()].sort();
   const previousKeys = [...previousMap.keys()].sort();
