@@ -53,20 +53,39 @@ export async function getSessionsByDevice(
     .sort((a, b) => b.value - a.value);
 }
 
-export async function getSessionsByLocation(
-  range: ResolvedDateRange,
-): Promise<NamedValue[]> {
+async function fetchSessionsByLocationMap(
+  period: PeriodBounds,
+): Promise<Map<string, number>> {
   const rows = await runGa4Report({
     dimensions: ["region", "city"],
     metrics: ["sessions"],
-    startDate: toIsoDate(range.current.start),
-    endDate: toIsoDate(range.current.end),
+    startDate: toIsoDate(period.start),
+    endDate: toIsoDate(period.end),
   });
 
-  return rows
-    .map((row) => ({
-      name: `${row.dimensionValues[0]} · ${row.dimensionValues[1]}`,
-      value: row.metricValues[0],
+  const map = new Map<string, number>();
+  for (const row of rows) {
+    map.set(
+      `${row.dimensionValues[0]} · ${row.dimensionValues[1]}`,
+      row.metricValues[0],
+    );
+  }
+  return map;
+}
+
+export async function getSessionsByLocation(
+  range: ResolvedDateRange,
+): Promise<NamedValue[]> {
+  const [currentMap, previousMap] = await Promise.all([
+    fetchSessionsByLocationMap(range.current),
+    fetchSessionsByLocationMap(range.previous),
+  ]);
+
+  return [...currentMap.entries()]
+    .map(([name, value]) => ({
+      name,
+      value,
+      previousValue: previousMap.get(name) ?? 0,
     }))
     .sort((a, b) => b.value - a.value)
     .slice(0, 10);

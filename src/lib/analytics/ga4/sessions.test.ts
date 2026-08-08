@@ -63,6 +63,28 @@ describe("getSessionsByLocation", () => {
     const result = await getSessionsByLocation(range);
 
     expect(result).toHaveLength(10);
-    expect(result[0]).toEqual({ name: "Region0 · City0", value: 12 });
+    expect(result[0]).toEqual({
+      name: "Region0 · City0",
+      value: 12,
+      previousValue: 12,
+    });
+  });
+
+  it("attaches previousValue by matching the region · city name across periods, defaulting to 0 when absent previously", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["Florida", "Miami"], metricValues: [342] },
+        { dimensionValues: ["Illinois", "Chicago"], metricValues: [100] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["Florida", "Miami"], metricValues: [265] },
+      ]);
+
+    const result = await getSessionsByLocation(range);
+
+    expect(result).toEqual([
+      { name: "Florida · Miami", value: 342, previousValue: 265 },
+      { name: "Illinois · Chicago", value: 100, previousValue: 0 },
+    ]);
   });
 });
