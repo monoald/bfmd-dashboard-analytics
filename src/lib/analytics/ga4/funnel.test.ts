@@ -18,9 +18,9 @@ const range: ResolvedDateRange = {
 };
 
 describe("getConversionFunnel", () => {
-  it("builds four funnel steps with sessions and percentage of top-of-funnel sessions", async () => {
+  it("builds four funnel steps with sessions, percentage of top-of-funnel sessions, and previousSessions", async () => {
     vi.mocked(runGa4Report)
-      .mockResolvedValueOnce([{ dimensionValues: [], metricValues: [1000] }]) // sessions
+      .mockResolvedValueOnce([{ dimensionValues: [], metricValues: [1000] }]) // current sessions
       .mockResolvedValueOnce([
         { dimensionValues: ["add_to_cart"], metricValues: [300] },
       ])
@@ -29,15 +29,45 @@ describe("getConversionFunnel", () => {
       ])
       .mockResolvedValueOnce([
         { dimensionValues: ["purchase"], metricValues: [100] },
+      ])
+      .mockResolvedValueOnce([{ dimensionValues: [], metricValues: [800] }]) // previous sessions
+      .mockResolvedValueOnce([
+        { dimensionValues: ["add_to_cart"], metricValues: [280] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["begin_checkout"], metricValues: [140] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["purchase"], metricValues: [90] },
       ]);
 
     const result = await getConversionFunnel(range);
 
     expect(result).toEqual([
-      { step: "Sessions", sessions: 1000, percentage: 100 },
-      { step: "Added to cart", sessions: 300, percentage: 30 },
-      { step: "Reached checkout", sessions: 150, percentage: 15 },
-      { step: "Completed checkout", sessions: 100, percentage: 10 },
+      {
+        step: "Sessions",
+        sessions: 1000,
+        percentage: 100,
+        previousSessions: 800,
+      },
+      {
+        step: "Added to cart",
+        sessions: 300,
+        percentage: 30,
+        previousSessions: 280,
+      },
+      {
+        step: "Reached checkout",
+        sessions: 150,
+        percentage: 15,
+        previousSessions: 140,
+      },
+      {
+        step: "Completed checkout",
+        sessions: 100,
+        percentage: 10,
+        previousSessions: 90,
+      },
     ]);
   });
 });

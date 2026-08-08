@@ -172,21 +172,25 @@ export function buildMockDashboardPayload(
           step: "Sessions",
           sessions: Math.round(sessionsCurrent),
           percentage: 100,
+          previousSessions: Math.round(sessionsPrevious),
         },
         {
           step: "Added to cart",
           sessions: Math.round(sessionsCurrent * 0.26),
           percentage: 26,
+          previousSessions: Math.round(sessionsPrevious * 0.285),
         },
         {
           step: "Reached checkout",
           sessions: Math.round(sessionsCurrent * 0.28),
           percentage: 28,
+          previousSessions: Math.round(sessionsPrevious * 0.31),
         },
         {
           step: "Completed checkout",
           sessions: Math.round(sessionsCurrent * 0.1),
           percentage: 10,
+          previousSessions: Math.round(sessionsPrevious * 0.082),
         },
       ],
       sessionsByDevice: [

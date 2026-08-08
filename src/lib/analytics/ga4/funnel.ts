@@ -44,12 +44,17 @@ async function fetchFunnelCounts(period: PeriodBounds): Promise<number[]> {
 export async function getConversionFunnel(
   range: ResolvedDateRange,
 ): Promise<FunnelStep[]> {
-  const counts = await fetchFunnelCounts(range.current);
-  const sessions = counts[0] || 1;
+  // Sequential, not Promise.all: fetchFunnelCounts itself issues its GA4 calls
+  // sequentially, and racing two of these against each other reorders results
+  // when a test's mocked call queue is shared (see getConversionRateSummary).
+  const currentCounts = await fetchFunnelCounts(range.current);
+  const previousCounts = await fetchFunnelCounts(range.previous);
+  const sessions = currentCounts[0] || 1;
   return FUNNEL_EVENTS.map((step, i) => ({
     step: step.step,
-    sessions: counts[i],
-    percentage: Math.round((counts[i] / sessions) * 1000) / 10,
+    sessions: currentCounts[i],
+    percentage: Math.round((currentCounts[i] / sessions) * 1000) / 10,
+    previousSessions: previousCounts[i],
   }));
 }
 
