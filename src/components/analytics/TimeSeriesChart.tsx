@@ -11,10 +11,35 @@ import {
 } from "recharts";
 import type { TimeSeriesData } from "@/lib/analytics/types";
 
+export type TimeSeriesValueFormat = "currency" | "percent";
+
+const VALUE_FORMATTERS: Record<
+  TimeSeriesValueFormat,
+  (value: number) => string
+> = {
+  currency: (value) =>
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+    }).format(value),
+  percent: (value) => `${value.toFixed(1)}%`,
+};
+
 export interface TimeSeriesChartProps {
   title: string;
   data: TimeSeriesData[];
-  formatValue?: (value: number) => string;
+  // A serializable format key rather than a function prop: Server Components
+  // (this chart is rendered from one) can't pass plain functions to Client
+  // Components across the RSC boundary.
+  formatValue?: TimeSeriesValueFormat;
+}
+
+export function resolveFormatter(
+  formatValue?: TimeSeriesValueFormat,
+): (value: number) => string {
+  return formatValue
+    ? VALUE_FORMATTERS[formatValue]
+    : (value: number) => String(value);
 }
 
 export function buildChartSeries(
@@ -33,7 +58,7 @@ export function TimeSeriesChart({
   formatValue,
 }: TimeSeriesChartProps) {
   const series = buildChartSeries(data);
-  const format = formatValue ?? ((value: number) => String(value));
+  const format = resolveFormatter(formatValue);
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
