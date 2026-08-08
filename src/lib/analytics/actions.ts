@@ -2,6 +2,7 @@
 
 import { withFixedCache, withRangeCache } from "./cache";
 import { resolveDateRange } from "./date-range";
+import { buildMockDashboardPayload } from "./mock-data";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
 import { getRevenueStats } from "./woocommerce/revenue";
 import { getOrdersFulfilled } from "./woocommerce/orders";
@@ -79,9 +80,24 @@ async function settle<T>(promise: Promise<T>): Promise<T | Error> {
   }
 }
 
+function hasRealCredentials(): boolean {
+  return Boolean(
+    process.env.WC_STORE_URL &&
+    process.env.WC_CONSUMER_KEY &&
+    process.env.WC_CONSUMER_SECRET &&
+    process.env.GA4_PROPERTY_ID &&
+    process.env.GA4_CLIENT_EMAIL &&
+    process.env.GA4_PRIVATE_KEY,
+  );
+}
+
 export async function getDashboardData(
   rangeKey: DateRangeKey,
 ): Promise<DashboardPayload> {
+  if (!hasRealCredentials()) {
+    return buildMockDashboardPayload(rangeKey);
+  }
+
   const range = resolveDateRange(rangeKey, new Date());
 
   const [
