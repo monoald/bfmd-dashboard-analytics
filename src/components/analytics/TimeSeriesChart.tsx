@@ -133,7 +133,7 @@ export function TimeSeriesChart({
           {isHero && (
             <XAxis
               dataKey="date"
-              tick={{ fontSize: 10, fill: "var(--analytics-t3)" }}
+              tick={{ fontSize: 11, fill: "var(--analytics-t2)" }}
               stroke="var(--analytics-border)"
               tickLine={false}
             />
@@ -141,7 +141,7 @@ export function TimeSeriesChart({
           {isHero && (
             <YAxis
               tickFormatter={format}
-              tick={{ fontSize: 10, fill: "var(--analytics-t3)" }}
+              tick={{ fontSize: 11, fill: "var(--analytics-t2)" }}
               stroke="var(--analytics-border)"
               tickLine={false}
               axisLine={false}
