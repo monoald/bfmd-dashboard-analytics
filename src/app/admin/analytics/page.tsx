@@ -1,6 +1,7 @@
 import { getDashboardData } from "@/lib/analytics/actions";
 import { computeChange } from "@/lib/analytics/normalize";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
+import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { SummaryMetricCard } from "@/components/analytics/SummaryMetricCard";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
@@ -73,6 +74,7 @@ export default async function AnalyticsPage({
           </div>
           <div className="flex items-center gap-1.5">
             <DashboardDateFilter />
+            <ThemeToggle />
             <span
               className={`${CHIP_CLASS} border-(--analytics-up) bg-(--analytics-up-dim) text-(--analytics-up)`}
             >
