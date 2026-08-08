@@ -31,7 +31,7 @@ export function TimeSeriesChart({ title, data, formatValue }: TimeSeriesChartPro
           <CartesianGrid strokeDasharray="3 3" vertical={false} />
           <XAxis dataKey="date" tick={{ fontSize: 12 }} />
           <YAxis tickFormatter={format} tick={{ fontSize: 12 }} />
-          <Tooltip formatter={(value: number) => format(value)} />
+          <Tooltip formatter={(value) => format(Number(value))} />
           <Area type="monotone" dataKey="currentPeriod" stroke="#2563eb" strokeWidth={2} fill="#2563eb" fillOpacity={0.1} />
           <Area type="monotone" dataKey="previousPeriod" stroke="#2563eb" strokeWidth={2} strokeDasharray="4 4" fill="transparent" />
         </AreaChart>
