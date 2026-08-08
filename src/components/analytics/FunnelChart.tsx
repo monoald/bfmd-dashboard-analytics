@@ -79,7 +79,7 @@ function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
             key={step.step}
             points={points}
             fill="white"
-            fillOpacity={0.14}
+            fillOpacity={0.05}
           />
         );
       })}
