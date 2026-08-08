@@ -21,17 +21,17 @@ export function DonutBreakdown({ title, data }: DonutBreakdownProps) {
   const total = data.reduce((sum, item) => sum + item.value, 0);
 
   return (
-    <div className={CARD_CLASS}>
+    <div className={`${CARD_CLASS} flex h-full flex-col`}>
       <p className={`${LABEL_CLASS} mb-3.5`}>{title}</p>
-      <div className="flex items-center gap-3.5">
-        <ResponsiveContainer width={86} height={86}>
+      <div className="flex flex-1 items-center gap-6">
+        <ResponsiveContainer width={140} height={140}>
           <PieChart>
             <Pie
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius={24}
-              outerRadius={38}
+              innerRadius={40}
+              outerRadius={64}
               paddingAngle={2}
             >
               {data.map((entry, index) => (
@@ -45,11 +45,11 @@ export function DonutBreakdown({ title, data }: DonutBreakdownProps) {
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        <ul className="min-w-0 flex-1 space-y-2">
+        <ul className="min-w-0 flex-1 space-y-4">
           {data.map((item, index) => (
-            <li key={item.name} className="flex items-center gap-2 text-[11px]">
+            <li key={item.name} className="flex items-center gap-3 text-[13px]">
               <span
-                className="h-1.5 w-1.5 shrink-0 rounded-full"
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
                 style={{ backgroundColor: COLORS[index % COLORS.length] }}
               />
               <span className="flex-1 truncate text-(--analytics-t2)">
