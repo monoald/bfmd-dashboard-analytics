@@ -28,6 +28,11 @@ export interface TimeSeriesData {
 export interface NamedValue {
   name: string;
   value: number;
+  // Optional: when present, the ranked-list UI renders a period-over-period
+  // comparison bar + % change instead of a single bar. Only populated by
+  // fetchers that fetch both periods (see products.ts, sessions.ts's
+  // getSessionsByLocation, referrers.ts).
+  previousValue?: number;
 }
 
 export interface FunnelStep {

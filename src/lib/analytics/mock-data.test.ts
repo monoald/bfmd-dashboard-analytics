@@ -51,6 +51,20 @@ describe("buildMockDashboardPayload", () => {
     );
   });
 
+  it("gives salesByProduct, sessionsByLocation, and totalSalesBySocialReferrer a previousValue for comparison", () => {
+    const payload = buildMockDashboardPayload("7d");
+
+    for (const item of payload.charts.salesByProduct) {
+      expect(item.previousValue).toBeGreaterThan(0);
+    }
+    for (const item of payload.charts.sessionsByLocation) {
+      expect(item.previousValue).toBeGreaterThan(0);
+    }
+    for (const item of payload.charts.totalSalesBySocialReferrer) {
+      expect(item.previousValue).toBeDefined();
+    }
+  });
+
   it("sorts sessionsByDevice with Mobile as the largest share", () => {
     const payload = buildMockDashboardPayload("today");
     const [first] = payload.charts.sessionsByDevice;
