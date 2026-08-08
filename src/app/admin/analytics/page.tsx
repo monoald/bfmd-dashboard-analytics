@@ -143,24 +143,42 @@ export default async function AnalyticsPage({
           )}
         </div>
 
-        {data.errors.salesOverTime ? (
-          <CardError
-            title="Total sales over time"
-            message={data.errors.salesOverTime}
-          />
-        ) : (
-          <TimeSeriesChart
-            title="Total sales over time"
-            data={data.charts.salesOverTime}
-            formatValue="currency"
-            variant="hero"
-            headline={{
-              value: formatCurrency(data.summaryCards.grossSales.value),
-              changePercentage: data.summaryCards.grossSales.changePercentage,
-              trend: data.summaryCards.grossSales.trend,
-            }}
-          />
-        )}
+        <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_320px]">
+          {data.errors.salesOverTime ? (
+            <CardError
+              title="Total sales over time"
+              message={data.errors.salesOverTime}
+            />
+          ) : (
+            <TimeSeriesChart
+              title="Total sales over time"
+              data={data.charts.salesOverTime}
+              formatValue="currency"
+              variant="hero"
+              headline={{
+                value: formatCurrency(data.summaryCards.grossSales.value),
+                changePercentage: data.summaryCards.grossSales.changePercentage,
+                trend: data.summaryCards.grossSales.trend,
+              }}
+            />
+          )}
+          {data.errors.salesBreakdown ? (
+            <CardError
+              title="Total sales breakdown"
+              message={data.errors.salesBreakdown}
+            />
+          ) : (
+            <RankedList
+              title="Total sales breakdown"
+              variant="breakdown"
+              items={data.charts.salesBreakdown.map((line) => ({
+                name: line.label,
+                value: line.value,
+              }))}
+              formatValue={formatCurrency}
+            />
+          )}
+        </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {data.errors.sessionsOverTime ? (
@@ -245,22 +263,6 @@ export default async function AnalyticsPage({
             <DonutBreakdown
               title="Total sales by sales channel"
               data={data.charts.salesByChannel}
-            />
-          )}
-          {data.errors.salesBreakdown ? (
-            <CardError
-              title="Total sales breakdown"
-              message={data.errors.salesBreakdown}
-            />
-          ) : (
-            <RankedList
-              title="Total sales breakdown"
-              variant="breakdown"
-              items={data.charts.salesBreakdown.map((line) => ({
-                name: line.label,
-                value: line.value,
-              }))}
-              formatValue={formatCurrency}
             />
           )}
           {data.errors.sessionsByLocation ? (
