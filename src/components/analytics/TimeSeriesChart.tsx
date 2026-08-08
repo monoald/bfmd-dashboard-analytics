@@ -88,22 +88,22 @@ export function TimeSeriesChart({
         <div>
           <p className={`${LABEL_CLASS} mb-1.5`}>{title}</p>
           {headline && (
-            <>
-              <p className={isHero ? HERO_VALUE_CLASS : KPI_VALUE_CLASS}>
-                {headline.value}
-              </p>
-              <div className="mt-1.5 flex items-center gap-1.5">
+            <div className="flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <p className={isHero ? HERO_VALUE_CLASS : KPI_VALUE_CLASS}>
+                  {headline.value}
+                </p>
                 <span className={trendBadgeClass(headline.trend)}>
                   {trendArrow(headline.trend)}{" "}
                   {Math.abs(headline.changePercentage)}%
                 </span>
-                {isHero && (
-                  <span className="text-[11px] text-(--analytics-t2)">
-                    vs. previous period
-                  </span>
-                )}
               </div>
-            </>
+              {isHero && (
+                <span className="text-[11px] text-(--analytics-t2)">
+                  vs. previous period
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
