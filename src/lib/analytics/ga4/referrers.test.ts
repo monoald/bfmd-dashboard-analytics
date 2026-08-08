@@ -36,8 +36,26 @@ describe("getSocialReferrerRevenue", () => {
       }),
     );
     expect(result).toEqual([
-      { name: "youtube", value: 6135.07 },
-      { name: "facebook", value: 34.95 },
+      { name: "youtube", value: 6135.07, previousValue: 6135.07 },
+      { name: "facebook", value: 34.95, previousValue: 34.95 },
+    ]);
+  });
+
+  it("attaches previousValue by matching the source name across periods, defaulting to 0 when absent previously", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["youtube / social"], metricValues: [4645] },
+        { dimensionValues: ["facebook / social"], metricValues: [0] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["youtube / social"], metricValues: [963] },
+      ]);
+
+    const result = await getSocialReferrerRevenue(range);
+
+    expect(result).toEqual([
+      { name: "youtube", value: 4645, previousValue: 963 },
+      { name: "facebook", value: 0, previousValue: 0 },
     ]);
   });
 });
