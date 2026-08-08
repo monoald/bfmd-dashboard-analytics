@@ -181,6 +181,46 @@ export default async function AnalyticsPage({
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+          {data.errors.salesByChannel ? (
+            <CardError
+              title="Total sales by sales channel"
+              message={data.errors.salesByChannel}
+            />
+          ) : (
+            <DonutBreakdown
+              title="Total sales by sales channel"
+              data={data.charts.salesByChannel}
+            />
+          )}
+          {data.errors.aovOverTime ? (
+            <CardError
+              title="Average order value over time"
+              message={data.errors.aovOverTime}
+            />
+          ) : (
+            <TimeSeriesChart
+              title="Average order value over time"
+              data={data.charts.aovOverTime}
+              formatValue="currency"
+              headline={{
+                value: formatCurrency(aovHeadline.value),
+                changePercentage: aovHeadline.changePercentage,
+                trend: aovHeadline.trend,
+              }}
+            />
+          )}
+          {data.errors.salesByProduct ? (
+            <CardError
+              title="Total sales by product"
+              message={data.errors.salesByProduct}
+            />
+          ) : (
+            <RankedList
+              title="Total sales by product"
+              items={data.charts.salesByProduct}
+              formatValue={formatCurrency}
+            />
+          )}
           {data.errors.sessionsOverTime ? (
             <CardError
               title="Sessions over time"
@@ -215,23 +255,6 @@ export default async function AnalyticsPage({
               }}
             />
           )}
-          {data.errors.aovOverTime ? (
-            <CardError
-              title="Average order value over time"
-              message={data.errors.aovOverTime}
-            />
-          ) : (
-            <TimeSeriesChart
-              title="Average order value over time"
-              data={data.charts.aovOverTime}
-              formatValue="currency"
-              headline={{
-                value: formatCurrency(aovHeadline.value),
-                changePercentage: aovHeadline.changePercentage,
-                trend: aovHeadline.trend,
-              }}
-            />
-          )}
           {data.errors.conversionFunnel ? (
             <CardError
               title="Conversion rate breakdown"
@@ -254,17 +277,6 @@ export default async function AnalyticsPage({
               data={data.charts.sessionsByDevice}
             />
           )}
-          {data.errors.salesByChannel ? (
-            <CardError
-              title="Total sales by sales channel"
-              message={data.errors.salesByChannel}
-            />
-          ) : (
-            <DonutBreakdown
-              title="Total sales by sales channel"
-              data={data.charts.salesByChannel}
-            />
-          )}
           {data.errors.sessionsByLocation ? (
             <CardError
               title="Sessions by location"
@@ -285,18 +297,6 @@ export default async function AnalyticsPage({
             <RankedList
               title="Total sales by social referrer"
               items={data.charts.totalSalesBySocialReferrer}
-              formatValue={formatCurrency}
-            />
-          )}
-          {data.errors.salesByProduct ? (
-            <CardError
-              title="Total sales by product"
-              message={data.errors.salesByProduct}
-            />
-          ) : (
-            <RankedList
-              title="Total sales by product"
-              items={data.charts.salesByProduct}
               formatValue={formatCurrency}
             />
           )}
