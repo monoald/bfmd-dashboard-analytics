@@ -107,6 +107,7 @@ export function buildMockDashboardPayload(
   const grossSalesCurrent = sum(salesOverTime, "currentPeriod");
   const grossSalesPrevious = sum(salesOverTime, "previousPeriod");
   const sessionsCurrent = sum(sessionsOverTime, "currentPeriod");
+  const sessionsPrevious = sum(sessionsOverTime, "previousPeriod");
   const ordersCurrent = Math.round(sum(ordersSeries, "currentPeriod"));
   const ordersPrevious = Math.round(sum(ordersSeries, "previousPeriod"));
   const ordersFulfilledCurrent = Math.round(ordersCurrent * 0.68);
@@ -198,32 +199,50 @@ export function buildMockDashboardPayload(
         {
           name: "United States · Florida · Miami",
           value: Math.round(sessionsCurrent * 0.06),
+          previousValue: Math.round(sessionsPrevious * 0.058),
         },
         {
           name: "United States · Illinois · Chicago",
           value: Math.round(sessionsCurrent * 0.055),
+          previousValue: Math.round(sessionsPrevious * 0.062),
         },
         {
           name: "United States · Georgia · Atlanta",
           value: Math.round(sessionsCurrent * 0.05),
+          previousValue: Math.round(sessionsPrevious * 0.045),
         },
         {
           name: "United States · Arizona · Phoenix",
           value: Math.round(sessionsCurrent * 0.045),
+          previousValue: Math.round(sessionsPrevious * 0.05),
         },
         {
           name: "United States · Texas · Houston",
           value: Math.round(sessionsCurrent * 0.04),
+          previousValue: Math.round(sessionsPrevious * 0.033),
         },
       ],
       totalSalesBySocialReferrer: [
-        { name: "youtube", value: Math.round(grossSalesCurrent * 0.082) },
-        { name: "instagram", value: Math.round(grossSalesCurrent * 0.0014) },
+        {
+          name: "youtube",
+          value: Math.round(grossSalesCurrent * 0.082),
+          previousValue: Math.round(grossSalesPrevious * 0.02),
+        },
+        {
+          name: "instagram",
+          value: Math.round(grossSalesCurrent * 0.0014),
+          previousValue: Math.round(grossSalesPrevious * 0.0016),
+        },
         {
           name: "pinterest",
           value: Math.round(grossSalesCurrent * 0.0005 * 100) / 100,
+          previousValue: Math.round(grossSalesPrevious * 0.0004 * 100) / 100,
         },
-        { name: "facebook", value: 0 },
+        {
+          name: "facebook",
+          value: 0,
+          previousValue: Math.round(grossSalesPrevious * 0.0002 * 100) / 100,
+        },
       ],
       salesOverTime,
       salesBreakdown: [
@@ -246,22 +265,27 @@ export function buildMockDashboardPayload(
         {
           name: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",
           value: Math.round(grossSalesCurrent * 0.316),
+          previousValue: Math.round(grossSalesPrevious * 0.29),
         },
         {
           name: "Magnesium Sleep Aid 1695 MG | Melatonin-Free",
           value: Math.round(grossSalesCurrent * 0.069),
+          previousValue: Math.round(grossSalesPrevious * 0.075),
         },
         {
           name: "The Nattokinase 4-in-1 Cardio Complex 10,800 FU",
           value: Math.round(grossSalesCurrent * 0.048),
+          previousValue: Math.round(grossSalesPrevious * 0.022),
         },
         {
           name: "NMN 1000MG | Enhanced with BioPerine®",
           value: Math.round(grossSalesCurrent * 0.032),
+          previousValue: Math.round(grossSalesPrevious * 0.03),
         },
         {
           name: "Turkesterone Tongkat Ali 1000mg",
           value: Math.round(grossSalesCurrent * 0.021),
+          previousValue: Math.round(grossSalesPrevious * 0.019),
         },
       ],
     },

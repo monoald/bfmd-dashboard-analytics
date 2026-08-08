@@ -49,4 +49,32 @@ describe("RankedList", () => {
     expect(totalRow).toHaveTextContent("Total sales");
     expect(screen.getByText("Total sales")).toHaveClass("font-extrabold");
   });
+
+  it("renders a period-over-period comparison bar and % change when items carry previousValue", () => {
+    render(
+      <RankedList
+        title="Total sales by product"
+        items={[
+          { name: "Cocoa Flavanols", value: 14500, previousValue: 33300 },
+        ]}
+        formatValue={(v) => `$${(v / 1000).toFixed(1)}K`}
+      />,
+    );
+
+    expect(screen.getByText("$14.5K")).toBeInTheDocument();
+    expect(screen.getByText("$33.3K")).toBeInTheDocument();
+    expect(screen.getByText(/56\.5%/)).toBeInTheDocument();
+  });
+
+  it("does not render a comparison row when previousValue is absent", () => {
+    render(
+      <RankedList
+        title="Sessions by location"
+        items={[{ name: "Miami", value: 342 }]}
+      />,
+    );
+
+    expect(screen.getByText("342")).toBeInTheDocument();
+    expect(screen.queryByText(/[↑↓]/)).not.toBeInTheDocument();
+  });
 });
