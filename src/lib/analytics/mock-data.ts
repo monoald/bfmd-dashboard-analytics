@@ -102,6 +102,7 @@ export function buildMockDashboardPayload(
   );
   const aovOverTime = buildSeries(labels, 58, 14, 0.94);
   const conversionRateOverTime = buildSeries(labels, 10.2, 3.4, 1.08);
+  const returningCustomerRateSeries = buildSeries(labels, 52, 8, 0.9);
 
   const grossSalesCurrent = sum(salesOverTime, "currentPeriod");
   const grossSalesPrevious = sum(salesOverTime, "previousPeriod");
@@ -114,6 +115,10 @@ export function buildMockDashboardPayload(
     sum(conversionRateOverTime, "currentPeriod") / labels.length;
   const conversionRatePrevious =
     sum(conversionRateOverTime, "previousPeriod") / labels.length;
+  const returningCustomerRateCurrent =
+    sum(returningCustomerRateSeries, "currentPeriod") / labels.length;
+  const returningCustomerRatePrevious =
+    sum(returningCustomerRateSeries, "previousPeriod") / labels.length;
 
   const discounts = -Math.round(grossSalesCurrent * 0.259);
   const salesReversals = -Math.round(grossSalesCurrent * 0.0167);
@@ -138,15 +143,25 @@ export function buildMockDashboardPayload(
         ),
         sparkline: conversionRateOverTime.map((point) => point.currentPeriod),
       },
-      ordersFulfilled: computeChange(
-        ordersFulfilledCurrent,
-        ordersFulfilledPrevious,
-      ),
+      ordersFulfilled: {
+        ...computeChange(ordersFulfilledCurrent, ordersFulfilledPrevious),
+        sparkline: ordersSeries.map((point) =>
+          Math.round(point.currentPeriod * 0.68),
+        ),
+      },
       orders: {
         ...computeChange(ordersCurrent, ordersPrevious),
         sparkline: ordersSeries.map((point) => point.currentPeriod),
       },
-      returningCustomerRate: computeChange(51.8, 53.9),
+      returningCustomerRate: {
+        ...computeChange(
+          Math.round(returningCustomerRateCurrent * 10) / 10,
+          Math.round(returningCustomerRatePrevious * 10) / 10,
+        ),
+        sparkline: returningCustomerRateSeries.map(
+          (point) => point.currentPeriod,
+        ),
+      },
     },
     charts: {
       sessionsOverTime,

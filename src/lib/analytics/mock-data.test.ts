@@ -40,6 +40,17 @@ describe("buildMockDashboardPayload", () => {
     expect(byLabel("Gross sales")).toBeGreaterThan(byLabel("Net sales"));
   });
 
+  it("gives every summary card a sparkline, including orders fulfilled and returning customer rate", () => {
+    const payload = buildMockDashboardPayload("7d");
+
+    expect(payload.summaryCards.ordersFulfilled.sparkline).toBeDefined();
+    expect(payload.summaryCards.ordersFulfilled.sparkline!.length).toBe(7);
+    expect(payload.summaryCards.returningCustomerRate.sparkline).toBeDefined();
+    expect(payload.summaryCards.returningCustomerRate.sparkline!.length).toBe(
+      7,
+    );
+  });
+
   it("sorts sessionsByDevice with Mobile as the largest share", () => {
     const payload = buildMockDashboardPayload("today");
     const [first] = payload.charts.sessionsByDevice;
