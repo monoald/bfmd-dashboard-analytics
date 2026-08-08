@@ -32,13 +32,13 @@ export default async function AnalyticsPage({
   const data = await getDashboardData(rangeKey);
 
   return (
-    <div className="min-h-screen bg-[#F6F6F7] p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Analytics</h1>
+    <div className="min-h-screen space-y-4 bg-(--analytics-bg) p-6 text-[13px] text-(--analytics-t1)">
+      <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
+        <h1 className="text-sm font-bold tracking-tight">Analytics</h1>
         <DashboardDateFilter />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         {data.errors.grossSales ? (
           <CardError title="Gross sales" message={data.errors.grossSales} />
         ) : (
@@ -111,7 +111,7 @@ export default async function AnalyticsPage({
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {data.errors.sessionsOverTime ? (
           <CardError
             title="Sessions over time"

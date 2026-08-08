@@ -15,7 +15,7 @@ describe("DashboardDateFilter", () => {
     render(<DashboardDateFilter />);
 
     const todayButton = screen.getByText("Today");
-    expect(todayButton).toHaveClass("bg-gray-900");
+    expect(todayButton).toHaveClass("border-(--analytics-accent)");
 
     fireEvent.click(screen.getByText("Last 7 Days"));
 
