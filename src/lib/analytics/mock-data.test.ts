@@ -65,6 +65,14 @@ describe("buildMockDashboardPayload", () => {
     }
   });
 
+  it("gives every conversionFunnel step a previousSessions for comparison", () => {
+    const payload = buildMockDashboardPayload("7d");
+
+    for (const step of payload.charts.conversionFunnel) {
+      expect(step.previousSessions).toBeGreaterThan(0);
+    }
+  });
+
   it("sorts sessionsByDevice with Mobile as the largest share", () => {
     const payload = buildMockDashboardPayload("today");
     const [first] = payload.charts.sessionsByDevice;

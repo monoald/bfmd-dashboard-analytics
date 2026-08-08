@@ -264,6 +264,12 @@ export default async function AnalyticsPage({
             <FunnelChart
               title="Conversion rate breakdown"
               steps={data.charts.conversionFunnel}
+              headline={{
+                value: formatPercent(data.summaryCards.conversionRate.value),
+                changePercentage:
+                  data.summaryCards.conversionRate.changePercentage,
+                trend: data.summaryCards.conversionRate.trend,
+              }}
             />
           )}
           {data.errors.sessionsByDevice ? (

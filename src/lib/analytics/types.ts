@@ -39,6 +39,9 @@ export interface FunnelStep {
   step: string;
   sessions: number;
   percentage: number;
+  // Optional: when present, the funnel UI renders a period-over-period
+  // trend for this step's session count (see ga4/funnel.ts).
+  previousSessions?: number;
 }
 
 export interface SalesBreakdownLine {
