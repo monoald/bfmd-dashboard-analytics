@@ -11,26 +11,28 @@ const FUNNEL_EVENTS = [
 ];
 
 async function fetchFunnelCounts(period: PeriodBounds): Promise<number[]> {
-  const promises = FUNNEL_EVENTS.map((step) => {
+  const counts: number[] = [];
+  for (const step of FUNNEL_EVENTS) {
     if (step.event === null) {
-      return runGa4Report({
+      const rows = await runGa4Report({
         dimensions: [],
         metrics: ["sessions"],
         startDate: toIsoDate(period.start),
         endDate: toIsoDate(period.end),
       });
+      counts.push(rows[0]?.metricValues[0] ?? 0);
+      continue;
     }
-    return runGa4Report({
+    const rows = await runGa4Report({
       dimensions: ["eventName"],
       metrics: ["sessions"],
       startDate: toIsoDate(period.start),
       endDate: toIsoDate(period.end),
       dimensionFilter: { fieldName: "eventName", value: step.event },
     });
-  });
-
-  const results = await Promise.all(promises);
-  return results.map((rows) => rows[0]?.metricValues[0] ?? 0);
+    counts.push(rows[0]?.metricValues[0] ?? 0);
+  }
+  return counts;
 }
 
 export async function getConversionFunnel(range: ResolvedDateRange): Promise<FunnelStep[]> {
@@ -44,10 +46,8 @@ export async function getConversionFunnel(range: ResolvedDateRange): Promise<Fun
 }
 
 export async function getConversionRateSummary(range: ResolvedDateRange): Promise<ChangeMetric> {
-  const [currentCounts, previousCounts] = await Promise.all([
-    fetchFunnelCounts(range.current),
-    fetchFunnelCounts(range.previous),
-  ]);
+  const currentCounts = await fetchFunnelCounts(range.current);
+  const previousCounts = await fetchFunnelCounts(range.previous);
   const currentRate = currentCounts[0] ? Math.round((currentCounts[3] / currentCounts[0]) * 1000) / 10 : 0;
   const previousRate = previousCounts[0] ? Math.round((previousCounts[3] / previousCounts[0]) * 1000) / 10 : 0;
   return computeChange(currentRate, previousRate);
