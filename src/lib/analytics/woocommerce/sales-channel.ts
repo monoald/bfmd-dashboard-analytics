@@ -34,13 +34,18 @@ async function fetchAllOrders(period: PeriodBounds): Promise<WcOrderRow[]> {
   return results;
 }
 
-export async function getSalesByChannel(range: ResolvedDateRange): Promise<NamedValue[]> {
+export async function getSalesByChannel(
+  range: ResolvedDateRange,
+): Promise<NamedValue[]> {
   const orders = await fetchAllOrders(range.current);
   const totalsByChannel = new Map<string, number>();
 
   for (const order of orders) {
     const label = CHANNEL_LABELS[order.created_via] ?? order.created_via;
-    totalsByChannel.set(label, (totalsByChannel.get(label) ?? 0) + Number(order.total));
+    totalsByChannel.set(
+      label,
+      (totalsByChannel.get(label) ?? 0) + Number(order.total),
+    );
   }
 
   return [...totalsByChannel.entries()]

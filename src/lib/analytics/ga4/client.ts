@@ -9,7 +9,9 @@ function getClient(): BetaAnalyticsDataClient {
   const privateKey = process.env.GA4_PRIVATE_KEY;
 
   if (!clientEmail || !privateKey) {
-    throw new Error("Missing GA4 environment variables (GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY)");
+    throw new Error(
+      "Missing GA4 environment variables (GA4_CLIENT_EMAIL, GA4_PRIVATE_KEY)",
+    );
   }
 
   client = new BetaAnalyticsDataClient({
@@ -37,7 +39,9 @@ export interface Ga4ReportParams {
   };
 }
 
-export async function runGa4Report(params: Ga4ReportParams): Promise<Ga4ReportRow[]> {
+export async function runGa4Report(
+  params: Ga4ReportParams,
+): Promise<Ga4ReportRow[]> {
   const propertyId = process.env.GA4_PROPERTY_ID;
   if (!propertyId) {
     throw new Error("Missing GA4 environment variable GA4_PROPERTY_ID");

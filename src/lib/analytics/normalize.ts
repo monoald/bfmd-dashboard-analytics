@@ -18,7 +18,8 @@ export function computeChange(current: number, previous: number): ChangeMetric {
     };
   }
 
-  const changePercentage = Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10;
+  const changePercentage =
+    Math.round(((current - previous) / Math.abs(previous)) * 1000) / 10;
   return {
     value: current,
     changePercentage,
@@ -27,7 +28,8 @@ export function computeChange(current: number, previous: number): ChangeMetric {
 }
 
 export interface RawPipelineResults {
-  revenueStats: { current: RevenueStatsResult; previous: RevenueStatsResult } | Error;
+  revenueStats:
+    { current: RevenueStatsResult; previous: RevenueStatsResult } | Error;
   ordersFulfilled: { current: number; previous: number } | Error;
   returningCustomerRate: { current: number; previous: number } | Error;
   salesByProduct: NamedValue[] | Error;
@@ -56,12 +58,21 @@ const EMPTY_REVENUE_STATS: RevenueStatsResult = {
   },
 };
 
-function salesOverTimeFrom(stats: { current: RevenueStatsResult; previous: RevenueStatsResult }): TimeSeriesData[] {
-  const count = Math.max(stats.current.intervals.length, stats.previous.intervals.length);
+function salesOverTimeFrom(stats: {
+  current: RevenueStatsResult;
+  previous: RevenueStatsResult;
+}): TimeSeriesData[] {
+  const count = Math.max(
+    stats.current.intervals.length,
+    stats.previous.intervals.length,
+  );
   const series: TimeSeriesData[] = [];
   for (let i = 0; i < count; i++) {
     series.push({
-      date: stats.current.intervals[i]?.date ?? stats.previous.intervals[i]?.date ?? "",
+      date:
+        stats.current.intervals[i]?.date ??
+        stats.previous.intervals[i]?.date ??
+        "",
       currentPeriod: stats.current.intervals[i]?.grossSales ?? 0,
       previousPeriod: stats.previous.intervals[i]?.grossSales ?? 0,
     });
@@ -69,16 +80,24 @@ function salesOverTimeFrom(stats: { current: RevenueStatsResult; previous: Reven
   return series;
 }
 
-function aovOverTimeFrom(stats: { current: RevenueStatsResult; previous: RevenueStatsResult }): TimeSeriesData[] {
-  const count = Math.max(stats.current.intervals.length, stats.previous.intervals.length);
+function aovOverTimeFrom(stats: {
+  current: RevenueStatsResult;
+  previous: RevenueStatsResult;
+}): TimeSeriesData[] {
+  const count = Math.max(
+    stats.current.intervals.length,
+    stats.previous.intervals.length,
+  );
   const series: TimeSeriesData[] = [];
   for (let i = 0; i < count; i++) {
     const cur = stats.current.intervals[i];
     const prev = stats.previous.intervals[i];
     series.push({
       date: cur?.date ?? prev?.date ?? "",
-      currentPeriod: cur && cur.ordersCount > 0 ? cur.netRevenue / cur.ordersCount : 0,
-      previousPeriod: prev && prev.ordersCount > 0 ? prev.netRevenue / prev.ordersCount : 0,
+      currentPeriod:
+        cur && cur.ordersCount > 0 ? cur.netRevenue / cur.ordersCount : 0,
+      previousPeriod:
+        prev && prev.ordersCount > 0 ? prev.netRevenue / prev.ordersCount : 0,
     });
   }
   return series;
@@ -97,7 +116,9 @@ function salesBreakdownFrom(stats: RevenueStatsResult): SalesBreakdownLine[] {
   ];
 }
 
-export function buildDashboardPayload(raw: RawPipelineResults): DashboardPayload {
+export function buildDashboardPayload(
+  raw: RawPipelineResults,
+): DashboardPayload {
   const errors: Partial<Record<CardKey, string>> = {};
 
   function unwrap<T>(key: CardKey, result: T | Error, fallback: T): T {
@@ -108,7 +129,10 @@ export function buildDashboardPayload(raw: RawPipelineResults): DashboardPayload
     return result;
   }
 
-  let revenueStats: { current: RevenueStatsResult; previous: RevenueStatsResult };
+  let revenueStats: {
+    current: RevenueStatsResult;
+    previous: RevenueStatsResult;
+  };
   if (raw.revenueStats instanceof Error) {
     const message = raw.revenueStats.message;
     errors.grossSales = message;
@@ -116,44 +140,84 @@ export function buildDashboardPayload(raw: RawPipelineResults): DashboardPayload
     errors.salesOverTime = message;
     errors.salesBreakdown = message;
     errors.aovOverTime = message;
-    revenueStats = { current: EMPTY_REVENUE_STATS, previous: EMPTY_REVENUE_STATS };
+    revenueStats = {
+      current: EMPTY_REVENUE_STATS,
+      previous: EMPTY_REVENUE_STATS,
+    };
   } else {
     revenueStats = raw.revenueStats;
   }
 
-  const ordersFulfilled = unwrap("ordersFulfilled", raw.ordersFulfilled, { current: 0, previous: 0 });
-  const returningCustomerRate = unwrap("returningCustomerRate", raw.returningCustomerRate, { current: 0, previous: 0 });
-  const conversionRateOverTimeSeries = unwrap("conversionRateOverTime", raw.conversionRateOverTime, []);
-  const conversionRateSummaryMetric = unwrap("conversionRate", raw.conversionRateSummary, {
-    value: 0,
-    changePercentage: 0,
-    trend: "up" as const,
+  const ordersFulfilled = unwrap("ordersFulfilled", raw.ordersFulfilled, {
+    current: 0,
+    previous: 0,
   });
+  const returningCustomerRate = unwrap(
+    "returningCustomerRate",
+    raw.returningCustomerRate,
+    { current: 0, previous: 0 },
+  );
+  const conversionRateOverTimeSeries = unwrap(
+    "conversionRateOverTime",
+    raw.conversionRateOverTime,
+    [],
+  );
+  const conversionRateSummaryMetric = unwrap(
+    "conversionRate",
+    raw.conversionRateSummary,
+    {
+      value: 0,
+      changePercentage: 0,
+      trend: "up" as const,
+    },
+  );
 
   return {
     summaryCards: {
       grossSales: {
-        ...computeChange(revenueStats.current.totals.grossSales, revenueStats.previous.totals.grossSales),
+        ...computeChange(
+          revenueStats.current.totals.grossSales,
+          revenueStats.previous.totals.grossSales,
+        ),
         sparkline: revenueStats.current.intervals.map((i) => i.grossSales),
       },
       conversionRate: {
         ...conversionRateSummaryMetric,
-        sparkline: conversionRateOverTimeSeries.map((point) => point.currentPeriod),
+        sparkline: conversionRateOverTimeSeries.map(
+          (point) => point.currentPeriod,
+        ),
       },
-      ordersFulfilled: computeChange(ordersFulfilled.current, ordersFulfilled.previous),
+      ordersFulfilled: computeChange(
+        ordersFulfilled.current,
+        ordersFulfilled.previous,
+      ),
       orders: {
-        ...computeChange(revenueStats.current.totals.ordersCount, revenueStats.previous.totals.ordersCount),
+        ...computeChange(
+          revenueStats.current.totals.ordersCount,
+          revenueStats.previous.totals.ordersCount,
+        ),
         sparkline: revenueStats.current.intervals.map((i) => i.ordersCount),
       },
-      returningCustomerRate: computeChange(returningCustomerRate.current, returningCustomerRate.previous),
+      returningCustomerRate: computeChange(
+        returningCustomerRate.current,
+        returningCustomerRate.previous,
+      ),
     },
     charts: {
       sessionsOverTime: unwrap("sessionsOverTime", raw.sessionsOverTime, []),
       conversionRateOverTime: conversionRateOverTimeSeries,
       conversionFunnel: unwrap("conversionFunnel", raw.conversionFunnel, []),
       sessionsByDevice: unwrap("sessionsByDevice", raw.sessionsByDevice, []),
-      sessionsByLocation: unwrap("sessionsByLocation", raw.sessionsByLocation, []),
-      totalSalesBySocialReferrer: unwrap("totalSalesBySocialReferrer", raw.totalSalesBySocialReferrer, []),
+      sessionsByLocation: unwrap(
+        "sessionsByLocation",
+        raw.sessionsByLocation,
+        [],
+      ),
+      totalSalesBySocialReferrer: unwrap(
+        "totalSalesBySocialReferrer",
+        raw.totalSalesBySocialReferrer,
+        [],
+      ),
       salesOverTime: salesOverTimeFrom(revenueStats),
       salesBreakdown: salesBreakdownFrom(revenueStats.current),
       salesByChannel: unwrap("salesByChannel", raw.salesByChannel, []),

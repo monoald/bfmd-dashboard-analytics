@@ -6,7 +6,10 @@ interface WcCustomerRow {
   orders_count: number;
 }
 
-async function fetchCustomerRows(period: { start: Date; end: Date }): Promise<WcCustomerRow[]> {
+async function fetchCustomerRows(period: {
+  start: Date;
+  end: Date;
+}): Promise<WcCustomerRow[]> {
   return fetchWc<WcCustomerRow[]>("/wc-analytics/reports/customers", {
     after: period.start.toISOString(),
     before: period.end.toISOString(),
@@ -21,7 +24,7 @@ function computeReturningRate(rows: WcCustomerRow[]): number {
 }
 
 export async function getReturningCustomerRate(
-  range: ResolvedDateRange
+  range: ResolvedDateRange,
 ): Promise<{ current: number; previous: number }> {
   const [currentRows, previousRows] = await Promise.all([
     fetchCustomerRows(range.current),

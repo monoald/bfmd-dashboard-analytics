@@ -3,7 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const runReportMock = vi.fn();
 
 vi.mock("@google-analytics/data", () => ({
-  BetaAnalyticsDataClient: vi.fn().mockImplementation(function (config: unknown) {
+  BetaAnalyticsDataClient: vi.fn().mockImplementation(function (
+    config: unknown,
+  ) {
     return {
       runReport: runReportMock,
       __config: config,
@@ -22,7 +24,12 @@ describe("GA4 client", () => {
     vi.stubEnv("GA4_PRIVATE_KEY", "line1\\nline2");
     runReportMock.mockResolvedValue([
       {
-        rows: [{ dimensionValues: [{ value: "mobile" }], metricValues: [{ value: "42" }] }],
+        rows: [
+          {
+            dimensionValues: [{ value: "mobile" }],
+            metricValues: [{ value: "42" }],
+          },
+        ],
       },
     ]);
   });
@@ -33,11 +40,23 @@ describe("GA4 client", () => {
   });
 
   it("constructs the client once with credentials, converting escaped newlines", async () => {
-    await runGa4Report({ dimensions: ["deviceCategory"], metrics: ["sessions"], startDate: "2026-08-01", endDate: "2026-08-07" });
-    await runGa4Report({ dimensions: ["deviceCategory"], metrics: ["sessions"], startDate: "2026-08-01", endDate: "2026-08-07" });
+    await runGa4Report({
+      dimensions: ["deviceCategory"],
+      metrics: ["sessions"],
+      startDate: "2026-08-01",
+      endDate: "2026-08-07",
+    });
+    await runGa4Report({
+      dimensions: ["deviceCategory"],
+      metrics: ["sessions"],
+      startDate: "2026-08-01",
+      endDate: "2026-08-07",
+    });
 
     expect(BetaAnalyticsDataClient).toHaveBeenCalledTimes(1);
-    const config = vi.mocked(BetaAnalyticsDataClient).mock.calls[0][0] as { credentials: { private_key: string } };
+    const config = vi.mocked(BetaAnalyticsDataClient).mock.calls[0][0] as {
+      credentials: { private_key: string };
+    };
     expect(config.credentials.private_key).toBe("line1\nline2");
   });
 
@@ -55,7 +74,12 @@ describe("GA4 client", () => {
       dateRanges: [{ startDate: "2026-08-01", endDate: "2026-08-07" }],
       dimensions: [{ name: "deviceCategory" }],
       metrics: [{ name: "sessions" }],
-      dimensionFilter: { filter: { fieldName: "sessionMedium", stringFilter: { value: "social" } } },
+      dimensionFilter: {
+        filter: {
+          fieldName: "sessionMedium",
+          stringFilter: { value: "social" },
+        },
+      },
     });
     expect(rows).toEqual([{ dimensionValues: ["mobile"], metricValues: [42] }]);
   });
@@ -66,7 +90,12 @@ describe("GA4 client", () => {
     vi.stubEnv("GA4_PRIVATE_KEY", "line1");
 
     await expect(
-      runGa4Report({ dimensions: [], metrics: ["sessions"], startDate: "2026-08-01", endDate: "2026-08-07" })
+      runGa4Report({
+        dimensions: [],
+        metrics: ["sessions"],
+        startDate: "2026-08-01",
+        endDate: "2026-08-07",
+      }),
     ).rejects.toThrow(/GA4_PROPERTY_ID/);
   });
 });

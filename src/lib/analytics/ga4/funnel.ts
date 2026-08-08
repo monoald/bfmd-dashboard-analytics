@@ -1,7 +1,13 @@
 import { runGa4Report } from "./client";
 import { alignSeries, toIsoDate } from "./format";
 import { computeChange } from "../normalize";
-import type { ChangeMetric, FunnelStep, PeriodBounds, ResolvedDateRange, TimeSeriesData } from "../types";
+import type {
+  ChangeMetric,
+  FunnelStep,
+  PeriodBounds,
+  ResolvedDateRange,
+  TimeSeriesData,
+} from "../types";
 
 const FUNNEL_EVENTS = [
   { step: "Sessions", event: null as string | null },
@@ -35,7 +41,9 @@ async function fetchFunnelCounts(period: PeriodBounds): Promise<number[]> {
   return counts;
 }
 
-export async function getConversionFunnel(range: ResolvedDateRange): Promise<FunnelStep[]> {
+export async function getConversionFunnel(
+  range: ResolvedDateRange,
+): Promise<FunnelStep[]> {
   const counts = await fetchFunnelCounts(range.current);
   const sessions = counts[0] || 1;
   return FUNNEL_EVENTS.map((step, i) => ({
@@ -45,15 +53,24 @@ export async function getConversionFunnel(range: ResolvedDateRange): Promise<Fun
   }));
 }
 
-export async function getConversionRateSummary(range: ResolvedDateRange): Promise<ChangeMetric> {
+export async function getConversionRateSummary(
+  range: ResolvedDateRange,
+): Promise<ChangeMetric> {
   const currentCounts = await fetchFunnelCounts(range.current);
   const previousCounts = await fetchFunnelCounts(range.previous);
-  const currentRate = currentCounts[0] ? Math.round((currentCounts[3] / currentCounts[0]) * 1000) / 10 : 0;
-  const previousRate = previousCounts[0] ? Math.round((previousCounts[3] / previousCounts[0]) * 1000) / 10 : 0;
+  const currentRate = currentCounts[0]
+    ? Math.round((currentCounts[3] / currentCounts[0]) * 1000) / 10
+    : 0;
+  const previousRate = previousCounts[0]
+    ? Math.round((previousCounts[3] / previousCounts[0]) * 1000) / 10
+    : 0;
   return computeChange(currentRate, previousRate);
 }
 
-async function fetchRateByBucket(period: PeriodBounds, interval: "hour" | "day"): Promise<Map<string, number>> {
+async function fetchRateByBucket(
+  period: PeriodBounds,
+  interval: "hour" | "day",
+): Promise<Map<string, number>> {
   const dimension = interval === "hour" ? "dateHour" : "date";
 
   const [sessionsRows, purchaseRows] = await Promise.all([
@@ -73,20 +90,27 @@ async function fetchRateByBucket(period: PeriodBounds, interval: "hour" | "day")
   ]);
 
   const sessionsByBucket = new Map<string, number>();
-  for (const row of sessionsRows) sessionsByBucket.set(row.dimensionValues[0], row.metricValues[0]);
+  for (const row of sessionsRows)
+    sessionsByBucket.set(row.dimensionValues[0], row.metricValues[0]);
 
   const purchasesByBucket = new Map<string, number>();
-  for (const row of purchaseRows) purchasesByBucket.set(row.dimensionValues[0], row.metricValues[0]);
+  for (const row of purchaseRows)
+    purchasesByBucket.set(row.dimensionValues[0], row.metricValues[0]);
 
   const rateByBucket = new Map<string, number>();
   for (const [bucket, sessions] of sessionsByBucket) {
     const purchases = purchasesByBucket.get(bucket) ?? 0;
-    rateByBucket.set(bucket, sessions === 0 ? 0 : Math.round((purchases / sessions) * 1000) / 10);
+    rateByBucket.set(
+      bucket,
+      sessions === 0 ? 0 : Math.round((purchases / sessions) * 1000) / 10,
+    );
   }
   return rateByBucket;
 }
 
-export async function getConversionRateOverTime(range: ResolvedDateRange): Promise<TimeSeriesData[]> {
+export async function getConversionRateOverTime(
+  range: ResolvedDateRange,
+): Promise<TimeSeriesData[]> {
   const [currentMap, previousMap] = await Promise.all([
     fetchRateByBucket(range.current, range.interval),
     fetchRateByBucket(range.previous, range.interval),

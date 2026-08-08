@@ -11,7 +11,7 @@ describe("FunnelChart", () => {
           { step: "Sessions", sessions: 5516, percentage: 100 },
           { step: "Completed checkout", sessions: 552, percentage: 10 },
         ]}
-      />
+      />,
     );
 
     expect(screen.getByText("Sessions")).toBeInTheDocument();

@@ -22,7 +22,11 @@ describe("getOrdersFulfilled", () => {
     expect(result).toEqual({ current: 12, previous: 9 });
     expect(fetchWcCount).toHaveBeenCalledWith(
       "/wc-analytics/reports/orders",
-      expect.objectContaining({ status: "completed", after: range.current.start.toISOString(), before: range.current.end.toISOString() })
+      expect.objectContaining({
+        "status_is[]": "completed",
+        after: range.current.start.toISOString(),
+        before: range.current.end.toISOString(),
+      }),
     );
   });
 });

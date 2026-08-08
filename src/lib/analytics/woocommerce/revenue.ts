@@ -58,20 +58,37 @@ function sumTotals(intervals: RevenueStatsInterval[]): RevenueStatsTotals {
       totalSales: acc.totalSales + i.totalSales,
       ordersCount: acc.ordersCount + i.ordersCount,
     }),
-    { grossSales: 0, netRevenue: 0, discounts: 0, refunds: 0, shipping: 0, taxes: 0, totalSales: 0, ordersCount: 0 }
+    {
+      grossSales: 0,
+      netRevenue: 0,
+      discounts: 0,
+      refunds: 0,
+      shipping: 0,
+      taxes: 0,
+      totalSales: 0,
+      ordersCount: 0,
+    },
   );
   return {
     ...totals,
-    averageOrderValue: totals.ordersCount === 0 ? 0 : totals.netRevenue / totals.ordersCount,
+    averageOrderValue:
+      totals.ordersCount === 0 ? 0 : totals.netRevenue / totals.ordersCount,
   };
 }
 
-async function fetchRevenueStatsForPeriod(period: PeriodBounds, interval: "hour" | "day"): Promise<RevenueStatsResult> {
-  const raw = await fetchWc<WcRevenueStatsResponse>("/wc-analytics/reports/revenue/stats", {
-    after: period.start.toISOString(),
-    before: period.end.toISOString(),
-    interval,
-  });
+async function fetchRevenueStatsForPeriod(
+  period: PeriodBounds,
+  interval: "hour" | "day",
+): Promise<RevenueStatsResult> {
+  const raw = await fetchWc<WcRevenueStatsResponse>(
+    "/wc-analytics/reports/revenue/stats",
+    {
+      after: period.start.toISOString(),
+      before: period.end.toISOString(),
+      interval,
+      per_page: "100",
+    },
+  );
 
   const intervals: RevenueStatsInterval[] = raw.intervals.map((i) => ({
     date: i.date_start,
@@ -89,7 +106,7 @@ async function fetchRevenueStatsForPeriod(period: PeriodBounds, interval: "hour"
 }
 
 export async function getRevenueStats(
-  range: ResolvedDateRange
+  range: ResolvedDateRange,
 ): Promise<{ current: RevenueStatsResult; previous: RevenueStatsResult }> {
   const [current, previous] = await Promise.all([
     fetchRevenueStatsForPeriod(range.current, range.interval),

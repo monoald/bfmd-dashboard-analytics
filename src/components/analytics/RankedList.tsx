@@ -14,7 +14,10 @@ export function RankedList({ title, items, formatValue }: RankedListProps) {
       <p className="text-sm text-gray-500 mb-2">{title}</p>
       <ul className="divide-y divide-gray-100">
         {items.map((item) => (
-          <li key={item.name} className="flex items-center justify-between py-2 text-sm">
+          <li
+            key={item.name}
+            className="flex items-center justify-between py-2 text-sm"
+          >
             <span>{item.name}</span>
             <span className="font-medium">{format(item.value)}</span>
           </li>

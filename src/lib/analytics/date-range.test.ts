@@ -30,11 +30,15 @@ describe("resolveDateRange", () => {
     const now = new Date(2026, 7, 7, 15, 30, 0);
     const range = resolveDateRange("30d", now);
 
-    const currentLengthMs = range.current.end.getTime() - range.current.start.getTime();
-    const previousLengthMs = range.previous.end.getTime() - range.previous.start.getTime();
+    const currentLengthMs =
+      range.current.end.getTime() - range.current.start.getTime();
+    const previousLengthMs =
+      range.previous.end.getTime() - range.previous.start.getTime();
 
     expect(Math.round(currentLengthMs / (24 * 60 * 60 * 1000))).toBe(30);
     expect(Math.round(previousLengthMs / (24 * 60 * 60 * 1000))).toBe(30);
-    expect(range.previous.end.getTime()).toBeLessThan(range.current.start.getTime());
+    expect(range.previous.end.getTime()).toBeLessThan(
+      range.current.start.getTime(),
+    );
   });
 });

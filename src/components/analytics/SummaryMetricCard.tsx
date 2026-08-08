@@ -8,7 +8,13 @@ export interface SummaryMetricCardProps {
   sparklineData: number[];
 }
 
-export function SummaryMetricCard({ title, value, changePercentage, trend, sparklineData }: SummaryMetricCardProps) {
+export function SummaryMetricCard({
+  title,
+  value,
+  changePercentage,
+  trend,
+  sparklineData,
+}: SummaryMetricCardProps) {
   const trendColor = trend === "up" ? "text-green-600" : "text-red-600";
   const trendSign = trend === "up" ? "+" : "-";
 

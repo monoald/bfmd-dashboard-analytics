@@ -15,15 +15,23 @@ const todayRange: ResolvedDateRange = {
   previous: { start: new Date(), end: new Date() },
 };
 
-const sevenDayRange: ResolvedDateRange = { ...todayRange, key: "7d", interval: "day" };
+const sevenDayRange: ResolvedDateRange = {
+  ...todayRange,
+  key: "7d",
+  interval: "day",
+};
 
 describe("withRangeCache", () => {
   it("wraps the function with a 300s cache keyed 'today' and a 3600s cache keyed 'range'", async () => {
     const fn = vi.fn().mockResolvedValue("result");
     withRangeCache(fn, "test-prefix");
 
-    expect(unstable_cache).toHaveBeenCalledWith(fn, ["test-prefix", "today"], { revalidate: 300 });
-    expect(unstable_cache).toHaveBeenCalledWith(fn, ["test-prefix", "range"], { revalidate: 3600 });
+    expect(unstable_cache).toHaveBeenCalledWith(fn, ["test-prefix", "today"], {
+      revalidate: 300,
+    });
+    expect(unstable_cache).toHaveBeenCalledWith(fn, ["test-prefix", "range"], {
+      revalidate: 3600,
+    });
   });
 
   it("calls the underlying function for both today and longer ranges", async () => {
@@ -43,6 +51,8 @@ describe("withFixedCache", () => {
     const fn = vi.fn().mockResolvedValue("result");
     withFixedCache(fn, "fixed-prefix", 14400);
 
-    expect(unstable_cache).toHaveBeenCalledWith(fn, ["fixed-prefix"], { revalidate: 14400 });
+    expect(unstable_cache).toHaveBeenCalledWith(fn, ["fixed-prefix"], {
+      revalidate: 14400,
+    });
   });
 });

@@ -14,7 +14,9 @@ export function FunnelChart({ title, steps }: FunnelChartProps) {
           <div key={step.step} className="flex-1">
             <p className="text-xs text-gray-500">{step.step}</p>
             <p className="text-2xl font-semibold">{step.percentage}%</p>
-            <p className="text-xs text-gray-400">{step.sessions.toLocaleString()}</p>
+            <p className="text-xs text-gray-400">
+              {step.sessions.toLocaleString()}
+            </p>
           </div>
         ))}
       </div>

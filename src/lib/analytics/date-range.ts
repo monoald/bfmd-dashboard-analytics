@@ -2,9 +2,28 @@ import type { DateRangeKey, ResolvedDateRange } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export function resolveDateRange(key: DateRangeKey, now: Date): ResolvedDateRange {
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
-  const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+export function resolveDateRange(
+  key: DateRangeKey,
+  now: Date,
+): ResolvedDateRange {
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0,
+    0,
+  );
+  const endOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    23,
+    59,
+    59,
+    999,
+  );
 
   if (key === "today") {
     return {
@@ -19,7 +38,9 @@ export function resolveDateRange(key: DateRangeKey, now: Date): ResolvedDateRang
   }
 
   const lengthDays = key === "7d" ? 7 : 30;
-  const currentStart = new Date(endOfToday.getTime() - (lengthDays - 1) * DAY_MS);
+  const currentStart = new Date(
+    endOfToday.getTime() - (lengthDays - 1) * DAY_MS,
+  );
   const currentStartMidnight = new Date(
     currentStart.getFullYear(),
     currentStart.getMonth(),
@@ -27,10 +48,12 @@ export function resolveDateRange(key: DateRangeKey, now: Date): ResolvedDateRang
     0,
     0,
     0,
-    0
+    0,
   );
   const previousEnd = new Date(currentStartMidnight.getTime() - 1);
-  const previousStart = new Date(previousEnd.getTime() - (lengthDays - 1) * DAY_MS);
+  const previousStart = new Date(
+    previousEnd.getTime() - (lengthDays - 1) * DAY_MS,
+  );
   const previousStartMidnight = new Date(
     previousStart.getFullYear(),
     previousStart.getMonth(),
@@ -38,7 +61,7 @@ export function resolveDateRange(key: DateRangeKey, now: Date): ResolvedDateRang
     0,
     0,
     0,
-    0
+    0,
   );
 
   return {
