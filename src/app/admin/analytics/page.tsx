@@ -94,6 +94,26 @@ export default async function AnalyticsPage({
               sparklineData={data.summaryCards.grossSales.sparkline ?? []}
             />
           )}
+          {data.errors.returningCustomerRate ? (
+            <CardError
+              title="Returning customer rate"
+              message={data.errors.returningCustomerRate}
+            />
+          ) : (
+            <SummaryMetricCard
+              title="Returning customer rate"
+              value={formatPercent(
+                data.summaryCards.returningCustomerRate.value,
+              )}
+              changePercentage={
+                data.summaryCards.returningCustomerRate.changePercentage
+              }
+              trend={data.summaryCards.returningCustomerRate.trend}
+              sparklineData={
+                data.summaryCards.returningCustomerRate.sparkline ?? []
+              }
+            />
+          )}
           {data.errors.ordersFulfilled ? (
             <CardError
               title="Orders fulfilled"
@@ -119,26 +139,6 @@ export default async function AnalyticsPage({
               changePercentage={data.summaryCards.orders.changePercentage}
               trend={data.summaryCards.orders.trend}
               sparklineData={data.summaryCards.orders.sparkline ?? []}
-            />
-          )}
-          {data.errors.returningCustomerRate ? (
-            <CardError
-              title="Returning customer rate"
-              message={data.errors.returningCustomerRate}
-            />
-          ) : (
-            <SummaryMetricCard
-              title="Returning customer rate"
-              value={formatPercent(
-                data.summaryCards.returningCustomerRate.value,
-              )}
-              changePercentage={
-                data.summaryCards.returningCustomerRate.changePercentage
-              }
-              trend={data.summaryCards.returningCustomerRate.trend}
-              sparklineData={
-                data.summaryCards.returningCustomerRate.sparkline ?? []
-              }
             />
           )}
         </div>
