@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("./cache", () => ({
   withRangeCache: (fn: unknown) => fn,
@@ -94,8 +94,33 @@ function mockHappyPath() {
   vi.mocked(getSocialReferrerRevenue).mockResolvedValue([]);
 }
 
+function stubRealCredentials() {
+  vi.stubEnv("WC_STORE_URL", "https://store.example.com");
+  vi.stubEnv("WC_CONSUMER_KEY", "ck_test");
+  vi.stubEnv("WC_CONSUMER_SECRET", "cs_test");
+  vi.stubEnv("GA4_PROPERTY_ID", "123456789");
+  vi.stubEnv("GA4_CLIENT_EMAIL", "svc@example.iam.gserviceaccount.com");
+  vi.stubEnv("GA4_PRIVATE_KEY", "line1");
+}
+
 describe("getDashboardData", () => {
-  it("assembles a full DashboardPayload when every fetcher succeeds", async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns mock data without calling any fetcher when credentials are missing", async () => {
+    vi.unstubAllEnvs();
+    mockHappyPath();
+
+    const payload = await getDashboardData("7d");
+
+    expect(payload.errors).toEqual({});
+    expect(payload.charts.salesOverTime).toHaveLength(7);
+    expect(getRevenueStats).not.toHaveBeenCalled();
+  });
+
+  it("assembles a full DashboardPayload from real fetchers when credentials are present", async () => {
+    stubRealCredentials();
     mockHappyPath();
 
     const payload = await getDashboardData("7d");
@@ -105,6 +130,7 @@ describe("getDashboardData", () => {
   });
 
   it("isolates a single fetcher rejection to its card without throwing", async () => {
+    stubRealCredentials();
     mockHappyPath();
     vi.mocked(getSessionsOverTime).mockRejectedValue(
       new Error("GA4 quota exceeded"),

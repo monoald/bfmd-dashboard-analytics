@@ -1,0 +1,52 @@
+import { describe, expect, it } from "vitest";
+import { buildMockDashboardPayload } from "./mock-data";
+
+describe("buildMockDashboardPayload", () => {
+  it("returns 24 hourly buckets for 'today'", () => {
+    const payload = buildMockDashboardPayload("today");
+
+    expect(payload.charts.sessionsOverTime).toHaveLength(24);
+    expect(payload.charts.sessionsOverTime[0].date).toMatch(
+      /^\d{1,2} (AM|PM)$/,
+    );
+  });
+
+  it("returns 7 daily buckets for '7d' and 30 for '30d'", () => {
+    expect(buildMockDashboardPayload("7d").charts.salesOverTime).toHaveLength(
+      7,
+    );
+    expect(buildMockDashboardPayload("30d").charts.salesOverTime).toHaveLength(
+      30,
+    );
+  });
+
+  it("produces non-zero, varied summary card values with no errors", () => {
+    const payload = buildMockDashboardPayload("7d");
+
+    expect(payload.summaryCards.grossSales.value).toBeGreaterThan(0);
+    expect(payload.summaryCards.orders.value).toBeGreaterThan(0);
+    expect(payload.summaryCards.conversionRate.value).toBeGreaterThan(0);
+    expect(payload.errors).toEqual({});
+  });
+
+  it("derives the sales breakdown from gross sales so totals are internally consistent", () => {
+    const payload = buildMockDashboardPayload("30d");
+    const breakdown = payload.charts.salesBreakdown;
+    const byLabel = (label: string) =>
+      breakdown.find((line) => line.label === label)!.value;
+
+    expect(byLabel("Discounts")).toBeLessThan(0);
+    expect(byLabel("Sales reversals")).toBeLessThan(0);
+    expect(byLabel("Gross sales")).toBeGreaterThan(byLabel("Net sales"));
+  });
+
+  it("sorts sessionsByDevice with Mobile as the largest share", () => {
+    const payload = buildMockDashboardPayload("today");
+    const [first] = payload.charts.sessionsByDevice;
+
+    expect(first.name).toBe("Mobile");
+    expect(first.value).toBeGreaterThan(
+      payload.charts.sessionsByDevice[1].value,
+    );
+  });
+});

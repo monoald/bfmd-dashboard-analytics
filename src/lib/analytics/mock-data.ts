@@ -1,0 +1,255 @@
+import { computeChange } from "./normalize";
+import type { DashboardPayload, DateRangeKey, TimeSeriesData } from "./types";
+
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function hourLabel(hour: number): string {
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${hour12} ${period}`;
+}
+
+function dayLabel(daysAgo: number, now: Date): string {
+  const date = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() - daysAgo,
+  );
+  return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+}
+
+function bucketLabels(rangeKey: DateRangeKey, now: Date): string[] {
+  if (rangeKey === "today") {
+    return Array.from({ length: 24 }, (_, hour) => hourLabel(hour));
+  }
+  const days = rangeKey === "7d" ? 7 : 30;
+  return Array.from({ length: days }, (_, i) => dayLabel(days - 1 - i, now));
+}
+
+// Deterministic wavy value generator so mock data looks varied (not flat)
+// without being random/flaky between renders.
+function wave(
+  index: number,
+  base: number,
+  amplitude: number,
+  phase = 0,
+): number {
+  return Math.max(0, base + amplitude * Math.sin(index / 2.3 + phase));
+}
+
+function buildSeries(
+  labels: string[],
+  base: number,
+  amplitude: number,
+  previousFactor: number,
+): TimeSeriesData[] {
+  return labels.map((date, i) => ({
+    date,
+    currentPeriod: Math.round(wave(i, base, amplitude)),
+    previousPeriod: Math.round(
+      wave(i, base * previousFactor, amplitude * previousFactor, 0.6),
+    ),
+  }));
+}
+
+function sum(
+  series: TimeSeriesData[],
+  key: "currentPeriod" | "previousPeriod",
+): number {
+  return series.reduce((total, point) => total + point[key], 0);
+}
+
+export function buildMockDashboardPayload(
+  rangeKey: DateRangeKey,
+): DashboardPayload {
+  const now = new Date();
+  const labels = bucketLabels(rangeKey, now);
+  const perBucketBase =
+    rangeKey === "today"
+      ? { revenue: 2200, sessions: 220, orders: 5.5 }
+      : { revenue: 9000, sessions: 750, orders: 22 };
+
+  const salesOverTime = buildSeries(
+    labels,
+    perBucketBase.revenue,
+    perBucketBase.revenue * 0.45,
+    0.87,
+  );
+  const sessionsOverTime = buildSeries(
+    labels,
+    perBucketBase.sessions,
+    perBucketBase.sessions * 0.5,
+    0.82,
+  );
+  const ordersSeries = buildSeries(
+    labels,
+    perBucketBase.orders,
+    perBucketBase.orders * 0.4,
+    0.85,
+  );
+  const aovOverTime = buildSeries(labels, 58, 14, 0.94);
+  const conversionRateOverTime = buildSeries(labels, 10.2, 3.4, 1.08);
+
+  const grossSalesCurrent = sum(salesOverTime, "currentPeriod");
+  const grossSalesPrevious = sum(salesOverTime, "previousPeriod");
+  const sessionsCurrent = sum(sessionsOverTime, "currentPeriod");
+  const ordersCurrent = Math.round(sum(ordersSeries, "currentPeriod"));
+  const ordersPrevious = Math.round(sum(ordersSeries, "previousPeriod"));
+  const ordersFulfilledCurrent = Math.round(ordersCurrent * 0.68);
+  const ordersFulfilledPrevious = Math.round(ordersPrevious * 0.62);
+  const conversionRateCurrent =
+    sum(conversionRateOverTime, "currentPeriod") / labels.length;
+  const conversionRatePrevious =
+    sum(conversionRateOverTime, "previousPeriod") / labels.length;
+
+  const discounts = -Math.round(grossSalesCurrent * 0.259);
+  const salesReversals = -Math.round(grossSalesCurrent * 0.0167);
+  const netSales = Math.round(grossSalesCurrent) + discounts + salesReversals;
+  const shipping = Math.round(grossSalesCurrent * 0.015);
+  const taxes = Math.round(grossSalesCurrent * 0.0233);
+  const totalSales = netSales + shipping + taxes;
+
+  return {
+    summaryCards: {
+      grossSales: {
+        ...computeChange(
+          Math.round(grossSalesCurrent),
+          Math.round(grossSalesPrevious),
+        ),
+        sparkline: salesOverTime.map((point) => point.currentPeriod),
+      },
+      conversionRate: {
+        ...computeChange(
+          Math.round(conversionRateCurrent * 10) / 10,
+          Math.round(conversionRatePrevious * 10) / 10,
+        ),
+        sparkline: conversionRateOverTime.map((point) => point.currentPeriod),
+      },
+      ordersFulfilled: computeChange(
+        ordersFulfilledCurrent,
+        ordersFulfilledPrevious,
+      ),
+      orders: {
+        ...computeChange(ordersCurrent, ordersPrevious),
+        sparkline: ordersSeries.map((point) => point.currentPeriod),
+      },
+      returningCustomerRate: computeChange(51.8, 53.9),
+    },
+    charts: {
+      sessionsOverTime,
+      conversionRateOverTime,
+      conversionFunnel: [
+        {
+          step: "Sessions",
+          sessions: Math.round(sessionsCurrent),
+          percentage: 100,
+        },
+        {
+          step: "Added to cart",
+          sessions: Math.round(sessionsCurrent * 0.26),
+          percentage: 26,
+        },
+        {
+          step: "Reached checkout",
+          sessions: Math.round(sessionsCurrent * 0.28),
+          percentage: 28,
+        },
+        {
+          step: "Completed checkout",
+          sessions: Math.round(sessionsCurrent * 0.1),
+          percentage: 10,
+        },
+      ],
+      sessionsByDevice: [
+        { name: "Mobile", value: Math.round(sessionsCurrent * 0.72) },
+        { name: "Desktop", value: Math.round(sessionsCurrent * 0.26) },
+        { name: "Tablet", value: Math.round(sessionsCurrent * 0.015) },
+        { name: "Other", value: Math.round(sessionsCurrent * 0.005) },
+      ],
+      sessionsByLocation: [
+        {
+          name: "United States · Florida · Miami",
+          value: Math.round(sessionsCurrent * 0.06),
+        },
+        {
+          name: "United States · Illinois · Chicago",
+          value: Math.round(sessionsCurrent * 0.055),
+        },
+        {
+          name: "United States · Georgia · Atlanta",
+          value: Math.round(sessionsCurrent * 0.05),
+        },
+        {
+          name: "United States · Arizona · Phoenix",
+          value: Math.round(sessionsCurrent * 0.045),
+        },
+        {
+          name: "United States · Texas · Houston",
+          value: Math.round(sessionsCurrent * 0.04),
+        },
+      ],
+      totalSalesBySocialReferrer: [
+        { name: "youtube", value: Math.round(grossSalesCurrent * 0.082) },
+        { name: "instagram", value: Math.round(grossSalesCurrent * 0.0014) },
+        {
+          name: "pinterest",
+          value: Math.round(grossSalesCurrent * 0.0005 * 100) / 100,
+        },
+        { name: "facebook", value: 0 },
+      ],
+      salesOverTime,
+      salesBreakdown: [
+        { label: "Gross sales", value: Math.round(grossSalesCurrent) },
+        { label: "Discounts", value: discounts },
+        { label: "Sales reversals", value: salesReversals },
+        { label: "Net sales", value: netSales },
+        { label: "Shipping charges", value: shipping },
+        { label: "Taxes", value: taxes },
+        { label: "Total sales", value: totalSales },
+      ],
+      salesByChannel: [
+        { name: "Online Store", value: Math.round(totalSales * 0.79) },
+        { name: "Buy Button", value: Math.round(totalSales * 0.11) },
+        { name: "Loop Subscriptions", value: Math.round(totalSales * 0.1) },
+        { name: "Draft Orders", value: 0 },
+      ],
+      aovOverTime,
+      salesByProduct: [
+        {
+          name: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",
+          value: Math.round(grossSalesCurrent * 0.316),
+        },
+        {
+          name: "Magnesium Sleep Aid 1695 MG | Melatonin-Free",
+          value: Math.round(grossSalesCurrent * 0.069),
+        },
+        {
+          name: "The Nattokinase 4-in-1 Cardio Complex 10,800 FU",
+          value: Math.round(grossSalesCurrent * 0.048),
+        },
+        {
+          name: "NMN 1000MG | Enhanced with BioPerine®",
+          value: Math.round(grossSalesCurrent * 0.032),
+        },
+        {
+          name: "Turkesterone Tongkat Ali 1000mg",
+          value: Math.round(grossSalesCurrent * 0.021),
+        },
+      ],
+    },
+    errors: {},
+  };
+}
