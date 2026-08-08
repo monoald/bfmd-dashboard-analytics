@@ -107,7 +107,7 @@ export function TimeSeriesChart({
           )}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={isHero ? 200 : 130}>
+      <ResponsiveContainer width="100%" height={isHero ? 200 : 160}>
         <AreaChart data={series}>
           <defs>
             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
@@ -123,31 +123,27 @@ export function TimeSeriesChart({
               />
             </linearGradient>
           </defs>
-          {isHero && (
-            <CartesianGrid
-              strokeDasharray="3 3"
-              vertical={false}
-              stroke="var(--analytics-border)"
-            />
-          )}
-          {isHero && (
-            <XAxis
-              dataKey="date"
-              tick={{ fontSize: 11, fill: "var(--analytics-t2)" }}
-              stroke="var(--analytics-border)"
-              tickLine={false}
-            />
-          )}
-          {isHero && (
-            <YAxis
-              tickFormatter={format}
-              tick={{ fontSize: 11, fill: "var(--analytics-t2)" }}
-              stroke="var(--analytics-border)"
-              tickLine={false}
-              axisLine={false}
-              width={48}
-            />
-          )}
+          <CartesianGrid
+            strokeDasharray="3 3"
+            vertical={false}
+            stroke="var(--analytics-border)"
+          />
+          <XAxis
+            dataKey="date"
+            tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
+            stroke="var(--analytics-border)"
+            tickLine={false}
+            interval={isHero ? 0 : "preserveStartEnd"}
+            minTickGap={isHero ? 5 : 20}
+          />
+          <YAxis
+            tickFormatter={format}
+            tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
+            stroke="var(--analytics-border)"
+            tickLine={false}
+            axisLine={false}
+            width={isHero ? 48 : 42}
+          />
           <Tooltip formatter={(value) => format(Number(value))} />
           <Area
             type="monotone"
