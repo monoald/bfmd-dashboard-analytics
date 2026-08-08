@@ -40,4 +40,34 @@ describe("TimeSeriesChart", () => {
     render(<TimeSeriesChart title="Sessions over time" data={[]} />);
     expect(screen.getByText("Sessions over time")).toBeInTheDocument();
   });
+
+  it("renders a headline value, trend badge, and 'vs. previous period' caption for the hero variant", () => {
+    render(
+      <TimeSeriesChart
+        title="Total sales over time"
+        data={[{ date: "Aug 1", currentPeriod: 100, previousPeriod: 80 }]}
+        formatValue="currency"
+        variant="hero"
+        headline={{ value: "$60,708.36", changePercentage: 1.8, trend: "up" }}
+      />,
+    );
+
+    expect(screen.getByText("$60,708.36")).toBeInTheDocument();
+    expect(screen.getByText("↑ 1.8%")).toBeInTheDocument();
+    expect(screen.getByText("vs. previous period")).toBeInTheDocument();
+  });
+
+  it("omits the 'vs. previous period' caption for the compact variant", () => {
+    render(
+      <TimeSeriesChart
+        title="Average order value over time"
+        data={[{ date: "Aug 1", currentPeriod: 58, previousPeriod: 55 }]}
+        formatValue="currency"
+        headline={{ value: "$58.00", changePercentage: 5, trend: "up" }}
+      />,
+    );
+
+    expect(screen.getByText("$58.00")).toBeInTheDocument();
+    expect(screen.queryByText("vs. previous period")).not.toBeInTheDocument();
+  });
 });

@@ -1,5 +1,11 @@
 import { Sparkline } from "./Sparkline";
-import { CARD_CLASS, LABEL_CLASS, VALUE_CLASS, trendBadgeClass } from "./theme";
+import {
+  CARD_CLASS,
+  KPI_VALUE_CLASS,
+  LABEL_CLASS,
+  trendArrow,
+  trendBadgeClass,
+} from "./theme";
 
 export interface SummaryMetricCardProps {
   title: string;
@@ -16,17 +22,13 @@ export function SummaryMetricCard({
   trend,
   sparklineData,
 }: SummaryMetricCardProps) {
-  const trendSign = trend === "up" ? "↑" : "↓";
-
   return (
-    <div className={`${CARD_CLASS} flex flex-col gap-2`}>
+    <div className={`${CARD_CLASS} flex flex-col gap-2.5`}>
       <p className={LABEL_CLASS}>{title}</p>
       <div className="flex items-start justify-between gap-2">
-        <p className={VALUE_CLASS}>{value}</p>
-        <span
-          className={`inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold ${trendBadgeClass(trend)}`}
-        >
-          {trendSign} {Math.abs(changePercentage)}%
+        <p className={KPI_VALUE_CLASS}>{value}</p>
+        <span className={trendBadgeClass(trend)}>
+          {trendArrow(trend)} {Math.abs(changePercentage)}%
         </span>
       </div>
       <Sparkline data={sparklineData} />
