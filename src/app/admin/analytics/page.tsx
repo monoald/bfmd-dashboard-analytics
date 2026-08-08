@@ -1,4 +1,5 @@
 import { getDashboardData } from "@/lib/analytics/actions";
+import { computeChange } from "@/lib/analytics/normalize";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { SummaryMetricCard } from "@/components/analytics/SummaryMetricCard";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
@@ -6,7 +7,8 @@ import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { RankedList } from "@/components/analytics/RankedList";
 import { CardError } from "@/components/analytics/CardError";
-import type { DateRangeKey } from "@/lib/analytics/types";
+import { CHIP_CLASS } from "@/components/analytics/theme";
+import type { DateRangeKey, TimeSeriesData } from "@/lib/analytics/types";
 
 function formatCurrency(value: number): string {
   return new Intl.NumberFormat("en-US", {
@@ -17,6 +19,20 @@ function formatCurrency(value: number): string {
 
 function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
+}
+
+function sumSeries(
+  series: TimeSeriesData[],
+  key: "currentPeriod" | "previousPeriod",
+): number {
+  return series.reduce((total, point) => total + point[key], 0);
+}
+
+function averageSeries(
+  series: TimeSeriesData[],
+  key: "currentPeriod" | "previousPeriod",
+): number {
+  return series.length === 0 ? 0 : sumSeries(series, key) / series.length;
 }
 
 export default async function AnalyticsPage({
@@ -31,14 +47,41 @@ export default async function AnalyticsPage({
     : "today";
   const data = await getDashboardData(rangeKey);
 
+  const sessionsHeadline = computeChange(
+    sumSeries(data.charts.sessionsOverTime, "currentPeriod"),
+    sumSeries(data.charts.sessionsOverTime, "previousPeriod"),
+  );
+  const aovHeadline = computeChange(
+    averageSeries(data.charts.aovOverTime, "currentPeriod"),
+    averageSeries(data.charts.aovOverTime, "previousPeriod"),
+  );
+
   return (
-    <div className="min-h-screen space-y-4 bg-(--analytics-bg) p-6 text-[13px] text-(--analytics-t1)">
+    <div className="min-h-screen space-y-3.5 bg-(--analytics-bg) p-6 text-[13px] text-(--analytics-t1)">
       <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
-        <h1 className="text-sm font-bold tracking-tight">Analytics</h1>
-        <DashboardDateFilter />
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-(--analytics-accent) bg-(--analytics-accent-dim) text-[11px] font-extrabold tracking-[-0.5px] text-(--analytics-accent)">
+            BF
+          </div>
+          <div>
+            <div className="text-sm font-bold tracking-tight">Analytics</div>
+            <div className="text-[11px] text-(--analytics-t2)">
+              Black Forest Supplements
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <DashboardDateFilter />
+          <span
+            className={`${CHIP_CLASS} border-(--analytics-up) bg-(--analytics-up-dim) text-(--analytics-up)`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-(--analytics-up)" />
+            Live
+          </span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-4 lg:grid-cols-5">
         {data.errors.grossSales ? (
           <CardError title="Gross sales" message={data.errors.grossSales} />
         ) : (
@@ -111,6 +154,25 @@ export default async function AnalyticsPage({
         )}
       </div>
 
+      {data.errors.salesOverTime ? (
+        <CardError
+          title="Total sales over time"
+          message={data.errors.salesOverTime}
+        />
+      ) : (
+        <TimeSeriesChart
+          title="Total sales over time"
+          data={data.charts.salesOverTime}
+          formatValue="currency"
+          variant="hero"
+          headline={{
+            value: formatCurrency(data.summaryCards.grossSales.value),
+            changePercentage: data.summaryCards.grossSales.changePercentage,
+            trend: data.summaryCards.grossSales.trend,
+          }}
+        />
+      )}
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {data.errors.sessionsOverTime ? (
           <CardError
@@ -121,6 +183,11 @@ export default async function AnalyticsPage({
           <TimeSeriesChart
             title="Sessions over time"
             data={data.charts.sessionsOverTime}
+            headline={{
+              value: sessionsHeadline.value.toLocaleString(),
+              changePercentage: sessionsHeadline.changePercentage,
+              trend: sessionsHeadline.trend,
+            }}
           />
         )}
         {data.errors.conversionRateOverTime ? (
@@ -133,6 +200,29 @@ export default async function AnalyticsPage({
             title="Conversion rate over time"
             data={data.charts.conversionRateOverTime}
             formatValue="percent"
+            headline={{
+              value: formatPercent(data.summaryCards.conversionRate.value),
+              changePercentage:
+                data.summaryCards.conversionRate.changePercentage,
+              trend: data.summaryCards.conversionRate.trend,
+            }}
+          />
+        )}
+        {data.errors.aovOverTime ? (
+          <CardError
+            title="Average order value over time"
+            message={data.errors.aovOverTime}
+          />
+        ) : (
+          <TimeSeriesChart
+            title="Average order value over time"
+            data={data.charts.aovOverTime}
+            formatValue="currency"
+            headline={{
+              value: formatCurrency(aovHeadline.value),
+              changePercentage: aovHeadline.changePercentage,
+              trend: aovHeadline.trend,
+            }}
           />
         )}
         {data.errors.conversionFunnel ? (
@@ -157,6 +247,33 @@ export default async function AnalyticsPage({
             data={data.charts.sessionsByDevice}
           />
         )}
+        {data.errors.salesByChannel ? (
+          <CardError
+            title="Total sales by sales channel"
+            message={data.errors.salesByChannel}
+          />
+        ) : (
+          <DonutBreakdown
+            title="Total sales by sales channel"
+            data={data.charts.salesByChannel}
+          />
+        )}
+        {data.errors.salesBreakdown ? (
+          <CardError
+            title="Total sales breakdown"
+            message={data.errors.salesBreakdown}
+          />
+        ) : (
+          <RankedList
+            title="Total sales breakdown"
+            variant="breakdown"
+            items={data.charts.salesBreakdown.map((line) => ({
+              name: line.label,
+              value: line.value,
+            }))}
+            formatValue={formatCurrency}
+          />
+        )}
         {data.errors.sessionsByLocation ? (
           <CardError
             title="Sessions by location"
@@ -178,56 +295,6 @@ export default async function AnalyticsPage({
             title="Total sales by social referrer"
             items={data.charts.totalSalesBySocialReferrer}
             formatValue={formatCurrency}
-          />
-        )}
-        {data.errors.salesOverTime ? (
-          <CardError
-            title="Total sales over time"
-            message={data.errors.salesOverTime}
-          />
-        ) : (
-          <TimeSeriesChart
-            title="Total sales over time"
-            data={data.charts.salesOverTime}
-            formatValue="currency"
-          />
-        )}
-        {data.errors.salesBreakdown ? (
-          <CardError
-            title="Total sales breakdown"
-            message={data.errors.salesBreakdown}
-          />
-        ) : (
-          <RankedList
-            title="Total sales breakdown"
-            items={data.charts.salesBreakdown.map((line) => ({
-              name: line.label,
-              value: line.value,
-            }))}
-            formatValue={formatCurrency}
-          />
-        )}
-        {data.errors.salesByChannel ? (
-          <CardError
-            title="Total sales by sales channel"
-            message={data.errors.salesByChannel}
-          />
-        ) : (
-          <DonutBreakdown
-            title="Total sales by sales channel"
-            data={data.charts.salesByChannel}
-          />
-        )}
-        {data.errors.aovOverTime ? (
-          <CardError
-            title="Average order value over time"
-            message={data.errors.aovOverTime}
-          />
-        ) : (
-          <TimeSeriesChart
-            title="Average order value over time"
-            data={data.charts.aovOverTime}
-            formatValue="currency"
           />
         )}
         {data.errors.salesByProduct ? (

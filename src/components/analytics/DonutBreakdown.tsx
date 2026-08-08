@@ -22,16 +22,16 @@ export function DonutBreakdown({ title, data }: DonutBreakdownProps) {
 
   return (
     <div className={CARD_CLASS}>
-      <p className={`${LABEL_CLASS} mb-3`}>{title}</p>
-      <div className="flex items-center gap-4">
-        <ResponsiveContainer width={100} height={100}>
+      <p className={`${LABEL_CLASS} mb-3.5`}>{title}</p>
+      <div className="flex items-center gap-3.5">
+        <ResponsiveContainer width={86} height={86}>
           <PieChart>
             <Pie
               data={data}
               dataKey="value"
               nameKey="name"
-              innerRadius={30}
-              outerRadius={48}
+              innerRadius={24}
+              outerRadius={38}
               paddingAngle={2}
             >
               {data.map((entry, index) => (

@@ -20,4 +20,33 @@ describe("RankedList", () => {
     expect(rows[0]).toHaveTextContent("Cocoa Flavanols");
     expect(rows[0]).toHaveTextContent("$23678.06");
   });
+
+  it("highlights the last row as a bold total and colors negative values in the breakdown variant", () => {
+    render(
+      <RankedList
+        title="Total sales breakdown"
+        variant="breakdown"
+        items={[
+          { name: "Gross sales", value: 79290.33 },
+          { name: "Discounts", value: -20539.97 },
+          { name: "Net sales", value: 57496.29 },
+          { name: "Total sales", value: 60708.36 },
+        ]}
+        formatValue={(v) => `$${v.toFixed(2)}`}
+      />,
+    );
+
+    const rows = screen.getAllByRole("listitem");
+    expect(rows).toHaveLength(4);
+
+    const discountsValue = screen.getByText("$-20539.97");
+    expect(discountsValue).toHaveClass("text-(--analytics-down)");
+
+    const netSalesValue = screen.getByText("$57496.29");
+    expect(netSalesValue).toHaveClass("text-(--analytics-up)");
+
+    const totalRow = rows[rows.length - 1];
+    expect(totalRow).toHaveTextContent("Total sales");
+    expect(screen.getByText("Total sales")).toHaveClass("font-extrabold");
+  });
 });

@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import type { DateRangeKey } from "@/lib/analytics/types";
+import { CHIP_CLASS } from "./theme";
 
 const OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: "today", label: "Today" },
@@ -28,10 +29,10 @@ export function DashboardDateFilter() {
           key={option.key}
           type="button"
           onClick={() => handleSelect(option.key)}
-          className={`rounded-md border px-2.5 py-1 text-[11px] font-medium ${
+          className={`${CHIP_CLASS} cursor-pointer ${
             activeRange === option.key
               ? "border-(--analytics-accent) bg-(--analytics-accent-dim) text-(--analytics-accent)"
-              : "border-(--analytics-border) bg-(--analytics-surface) text-(--analytics-t2)"
+              : ""
           }`}
         >
           {option.label}
