@@ -35,7 +35,12 @@ export function DonutBreakdown({ title, data }: DonutBreakdownProps) {
               paddingAngle={2}
             >
               {data.map((entry, index) => (
-                <Cell key={entry.name} fill={COLORS[index % COLORS.length]} />
+                <Cell
+                  key={entry.name}
+                  fill={COLORS[index % COLORS.length]}
+                  stroke="var(--analytics-surface)"
+                  strokeWidth={2}
+                />
               ))}
             </Pie>
           </PieChart>
