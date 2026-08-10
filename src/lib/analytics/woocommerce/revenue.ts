@@ -78,7 +78,7 @@ function sumTotals(intervals: RevenueStatsInterval[]): RevenueStatsTotals {
 
 async function fetchRevenueStatsForPeriod(
   period: PeriodBounds,
-  interval: "hour" | "day",
+  interval: "hour" | "day" | "week",
 ): Promise<RevenueStatsResult> {
   const raw = await fetchWc<WcRevenueStatsResponse>(
     "/wc-analytics/reports/revenue/stats",

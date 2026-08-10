@@ -33,4 +33,30 @@ describe("alignSeries", () => {
       { date: "Aug 2", currentPeriod: 20, previousPeriod: 0 },
     ]);
   });
+
+  it("groups every 7 aligned daily buckets into one when interval is 'week', summing values and labeling by the first day", () => {
+    const currentMap = new Map<string, number>();
+    const previousMap = new Map<string, number>();
+    // 9 consecutive days: 20260701 .. 20260709
+    for (let i = 0; i < 9; i++) {
+      const day = String(i + 1).padStart(2, "0");
+      currentMap.set(`202607${day}`, 10);
+      previousMap.set(`202607${day}`, 5);
+    }
+
+    const result = alignSeries(currentMap, previousMap, "week");
+
+    // 9 days -> ceil(9/7) = 2 week-buckets: [day1..day7], [day8..day9]
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({
+      date: "Jul 1",
+      currentPeriod: 70,
+      previousPeriod: 35,
+    });
+    expect(result[1]).toEqual({
+      date: "Jul 8",
+      currentPeriod: 20,
+      previousPeriod: 10,
+    });
+  });
 });

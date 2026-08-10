@@ -9,7 +9,7 @@ export function toIsoDate(date: Date): string {
 
 export function formatBucketLabel(
   rawDate: string,
-  interval: "hour" | "day",
+  interval: "hour" | "day" | "week",
 ): string {
   if (interval === "hour") {
     const hour = Number(rawDate.slice(8, 10));
@@ -37,10 +37,26 @@ export function formatBucketLabel(
   return `${monthNames[month - 1]} ${day}`;
 }
 
+function groupIntoWeeks(series: TimeSeriesData[]): TimeSeriesData[] {
+  const weeks: TimeSeriesData[] = [];
+  for (let i = 0; i < series.length; i += 7) {
+    const chunk = series.slice(i, i + 7);
+    weeks.push({
+      date: chunk[0].date,
+      currentPeriod: chunk.reduce((sum, point) => sum + point.currentPeriod, 0),
+      previousPeriod: chunk.reduce(
+        (sum, point) => sum + point.previousPeriod,
+        0,
+      ),
+    });
+  }
+  return weeks;
+}
+
 export function alignSeries(
   currentMap: Map<string, number>,
   previousMap: Map<string, number>,
-  interval: "hour" | "day",
+  interval: "hour" | "day" | "week",
 ): TimeSeriesData[] {
   const currentKeys = [...currentMap.keys()].sort();
   const previousKeys = [...previousMap.keys()].sort();
@@ -57,5 +73,5 @@ export function alignSeries(
       previousPeriod: previousKey ? previousMap.get(previousKey)! : 0,
     });
   }
-  return series;
+  return interval === "week" ? groupIntoWeeks(series) : series;
 }

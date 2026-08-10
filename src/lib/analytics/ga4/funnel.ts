@@ -74,7 +74,7 @@ export async function getConversionRateSummary(
 
 async function fetchRateByBucket(
   period: PeriodBounds,
-  interval: "hour" | "day",
+  interval: "hour" | "day" | "week",
 ): Promise<Map<string, number>> {
   const dimension = interval === "hour" ? "dateHour" : "date";
 
