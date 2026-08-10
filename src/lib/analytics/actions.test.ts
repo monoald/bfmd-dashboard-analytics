@@ -143,4 +143,28 @@ describe("getDashboardData", () => {
     );
     expect(payload.summaryCards.grossSales.value).toBe(100);
   });
+
+  it("resolves a custom start/end range and passes it to the mock data builder", async () => {
+    vi.unstubAllEnvs();
+    mockHappyPath();
+
+    const payload = await getDashboardData("custom", {
+      start: new Date(2026, 6, 1),
+      end: new Date(2026, 6, 15),
+    });
+
+    expect(payload.errors).toEqual({});
+    // Jul 1 - Jul 15 inclusive is 15 daily buckets
+    expect(payload.charts.salesOverTime).toHaveLength(15);
+  });
+
+  it("falls back to resolving 'today' if rangeKey is 'custom' but no customRange is provided", async () => {
+    vi.unstubAllEnvs();
+    mockHappyPath();
+
+    const payload = await getDashboardData("custom");
+
+    expect(payload.errors).toEqual({});
+    expect(payload.charts.salesOverTime).toHaveLength(24); // today = 24 hourly buckets
+  });
 });

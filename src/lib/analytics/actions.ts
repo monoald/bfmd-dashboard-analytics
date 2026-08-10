@@ -1,7 +1,7 @@
 "use server";
 
 import { withFixedCache, withRangeCache } from "./cache";
-import { resolveDateRange } from "./date-range";
+import { resolveCustomRange, resolveDateRange } from "./date-range";
 import { buildMockDashboardPayload } from "./mock-data";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
 import { getRevenueStats } from "./woocommerce/revenue";
@@ -93,8 +93,14 @@ function hasRealCredentials(): boolean {
 
 export async function getDashboardData(
   rangeKey: DateRangeKey,
+  customRange?: { start: Date; end: Date },
 ): Promise<DashboardPayload> {
-  const range = resolveDateRange(rangeKey, new Date());
+  const range =
+    rangeKey === "custom"
+      ? customRange
+        ? resolveCustomRange(customRange.start, customRange.end)
+        : resolveDateRange("today", new Date())
+      : resolveDateRange(rangeKey, new Date());
 
   if (!hasRealCredentials()) {
     return buildMockDashboardPayload(range);
