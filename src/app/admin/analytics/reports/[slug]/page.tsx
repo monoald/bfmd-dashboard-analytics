@@ -403,8 +403,6 @@ export default async function ReportPage({
   const rangeKey = resolveRangeKeyParam(range);
   const data = await getDashboardData(rangeKey);
 
-  const isWide = config.shape === "line-comparison";
-
   return (
     <div className="min-h-screen bg-(--analytics-bg) p-6">
       <div className="md:w-[90%] mx-auto text-[13px] text-(--analytics-t1) space-y-3.5">
@@ -460,7 +458,16 @@ export default async function ReportPage({
           of these four inner wrappers back to flex — that silently
           reintroduces the clipped-table regression.
         */}
-        <div className={isWide ? "grid w-full" : "grid max-w-2xl"}>
+        {/*
+          Every shape fills the full width except "donut": DonutBreakdown's
+          chart is a fixed pixel size and its legend rows use flex-1 on the
+          name column, so at full page width the fixed-size donut ends up
+          dwarfed by a legend row stretched into a huge label-to-value gap.
+          Capping its width keeps the donut proportional to its legend.
+        */}
+        <div
+          className={`grid ${config.shape === "donut" ? "max-w-md" : "w-full"}`}
+        >
           {renderReport(config, data)}
         </div>
       </div>
