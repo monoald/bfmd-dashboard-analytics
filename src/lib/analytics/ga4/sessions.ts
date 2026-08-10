@@ -9,7 +9,7 @@ import type {
 
 async function fetchSessionsByBucket(
   period: PeriodBounds,
-  interval: "hour" | "day",
+  interval: "hour" | "day" | "week",
 ): Promise<Map<string, number>> {
   const rows = await runGa4Report({
     dimensions: [interval === "hour" ? "dateHour" : "date"],
