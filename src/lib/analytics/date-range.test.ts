@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { resolveDateRange, resolveRangeKeyParam } from "./date-range";
+import {
+  resolveDateRange,
+  resolveRangeKeyParam,
+  resolveCustomRange,
+  resolveCustomRangeParams,
+  resolveRangeSelection,
+  buildRangeQueryParams,
+} from "./date-range";
 
 describe("resolveDateRange", () => {
   it("resolves 'today' to today vs. yesterday, hourly interval", () => {
@@ -53,5 +60,212 @@ describe("resolveRangeKeyParam", () => {
   it("falls back to 'today' for an invalid or missing param", () => {
     expect(resolveRangeKeyParam("bogus")).toBe("today");
     expect(resolveRangeKeyParam(undefined)).toBe("today");
+  });
+});
+
+describe("resolveDateRange — new named presets", () => {
+  const now = new Date(2026, 7, 7, 15, 30, 0); // Aug 7, 2026
+
+  it("resolves 'yesterday' to the single day before now, hourly interval", () => {
+    const range = resolveDateRange("yesterday", now);
+
+    expect(range.interval).toBe("hour");
+    expect(range.current.start.toISOString().slice(0, 10)).toBe("2026-08-06");
+    expect(range.current.end.toISOString().slice(0, 10)).toBe("2026-08-06");
+    expect(range.previous.start.toISOString().slice(0, 10)).toBe("2026-08-05");
+  });
+
+  it("resolves 'mtd' to the 1st of the month through now, comparing to the same day-of-month in the previous month", () => {
+    const range = resolveDateRange("mtd", now);
+
+    expect(range.interval).toBe("day");
+    expect(range.current.start.getDate()).toBe(1);
+    expect(range.current.start.getMonth()).toBe(7); // August
+    expect(range.current.end.getDate()).toBe(7);
+    expect(range.previous.start.getDate()).toBe(1);
+    expect(range.previous.start.getMonth()).toBe(6); // July
+    expect(range.previous.end.getDate()).toBe(7);
+    expect(range.previous.end.getMonth()).toBe(6); // July
+  });
+
+  it("resolves 'last-month' to the entire previous calendar month vs. the month before that", () => {
+    const range = resolveDateRange("last-month", now);
+
+    expect(range.interval).toBe("day");
+    expect(range.current.start.getDate()).toBe(1);
+    expect(range.current.start.getMonth()).toBe(6); // July
+    expect(range.current.end.getDate()).toBe(31); // July has 31 days
+    expect(range.current.end.getMonth()).toBe(6);
+    expect(range.previous.start.getDate()).toBe(1);
+    expect(range.previous.start.getMonth()).toBe(5); // June
+    expect(range.previous.end.getDate()).toBe(30); // June has 30 days
+    expect(range.previous.end.getMonth()).toBe(5);
+  });
+
+  it("resolves 'ytd' to Jan 1 through now, comparing to the same span last year, and picks 'week' once the span exceeds 60 days", () => {
+    const range = resolveDateRange("ytd", now);
+
+    expect(range.interval).toBe("week"); // Jan 1 - Aug 7 is well over 60 days
+    expect(range.current.start.getFullYear()).toBe(2026);
+    expect(range.current.start.getMonth()).toBe(0);
+    expect(range.current.start.getDate()).toBe(1);
+    expect(range.previous.start.getFullYear()).toBe(2025);
+    expect(range.previous.end.getFullYear()).toBe(2025);
+    expect(range.previous.end.getMonth()).toBe(7); // August
+    expect(range.previous.end.getDate()).toBe(7);
+  });
+
+  it("resolves 'last-year' to the entire previous calendar year vs. the year before that", () => {
+    const range = resolveDateRange("last-year", now);
+
+    expect(range.interval).toBe("week");
+    expect(range.current.start.getFullYear()).toBe(2025);
+    expect(range.current.start.getMonth()).toBe(0);
+    expect(range.current.start.getDate()).toBe(1);
+    expect(range.current.end.getFullYear()).toBe(2025);
+    expect(range.current.end.getMonth()).toBe(11);
+    expect(range.current.end.getDate()).toBe(31);
+    expect(range.previous.start.getFullYear()).toBe(2024);
+    expect(range.previous.end.getFullYear()).toBe(2024);
+  });
+
+  it("resolves '90d' to a 90-day current period and a 90-day previous period, week interval", () => {
+    const range = resolveDateRange("90d", now);
+
+    const currentLengthMs =
+      range.current.end.getTime() - range.current.start.getTime();
+    expect(Math.round(currentLengthMs / (24 * 60 * 60 * 1000))).toBe(90);
+    expect(range.interval).toBe("week");
+    expect(range.previous.end.getTime()).toBeLessThan(
+      range.current.start.getTime(),
+    );
+  });
+
+  it("throws if asked to resolve 'custom' — callers must use resolveCustomRange instead", () => {
+    expect(() => resolveDateRange("custom", now)).toThrow();
+  });
+});
+
+describe("resolveCustomRange", () => {
+  it("resolves an arbitrary start/end into a current period, with an equal-length previous period immediately before it", () => {
+    const range = resolveCustomRange(
+      new Date(2026, 6, 1),
+      new Date(2026, 6, 15),
+    );
+
+    expect(range.key).toBe("custom");
+    expect(range.current.start.getDate()).toBe(1);
+    expect(range.current.start.getMonth()).toBe(6);
+    expect(range.current.end.getDate()).toBe(15);
+    expect(range.current.end.getMonth()).toBe(6);
+    // current span is 15 days (Jul 1 - Jul 15 inclusive), so previous should
+    // end right before current starts and be the same length
+    expect(range.previous.end.getTime()).toBeLessThan(
+      range.current.start.getTime(),
+    );
+    const currentSpanMs =
+      range.current.end.getTime() - range.current.start.getTime();
+    const previousSpanMs =
+      range.previous.end.getTime() - range.previous.start.getTime();
+    expect(previousSpanMs).toBe(currentSpanMs);
+  });
+
+  it("picks interval by span length, same rule as resolveDateRange", () => {
+    const shortRange = resolveCustomRange(
+      new Date(2026, 6, 1),
+      new Date(2026, 6, 5),
+    );
+    expect(shortRange.interval).toBe("day");
+
+    const longRange = resolveCustomRange(
+      new Date(2026, 0, 1),
+      new Date(2026, 6, 1),
+    );
+    expect(longRange.interval).toBe("week");
+  });
+});
+
+describe("resolveRangeKeyParam — new keys", () => {
+  it("recognizes every new named preset key", () => {
+    for (const key of [
+      "yesterday",
+      "mtd",
+      "last-month",
+      "ytd",
+      "last-year",
+      "90d",
+      "custom",
+    ]) {
+      expect(resolveRangeKeyParam(key)).toBe(key);
+    }
+  });
+});
+
+describe("resolveCustomRangeParams", () => {
+  it("parses two valid YYYY-MM-DD strings", () => {
+    const result = resolveCustomRangeParams("2026-07-01", "2026-07-15");
+    expect(result).not.toBeNull();
+    expect(result!.start.getFullYear()).toBe(2026);
+    expect(result!.start.getMonth()).toBe(6);
+    expect(result!.start.getDate()).toBe(1);
+    expect(result!.end.getDate()).toBe(15);
+  });
+
+  it("returns null when either param is missing", () => {
+    expect(resolveCustomRangeParams(undefined, "2026-07-15")).toBeNull();
+    expect(resolveCustomRangeParams("2026-07-01", undefined)).toBeNull();
+  });
+
+  it("returns null for unparseable dates", () => {
+    expect(resolveCustomRangeParams("not-a-date", "2026-07-15")).toBeNull();
+  });
+
+  it("returns null when start is after end", () => {
+    expect(resolveCustomRangeParams("2026-07-15", "2026-07-01")).toBeNull();
+  });
+});
+
+describe("resolveRangeSelection", () => {
+  it("returns the named key with no customRange for non-custom keys, ignoring any start/end params", () => {
+    const result = resolveRangeSelection("7d", "2026-07-01", "2026-07-15");
+    expect(result).toEqual({ rangeKey: "7d", customRange: null });
+  });
+
+  it("returns the parsed customRange when range=custom and start/end are valid", () => {
+    const result = resolveRangeSelection("custom", "2026-07-01", "2026-07-15");
+    expect(result.rangeKey).toBe("custom");
+    expect(result.customRange).not.toBeNull();
+    expect(result.customRange!.start.getDate()).toBe(1);
+    expect(result.customRange!.end.getDate()).toBe(15);
+  });
+
+  it("falls back to 'today' with no customRange when range=custom but start/end are missing or invalid", () => {
+    expect(resolveRangeSelection("custom", undefined, undefined)).toEqual({
+      rangeKey: "today",
+      customRange: null,
+    });
+    expect(resolveRangeSelection("custom", "bogus", "2026-07-15")).toEqual({
+      rangeKey: "today",
+      customRange: null,
+    });
+  });
+});
+
+describe("buildRangeQueryParams", () => {
+  it("builds a plain range param for named keys", () => {
+    expect(buildRangeQueryParams("7d")).toBe("range=7d");
+    expect(buildRangeQueryParams("yesterday")).toBe("range=yesterday");
+  });
+
+  it("builds range+start+end for a custom range", () => {
+    const result = buildRangeQueryParams("custom", {
+      start: new Date(2026, 6, 1),
+      end: new Date(2026, 6, 15),
+    });
+    expect(result).toBe("range=custom&start=2026-07-01&end=2026-07-15");
+  });
+
+  it("falls back to a plain range param if rangeKey is 'custom' but no customRange is given", () => {
+    expect(buildRangeQueryParams("custom")).toBe("range=custom");
   });
 });
