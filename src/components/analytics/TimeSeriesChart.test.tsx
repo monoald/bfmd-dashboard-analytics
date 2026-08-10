@@ -71,6 +71,21 @@ describe("TimeSeriesChart", () => {
     expect(screen.getByText("$58.00")).toBeInTheDocument();
     expect(screen.queryByText("vs. previous period")).not.toBeInTheDocument();
   });
+
+  it("hides the previous-period comparison line and caption when showComparison is false", () => {
+    render(
+      <TimeSeriesChart
+        title="Gross sales"
+        data={[{ date: "", currentPeriod: 100, previousPeriod: 0 }]}
+        variant="hero"
+        showComparison={false}
+        headline={{ value: "$100.00", changePercentage: 5, trend: "up" }}
+      />,
+    );
+
+    expect(screen.getByText("$100.00")).toBeInTheDocument();
+    expect(screen.queryByText("vs. previous period")).not.toBeInTheDocument();
+  });
 });
 
 describe("ChartTooltip", () => {

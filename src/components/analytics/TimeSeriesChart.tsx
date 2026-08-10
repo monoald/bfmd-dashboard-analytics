@@ -51,6 +51,11 @@ export interface TimeSeriesChartProps {
   formatValue?: TimeSeriesValueFormat;
   headline?: TimeSeriesHeadline;
   variant?: "hero" | "compact";
+  // When false, hides the previous-period comparison line, its tooltip row,
+  // and the "vs. previous period" caption — for series that only have a
+  // single period's worth of data (e.g. KPI sparklines with no previous-
+  // period values at all).
+  showComparison?: boolean;
 }
 
 export function resolveFormatter(
@@ -155,6 +160,7 @@ export function TimeSeriesChart({
   formatValue,
   headline,
   variant = "compact",
+  showComparison = true,
 }: TimeSeriesChartProps) {
   const series = buildChartSeries(data);
   const format = resolveFormatter(formatValue);
@@ -179,7 +185,7 @@ export function TimeSeriesChart({
                   {Math.abs(headline.changePercentage)}%
                 </span>
               </div>
-              {isHero && (
+              {isHero && showComparison && (
                 <span className="text-[11px] text-(--analytics-t2)">
                   vs. previous period
                 </span>
@@ -246,14 +252,16 @@ export function TimeSeriesChart({
               strokeWidth={2}
               fill={`url(#${gradientId})`}
             />
-            <Area
-              type="monotone"
-              dataKey="previousPeriod"
-              stroke="var(--analytics-t2)"
-              strokeWidth={1.25}
-              strokeDasharray="4 4"
-              fill="transparent"
-            />
+            {showComparison && (
+              <Area
+                type="monotone"
+                dataKey="previousPeriod"
+                stroke="var(--analytics-t2)"
+                strokeWidth={1.25}
+                strokeDasharray="4 4"
+                fill="transparent"
+              />
+            )}
           </AreaChart>
         </ResponsiveContainer>
       </div>
