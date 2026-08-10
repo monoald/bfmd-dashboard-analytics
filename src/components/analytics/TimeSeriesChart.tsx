@@ -56,6 +56,10 @@ export interface TimeSeriesChartProps {
   // single period's worth of data (e.g. KPI sparklines with no previous-
   // period values at all).
   showComparison?: boolean;
+  // Overrides the variant's default chart height (200 for hero, 160 for
+  // compact) — for contexts like a standalone report page where the chart
+  // is the page's sole focus and has room to be larger.
+  height?: number;
 }
 
 export function resolveFormatter(
@@ -161,11 +165,13 @@ export function TimeSeriesChart({
   headline,
   variant = "compact",
   showComparison = true,
+  height,
 }: TimeSeriesChartProps) {
   const series = buildChartSeries(data);
   const format = resolveFormatter(formatValue);
   const gradientId = useId();
   const isHero = variant === "hero";
+  const chartHeight = height ?? (isHero ? 200 : 160);
 
   return (
     <div
@@ -194,7 +200,7 @@ export function TimeSeriesChart({
           )}
         </div>
       </div>
-      <div className="min-h-0 flex-1" style={{ minHeight: isHero ? 200 : 160 }}>
+      <div className="min-h-0 flex-1" style={{ minHeight: chartHeight }}>
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={series}>
             <defs>

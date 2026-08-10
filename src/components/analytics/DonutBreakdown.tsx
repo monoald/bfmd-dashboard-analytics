@@ -29,6 +29,10 @@ export interface DonutBreakdownProps {
   // (this chart is rendered from one) can't pass plain functions to Client
   // Components across the RSC boundary.
   formatValue?: DonutValueFormat;
+  // Overrides the default donut size (140px) — for contexts like a
+  // standalone report page where the chart has room to be larger. Inner/
+  // outer radius and the center label scale proportionally.
+  size?: number;
 }
 
 const COLORS = [
@@ -39,14 +43,16 @@ const COLORS = [
   "#8B5CF6",
 ];
 
-const DONUT_SIZE = 140;
+const DEFAULT_DONUT_SIZE = 140;
 
 export function DonutBreakdown({
   title,
   data,
   formatValue = "number",
+  size = DEFAULT_DONUT_SIZE,
 }: DonutBreakdownProps) {
   const format = VALUE_FORMATTERS[formatValue];
+  const scale = size / DEFAULT_DONUT_SIZE;
   const total = data.reduce((sum, item) => sum + item.value, 0);
   const hasComparison =
     data.length > 0 && data.every((item) => item.previousValue !== undefined);
@@ -71,16 +77,16 @@ export function DonutBreakdown({
       <div className="flex flex-1 items-center gap-6">
         <div
           className="relative shrink-0"
-          style={{ width: DONUT_SIZE, height: DONUT_SIZE }}
+          style={{ width: size, height: size }}
         >
-          <ResponsiveContainer width={DONUT_SIZE} height={DONUT_SIZE}>
+          <ResponsiveContainer width={size} height={size}>
             <PieChart>
               <Pie
                 data={data}
                 dataKey="value"
                 nameKey="name"
-                innerRadius={40}
-                outerRadius={64}
+                innerRadius={40 * scale}
+                outerRadius={64 * scale}
                 paddingAngle={2}
               >
                 {data.map((entry, index) => (
@@ -95,7 +101,10 @@ export function DonutBreakdown({
             </PieChart>
           </ResponsiveContainer>
           <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1">
-            <p className="text-[20px] font-extrabold leading-none tabular-nums text-(--analytics-t1)">
+            <p
+              className="font-extrabold leading-none tabular-nums text-(--analytics-t1)"
+              style={{ fontSize: 20 * scale }}
+            >
               {format(total)}
             </p>
             {totalChange && (

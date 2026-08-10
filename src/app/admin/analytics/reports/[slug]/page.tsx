@@ -24,6 +24,12 @@ import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { TimeSeriesReportTable } from "@/components/analytics/TimeSeriesReportTable";
 
+// Report pages give a chart the whole page to itself, so every chart type
+// renders noticeably larger here than its compact dashboard-card size.
+const REPORT_CHART_HEIGHT = 420;
+const REPORT_FUNNEL_HEIGHT = 260;
+const REPORT_DONUT_SIZE = 220;
+
 function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
   switch (config.slug) {
     case "gross-sales": {
@@ -40,6 +46,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           formatValue="currency"
           variant="hero"
           showComparison={false}
+          height={REPORT_CHART_HEIGHT}
           headline={{
             value: formatCurrency(metric.value),
             changePercentage: metric.changePercentage,
@@ -66,6 +73,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           formatValue="percent"
           variant="hero"
           showComparison={false}
+          height={REPORT_CHART_HEIGHT}
           headline={{
             value: formatPercent(metric.value),
             changePercentage: metric.changePercentage,
@@ -91,6 +99,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           data={sparklineToSeries(metric.sparkline ?? [])}
           variant="hero"
           showComparison={false}
+          height={REPORT_CHART_HEIGHT}
           headline={{
             value: metric.value.toLocaleString(),
             changePercentage: metric.changePercentage,
@@ -111,6 +120,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           data={sparklineToSeries(metric.sparkline ?? [])}
           variant="hero"
           showComparison={false}
+          height={REPORT_CHART_HEIGHT}
           headline={{
             value: metric.value.toLocaleString(),
             changePercentage: metric.changePercentage,
@@ -134,6 +144,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
             data={series}
             formatValue="currency"
             variant="hero"
+            height={REPORT_CHART_HEIGHT}
             headline={{
               value: formatCurrency(data.summaryCards.grossSales.value),
               changePercentage: data.summaryCards.grossSales.changePercentage,
@@ -163,6 +174,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
             data={series}
             formatValue="currency"
             variant="hero"
+            height={REPORT_CHART_HEIGHT}
             headline={{
               value: formatCurrency(headline.value),
               changePercentage: headline.changePercentage,
@@ -198,6 +210,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
             title={config.title}
             data={series}
             variant="hero"
+            height={REPORT_CHART_HEIGHT}
             headline={{
               value: headline.value.toLocaleString(),
               changePercentage: headline.changePercentage,
@@ -231,6 +244,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
             data={series}
             formatValue="percent"
             variant="hero"
+            height={REPORT_CHART_HEIGHT}
             headline={{
               value: formatPercent(data.summaryCards.conversionRate.value),
               changePercentage:
@@ -283,6 +297,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           title={config.title}
           data={data.charts.salesByChannel}
           formatValue="currency"
+          size={REPORT_DONUT_SIZE}
         />
       );
     }
@@ -318,6 +333,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         <DonutBreakdown
           title={config.title}
           data={data.charts.sessionsByDevice}
+          size={REPORT_DONUT_SIZE}
         />
       );
     }
@@ -372,6 +388,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         <FunnelChart
           title={config.title}
           steps={data.charts.conversionFunnel}
+          height={REPORT_FUNNEL_HEIGHT}
           headline={{
             value: formatPercent(data.summaryCards.conversionRate.value),
             changePercentage: data.summaryCards.conversionRate.changePercentage,
@@ -466,7 +483,7 @@ export default async function ReportPage({
           Capping its width keeps the donut proportional to its legend.
         */}
         <div
-          className={`grid ${config.shape === "donut" ? "max-w-md" : "w-full"}`}
+          className={`grid ${config.shape === "donut" ? "max-w-xl" : "w-full"}`}
         >
           {renderReport(config, data)}
         </div>
