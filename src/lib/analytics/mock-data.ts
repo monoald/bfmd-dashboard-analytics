@@ -194,10 +194,26 @@ export function buildMockDashboardPayload(
         },
       ],
       sessionsByDevice: [
-        { name: "Mobile", value: Math.round(sessionsCurrent * 0.72) },
-        { name: "Desktop", value: Math.round(sessionsCurrent * 0.26) },
-        { name: "Tablet", value: Math.round(sessionsCurrent * 0.015) },
-        { name: "Other", value: Math.round(sessionsCurrent * 0.005) },
+        {
+          name: "Mobile",
+          value: Math.round(sessionsCurrent * 0.72),
+          previousValue: Math.round(sessionsPrevious * 0.79),
+        },
+        {
+          name: "Desktop",
+          value: Math.round(sessionsCurrent * 0.26),
+          previousValue: Math.round(sessionsPrevious * 0.205),
+        },
+        {
+          name: "Tablet",
+          value: Math.round(sessionsCurrent * 0.015),
+          previousValue: Math.round(sessionsPrevious * 0.0155),
+        },
+        {
+          name: "Other",
+          value: Math.round(sessionsCurrent * 0.005),
+          previousValue: Math.round(sessionsPrevious * 0.0195),
+        },
       ],
       sessionsByLocation: [
         {

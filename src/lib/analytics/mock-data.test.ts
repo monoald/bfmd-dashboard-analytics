@@ -82,4 +82,12 @@ describe("buildMockDashboardPayload", () => {
       payload.charts.sessionsByDevice[1].value,
     );
   });
+
+  it("gives every sessionsByDevice entry a previousValue for comparison", () => {
+    const payload = buildMockDashboardPayload("7d");
+
+    for (const item of payload.charts.sessionsByDevice) {
+      expect(item.previousValue).toBeGreaterThan(0);
+    }
+  });
 });
