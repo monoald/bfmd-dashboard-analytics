@@ -111,7 +111,7 @@ describe("buildMockDashboardPayload", () => {
     expect(payload.charts.salesOverTime).toHaveLength(7);
   });
 
-  it("generates exactly 24 distinct hourly labels for a 'today'-shaped range, never duplicating an hour", () => {
+  it("generates exactly 24 distinct hourly labels for a 'today'-shaped range on a non-DST-transition day", () => {
     const range = resolveDateRange("today", NOW);
     const payload = buildMockDashboardPayload(range);
     const labels = payload.charts.salesOverTime.map((point) => point.date);
