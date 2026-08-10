@@ -94,11 +94,11 @@ function hasRealCredentials(): boolean {
 export async function getDashboardData(
   rangeKey: DateRangeKey,
 ): Promise<DashboardPayload> {
-  if (!hasRealCredentials()) {
-    return buildMockDashboardPayload(rangeKey);
-  }
-
   const range = resolveDateRange(rangeKey, new Date());
+
+  if (!hasRealCredentials()) {
+    return buildMockDashboardPayload(range);
+  }
 
   const [
     revenueStats,
