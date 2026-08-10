@@ -71,3 +71,11 @@ export function resolveDateRange(
     previous: { start: previousStartMidnight, end: previousEnd },
   };
 }
+
+const VALID_RANGE_KEYS: DateRangeKey[] = ["today", "7d", "30d"];
+
+export function resolveRangeKeyParam(range: string | undefined): DateRangeKey {
+  return VALID_RANGE_KEYS.includes(range as DateRangeKey)
+    ? (range as DateRangeKey)
+    : "today";
+}
