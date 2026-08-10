@@ -40,4 +40,26 @@ describe("TimeSeriesReportTable", () => {
     expect(screen.getByText("$170.00")).toBeInTheDocument();
     expect(screen.getByText(/11\.8%/)).toBeInTheDocument();
   });
+
+  it("shows an averaged footer labeled 'Average' when aggregate is 'average'", () => {
+    render(
+      <TimeSeriesReportTable
+        aggregate="average"
+        data={[
+          { date: "Aug 1", currentPeriod: 10, previousPeriod: 8 },
+          { date: "Aug 2", currentPeriod: 20, previousPeriod: 4 },
+        ]}
+        formatValue={(v) => `$${v.toFixed(2)}`}
+      />,
+    );
+
+    // average current: (10+20)/2 = 15, average previous: (8+4)/2 = 6
+    expect(screen.getByText("Average")).toBeInTheDocument();
+    expect(screen.queryByText("Total")).not.toBeInTheDocument();
+    expect(screen.getByText("$15.00")).toBeInTheDocument();
+    expect(screen.getByText("$6.00")).toBeInTheDocument();
+    // sums (30, 12) must not appear anywhere in the footer
+    expect(screen.queryByText("$30.00")).not.toBeInTheDocument();
+    expect(screen.queryByText("$12.00")).not.toBeInTheDocument();
+  });
 });

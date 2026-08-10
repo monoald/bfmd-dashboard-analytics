@@ -1,28 +1,29 @@
-import { computeChange } from "@/lib/analytics/normalize";
+import {
+  averageSeries,
+  computeChange,
+  sumSeries,
+} from "@/lib/analytics/normalize";
 import type { TimeSeriesData } from "@/lib/analytics/types";
 import { CARD_CLASS, trendArrow, trendBadgeClass } from "./theme";
 
 export interface TimeSeriesReportTableProps {
   data: TimeSeriesData[];
   formatValue: (value: number) => string;
-}
-
-function sum(
-  data: TimeSeriesData[],
-  key: "currentPeriod" | "previousPeriod",
-): number {
-  return data.reduce((total, point) => total + point[key], 0);
+  aggregate?: "sum" | "average";
 }
 
 export function TimeSeriesReportTable({
   data,
   formatValue,
+  aggregate = "sum",
 }: TimeSeriesReportTableProps) {
   if (data.length === 0) return null;
 
-  const totalCurrent = sum(data, "currentPeriod");
-  const totalPrevious = sum(data, "previousPeriod");
+  const aggregateFn = aggregate === "average" ? averageSeries : sumSeries;
+  const totalCurrent = aggregateFn(data, "currentPeriod");
+  const totalPrevious = aggregateFn(data, "previousPeriod");
   const totalChange = computeChange(totalCurrent, totalPrevious);
+  const totalLabel = aggregate === "average" ? "Average" : "Total";
 
   return (
     <div className={`${CARD_CLASS} overflow-x-auto`}>
@@ -68,7 +69,7 @@ export function TimeSeriesReportTable({
         <tfoot>
           <tr>
             <td className="py-2 pr-4 font-extrabold text-(--analytics-t1)">
-              Total
+              {totalLabel}
             </td>
             <td className="py-2 pr-4 font-extrabold tabular-nums text-(--analytics-t1)">
               {formatValue(totalCurrent)}
