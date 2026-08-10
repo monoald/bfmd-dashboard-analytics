@@ -33,6 +33,19 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
+// Calendar-date day count between two dates, inclusive of both endpoints.
+// Uses Date.UTC to diff pure Y/M/D values, which is immune to local DST
+// shifts (unlike diffing raw millisecond timestamps).
+function calendarDayCount(start: Date, end: Date): number {
+  const startUtc = Date.UTC(
+    start.getFullYear(),
+    start.getMonth(),
+    start.getDate(),
+  );
+  const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  return Math.round((endUtc - startUtc) / DAY_MS) + 1;
+}
+
 // Same day-of-month in a different year/month, clamped to that month's
 // length (e.g. day 31 in a 30-day month becomes day 30; Feb 29 in a
 // non-leap year becomes Feb 28).
@@ -213,9 +226,15 @@ export function resolveCustomRange(start: Date, end: Date): ResolvedDateRange {
     start: startOfDay(start),
     end: endOfDay(end),
   };
-  const spanMs = current.end.getTime() - current.start.getTime();
+  const dayCount = calendarDayCount(start, end);
   const previous: PeriodBounds = {
-    start: startOfDay(new Date(current.start.getTime() - spanMs - 1)),
+    start: startOfDay(
+      new Date(
+        current.start.getFullYear(),
+        current.start.getMonth(),
+        current.start.getDate() - dayCount,
+      ),
+    ),
     end: new Date(current.start.getTime() - 1),
   };
   return buildRange("custom", current, previous);

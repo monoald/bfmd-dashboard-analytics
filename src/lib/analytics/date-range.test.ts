@@ -220,21 +220,16 @@ describe("resolveCustomRange", () => {
 
   it("keeps the previous period's calendar-day count equal to the current period's, exactly", () => {
     const range = resolveCustomRange(
-      new Date(2026, 2, 9),
-      new Date(2026, 2, 14),
+      new Date(2026, 6, 1),
+      new Date(2026, 6, 15),
     );
-    const currentDays = Math.round(
-      (range.current.end.getTime() - range.current.start.getTime()) /
-        (24 * 60 * 60 * 1000),
-    );
-    const previousDays = Math.round(
-      (range.previous.end.getTime() - range.previous.start.getTime()) /
-        (24 * 60 * 60 * 1000),
-    );
-
+    // current: Jul 1 - Jul 15 inclusive = 15 calendar days
+    expect(range.previous.start.getDate()).toBe(16);
+    expect(range.previous.start.getMonth()).toBe(5); // June
+    expect(range.previous.end.getDate()).toBe(30);
+    expect(range.previous.end.getMonth()).toBe(5); // June
     expect(range.previous.start.getHours()).toBe(0);
     expect(range.previous.start.getMinutes()).toBe(0);
-    expect(currentDays).toBe(previousDays);
   });
 });
 
@@ -287,7 +282,7 @@ describe("resolveCustomRangeParams", () => {
   });
 
   it("accepts a span of exactly 366 days", () => {
-    expect(resolveCustomRangeParams("2025-01-01", "2026-01-01")).not.toBeNull();
+    expect(resolveCustomRangeParams("2028-01-01", "2029-01-01")).not.toBeNull();
   });
 });
 

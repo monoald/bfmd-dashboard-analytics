@@ -29,6 +29,13 @@ function hourLabel(hour: number): string {
 function bucketDates(range: ResolvedDateRange): Date[] {
   const { start, end } = range.current;
 
+  // Note: on a spring-forward DST transition day, the skipped local hour
+  // (e.g. 2 AM in zones that jump straight to 3 AM) gets silently
+  // normalized forward by the Date constructor, producing a duplicate
+  // hour label for that one calendar day per year. This only affects
+  // mock/synthetic hourly labels, never real fetched data. Not fixed —
+  // narrow enough (2 days/year, cosmetic only) to not warrant the
+  // complexity of detecting and special-casing the skipped hour.
   if (range.interval === "hour") {
     const year = start.getFullYear();
     const month = start.getMonth();
