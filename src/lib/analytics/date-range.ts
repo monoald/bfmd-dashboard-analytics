@@ -3,6 +3,7 @@ import type { DateRangeKey, PeriodBounds, ResolvedDateRange } from "./types";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_INTERVAL_THRESHOLD_DAYS = 60;
+const MAX_CUSTOM_RANGE_DAYS = 366;
 
 function startOfDay(date: Date): Date {
   return new Date(
@@ -214,7 +215,7 @@ export function resolveCustomRange(start: Date, end: Date): ResolvedDateRange {
   };
   const spanMs = current.end.getTime() - current.start.getTime();
   const previous: PeriodBounds = {
-    start: new Date(current.start.getTime() - spanMs - 1),
+    start: startOfDay(new Date(current.start.getTime() - spanMs - 1)),
     end: new Date(current.start.getTime() - 1),
   };
   return buildRange("custom", current, previous);
@@ -261,6 +262,7 @@ export function resolveCustomRangeParams(
   start: string | undefined,
   end: string | undefined,
 ): { start: Date; end: Date } | null {
+  if (typeof start !== "string" || typeof end !== "string") return null;
   if (!start || !end) return null;
   const startDate = new Date(`${start}T00:00:00`);
   const endDate = new Date(`${end}T00:00:00`);
@@ -275,6 +277,8 @@ export function resolveCustomRangeParams(
     return null;
   }
   if (startDate.getTime() > endDate.getTime()) return null;
+  const spanDays = (endDate.getTime() - startDate.getTime()) / DAY_MS;
+  if (spanDays > MAX_CUSTOM_RANGE_DAYS) return null;
   return { start: startDate, end: endDate };
 }
 
