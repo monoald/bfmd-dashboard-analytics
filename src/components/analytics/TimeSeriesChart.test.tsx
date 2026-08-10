@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { render, screen } from "@testing-library/react";
 import {
   buildChartSeries,
+  ChartTooltip,
   resolveFormatter,
   TimeSeriesChart,
 } from "./TimeSeriesChart";
@@ -69,5 +70,58 @@ describe("TimeSeriesChart", () => {
 
     expect(screen.getByText("$58.00")).toBeInTheDocument();
     expect(screen.queryByText("vs. previous period")).not.toBeInTheDocument();
+  });
+});
+
+describe("ChartTooltip", () => {
+  it("renders nothing when inactive", () => {
+    const { container } = render(
+      <ChartTooltip
+        active={false}
+        payload={[]}
+        label="Aug 1"
+        title="Total sales over time"
+        format={(v) => `$${v}`}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
+  });
+
+  it("renders the title, label, current value, previous value, and trend when both series are present", () => {
+    render(
+      <ChartTooltip
+        active
+        label="2 PM"
+        title="Total sales over time"
+        format={(v) => `$${v.toFixed(2)}`}
+        payload={[
+          { dataKey: "currentPeriod", value: 2007, color: "teal" },
+          { dataKey: "previousPeriod", value: 2252, color: "gray" },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("Total sales over time")).toBeInTheDocument();
+    expect(screen.getByText("$2007.00")).toBeInTheDocument();
+    expect(screen.getByText("$2252.00")).toBeInTheDocument();
+    // (2007-2252)/2252*100 = -10.879...%, rounds to -10.9%, trend "down"
+    expect(screen.getByText(/10\.9%/)).toBeInTheDocument();
+    expect(screen.getByText(/from comparison/)).toBeInTheDocument();
+  });
+
+  it("omits the trend and previous row when there's no previous-period entry", () => {
+    render(
+      <ChartTooltip
+        active
+        label="Aug 1"
+        title="Sessions over time"
+        format={(v) => String(v)}
+        payload={[{ dataKey: "currentPeriod", value: 100, color: "teal" }]}
+      />,
+    );
+
+    expect(screen.getByText("100")).toBeInTheDocument();
+    expect(screen.queryByText(/from comparison/)).not.toBeInTheDocument();
   });
 });
