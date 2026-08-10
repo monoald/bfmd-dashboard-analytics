@@ -186,7 +186,7 @@ export default async function AnalyticsPage({
           )}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           {SHOW_SALES_BY_CHANNEL &&
             (data.errors.salesByChannel ? (
               <CardError
@@ -228,6 +228,9 @@ export default async function AnalyticsPage({
               formatValue={formatCurrency}
             />
           )}
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
           {data.errors.sessionsOverTime ? (
             <CardError
               title="Sessions over time"
