@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type ReactNode } from "react";
 import {
   Area,
   AreaChart,
@@ -10,6 +10,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+import { computeChange } from "@/lib/analytics/normalize";
 import type { TimeSeriesData } from "@/lib/analytics/types";
 import {
   CARD_CLASS,
@@ -68,6 +69,84 @@ export function buildChartSeries(
     currentPeriod: point.currentPeriod,
     previousPeriod: point.previousPeriod,
   }));
+}
+
+export interface ChartTooltipPayloadEntry {
+  dataKey?: string;
+  value?: number;
+  color?: string;
+}
+
+export interface ChartTooltipProps {
+  active?: boolean;
+  payload?: ChartTooltipPayloadEntry[];
+  label?: ReactNode;
+  title: string;
+  format: (value: number) => string;
+}
+
+export function ChartTooltip({
+  active,
+  payload,
+  label,
+  title,
+  format,
+}: ChartTooltipProps) {
+  if (!active || !payload || payload.length === 0) return null;
+
+  const current = payload.find((item) => item.dataKey === "currentPeriod");
+  const previous = payload.find((item) => item.dataKey === "previousPeriod");
+  if (!current || current.value === undefined) return null;
+
+  const currentValue = Number(current.value);
+  const previousValue =
+    previous?.value !== undefined ? Number(previous.value) : null;
+  const change =
+    previousValue !== null ? computeChange(currentValue, previousValue) : null;
+
+  return (
+    <div className="min-w-47.5 rounded-lg border border-(--analytics-border) bg-(--analytics-surface) px-3 py-2.5 shadow-lg">
+      <p className={`${LABEL_CLASS} mb-2`}>{title}</p>
+      <div className="flex items-center gap-2">
+        <span
+          className="h-2 w-2 shrink-0 rounded-full"
+          style={{ backgroundColor: current.color }}
+        />
+        <span className="text-[11px] text-(--analytics-t2)">{label}</span>
+      </div>
+      <p className="mb-1.5 pl-4 text-[15px] font-bold tabular-nums text-(--analytics-t1)">
+        {format(currentValue)}
+      </p>
+      {change && (
+        <p
+          className={`mb-1.5 pl-4 text-[11px] font-semibold ${
+            change.trend === "up"
+              ? "text-(--analytics-up)"
+              : "text-(--analytics-down)"
+          }`}
+        >
+          {trendArrow(change.trend)} {Math.abs(change.changePercentage)}% from
+          comparison
+        </p>
+      )}
+      {previous && previousValue !== null && (
+        <>
+          <div className="flex items-center gap-2">
+            <span
+              className="h-2 w-2 shrink-0 rounded-full"
+              style={{ backgroundColor: previous.color }}
+            />
+            <span className="text-[11px] text-(--analytics-t2)">
+              {label} (previous period)
+            </span>
+          </div>
+          <p className="pl-4 text-[13px] font-semibold tabular-nums text-(--analytics-t2)">
+            {format(previousValue)}
+          </p>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function TimeSeriesChart({
@@ -147,7 +226,19 @@ export function TimeSeriesChart({
               axisLine={false}
               width={isHero ? 48 : 42}
             />
-            <Tooltip formatter={(value) => format(Number(value))} />
+            <Tooltip
+              content={({ active, payload, label }) => (
+                <ChartTooltip
+                  active={active}
+                  payload={
+                    payload as unknown as ChartTooltipPayloadEntry[] | undefined
+                  }
+                  label={label}
+                  title={title}
+                  format={format}
+                />
+              )}
+            />
             <Area
               type="monotone"
               dataKey="currentPeriod"
