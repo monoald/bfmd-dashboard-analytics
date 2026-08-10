@@ -36,18 +36,35 @@ describe("getSessionsOverTime", () => {
 });
 
 describe("getSessionsByDevice", () => {
-  it("maps rows to NamedValue sorted by sessions descending", async () => {
-    vi.mocked(runGa4Report).mockResolvedValue([
-      { dimensionValues: ["desktop"], metricValues: [10] },
-      { dimensionValues: ["mobile"], metricValues: [50] },
-    ]);
+  it("maps rows to NamedValue sorted by sessions descending, with previousValue joined by device name", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["desktop"], metricValues: [10] },
+        { dimensionValues: ["mobile"], metricValues: [50] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["desktop"], metricValues: [8] },
+        { dimensionValues: ["mobile"], metricValues: [60] },
+      ]);
 
     const result = await getSessionsByDevice(range);
 
     expect(result).toEqual([
-      { name: "mobile", value: 50 },
-      { name: "desktop", value: 10 },
+      { name: "mobile", value: 50, previousValue: 60 },
+      { name: "desktop", value: 10, previousValue: 8 },
     ]);
+  });
+
+  it("defaults previousValue to 0 when a device is absent from the previous period", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["tablet"], metricValues: [5] },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const result = await getSessionsByDevice(range);
+
+    expect(result).toEqual([{ name: "tablet", value: 5, previousValue: 0 }]);
   });
 });
 
