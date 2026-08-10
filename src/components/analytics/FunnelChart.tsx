@@ -71,7 +71,7 @@ function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
     >
       <polygon
         points={buildFunnelPoints(steps)}
-        fill="var(--analytics-accent)"
+        fill="color-mix(in srgb, var(--analytics-accent), black 30%)"
       />
       <polyline
         points={toPointsAttr(buildTopEdgePoints(steps))}
@@ -95,8 +95,7 @@ function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
           <polygon
             key={step.step}
             points={points}
-            fill="white"
-            fillOpacity={0.05}
+            fill="color-mix(in srgb, var(--analytics-accent), white 45%)"
           />
         );
       })}
