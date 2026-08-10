@@ -239,6 +239,24 @@ export function resolveRangeKeyParam(range: string | undefined): DateRangeKey {
     : "today";
 }
 
+function isValidCalendarDate(dateStr: string, date: Date): boolean {
+  // Validate that the parsed date's year/month/day round-trip back to the
+  // input string's numbers, catching silent date rollover (e.g. Feb 30 -> Mar 2)
+  const parts = dateStr.split("-");
+  if (parts.length !== 3) return false;
+  const [yearStr, monthStr, dayStr] = parts;
+  const inputYear = parseInt(yearStr, 10);
+  const inputMonth = parseInt(monthStr, 10);
+  const inputDay = parseInt(dayStr, 10);
+
+  // Check if the parsed values round-trip correctly
+  return (
+    date.getFullYear() === inputYear &&
+    date.getMonth() + 1 === inputMonth &&
+    date.getDate() === inputDay
+  );
+}
+
 export function resolveCustomRangeParams(
   start: string | undefined,
   end: string | undefined,
@@ -247,6 +265,13 @@ export function resolveCustomRangeParams(
   const startDate = new Date(`${start}T00:00:00`);
   const endDate = new Date(`${end}T00:00:00`);
   if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+    return null;
+  }
+  // Reject invalid calendar dates that JS silently normalizes
+  if (
+    !isValidCalendarDate(start, startDate) ||
+    !isValidCalendarDate(end, endDate)
+  ) {
     return null;
   }
   if (startDate.getTime() > endDate.getTime()) return null;
