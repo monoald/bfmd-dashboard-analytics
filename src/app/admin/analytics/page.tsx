@@ -247,10 +247,13 @@ export default async function AnalyticsPage({
               }}
             />
           )}
-          {data.errors.conversionRateOverTime ? (
+          {data.errors.conversionRateOverTime || data.errors.conversionRate ? (
             <CardError
               title="Conversion rate over time"
-              message={data.errors.conversionRateOverTime}
+              message={
+                data.errors.conversionRateOverTime ??
+                data.errors.conversionRate!
+              }
             />
           ) : (
             <TimeSeriesChart
@@ -265,10 +268,12 @@ export default async function AnalyticsPage({
               }}
             />
           )}
-          {data.errors.conversionFunnel ? (
+          {data.errors.conversionFunnel || data.errors.conversionRate ? (
             <CardError
               title="Conversion rate breakdown"
-              message={data.errors.conversionFunnel}
+              message={
+                data.errors.conversionFunnel ?? data.errors.conversionRate!
+              }
             />
           ) : (
             <FunnelChart

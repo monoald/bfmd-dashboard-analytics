@@ -181,4 +181,25 @@ describe("buildDashboardPayload", () => {
     expect(payload.charts.sessionsOverTime).toEqual([]);
     expect(payload.summaryCards.grossSales.value).toBe(100);
   });
+
+  it("flags a conversion-rate-summary failure separately from the funnel and rate-over-time charts it doesn't affect", () => {
+    const raw = baseRaw();
+    raw.conversionRateSummary = new Error("GA4 quota exceeded");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.conversionRate).toBe("GA4 quota exceeded");
+    expect(payload.summaryCards.conversionRate.value).toBe(0);
+    // The funnel and rate-over-time charts come from separate GA4 calls, so
+    // they stay populated even though the summary headline they're paired
+    // with on the dashboard failed — page.tsx must check errors.conversionRate
+    // itself rather than assume these charts' own success implies a valid
+    // headline.
+    expect(payload.charts.conversionFunnel).toEqual([
+      { step: "Sessions", sessions: 10, percentage: 100 },
+    ]);
+    expect(payload.charts.conversionRateOverTime).toEqual([
+      { date: "Aug 1", currentPeriod: 10, previousPeriod: 5 },
+    ]);
+  });
 });
