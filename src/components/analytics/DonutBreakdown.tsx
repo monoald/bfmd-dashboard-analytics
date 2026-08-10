@@ -8,8 +8,13 @@ import { CARD_CLASS, LABEL_CLASS, trendArrow, trendBadgeClass } from "./theme";
 
 export type DonutValueFormat = "number" | "currency";
 
+function formatCompactNumber(value: number): string {
+  if (Math.abs(value) < 1000) return value.toLocaleString();
+  return `${(value / 1000).toFixed(1).replace(/\.0$/, "")}K`;
+}
+
 const VALUE_FORMATTERS: Record<DonutValueFormat, (value: number) => string> = {
-  number: (value) => value.toLocaleString(),
+  number: formatCompactNumber,
   currency: (value) =>
     new Intl.NumberFormat("en-US", {
       style: "currency",

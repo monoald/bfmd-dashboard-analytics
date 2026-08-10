@@ -32,7 +32,7 @@ describe("DonutBreakdown", () => {
     );
 
     const centerOverlay = container.querySelector(".pointer-events-none");
-    expect(centerOverlay).toHaveTextContent("4,400");
+    expect(centerOverlay).toHaveTextContent("4.4K");
     expect(centerOverlay).toHaveTextContent("10%");
   });
 
@@ -48,9 +48,24 @@ describe("DonutBreakdown", () => {
     );
 
     const centerOverlay = container.querySelector(".pointer-events-none");
-    expect(centerOverlay).toHaveTextContent("4,400");
+    expect(centerOverlay).toHaveTextContent("4.4K");
     expect(centerOverlay?.querySelector("span")).toBeNull();
     expect(screen.getByText("Mobile").closest("li")).toHaveTextContent("10%");
+  });
+
+  it("abbreviates values of 1000 or more with a 'K' suffix, leaving smaller values as plain numbers", () => {
+    render(
+      <DonutBreakdown
+        title="Sessions by device type"
+        data={[
+          { name: "Mobile", value: 5532 },
+          { name: "Desktop", value: 86 },
+        ]}
+      />,
+    );
+
+    expect(screen.getByText("5.5K")).toBeInTheDocument();
+    expect(screen.getByText("86")).toBeInTheDocument();
   });
 
   it("formats values as currency and renders a per-row trend when requested", () => {
