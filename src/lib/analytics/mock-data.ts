@@ -26,21 +26,29 @@ function hourLabel(hour: number): string {
   return `${hour12} ${period}`;
 }
 
-function bucketStep(interval: ResolvedDateRange["interval"]): number {
-  if (interval === "hour") return 60 * 60 * 1000;
-  if (interval === "week") return 7 * 24 * 60 * 60 * 1000;
-  return 24 * 60 * 60 * 1000;
-}
-
 function bucketDates(range: ResolvedDateRange): Date[] {
-  const step = bucketStep(range.interval);
+  const { start, end } = range.current;
+
+  if (range.interval === "hour") {
+    const year = start.getFullYear();
+    const month = start.getMonth();
+    const day = start.getDate();
+    return Array.from(
+      { length: 24 },
+      (_, hour) => new Date(year, month, day, hour, 0, 0, 0),
+    );
+  }
+
+  const step = range.interval === "week" ? 7 : 1;
   const dates: Date[] = [];
-  for (
-    let t = range.current.start.getTime();
-    t <= range.current.end.getTime();
-    t += step
-  ) {
-    dates.push(new Date(t));
+  let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  while (cursor.getTime() <= end.getTime()) {
+    dates.push(cursor);
+    cursor = new Date(
+      cursor.getFullYear(),
+      cursor.getMonth(),
+      cursor.getDate() + step,
+    );
   }
   return dates;
 }

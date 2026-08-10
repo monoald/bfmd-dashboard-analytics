@@ -111,6 +111,24 @@ describe("buildMockDashboardPayload", () => {
     expect(payload.charts.salesOverTime).toHaveLength(7);
   });
 
+  it("generates exactly 24 distinct hourly labels for a 'today'-shaped range, never duplicating an hour", () => {
+    const range = resolveDateRange("today", NOW);
+    const payload = buildMockDashboardPayload(range);
+    const labels = payload.charts.salesOverTime.map((point) => point.date);
+
+    expect(labels).toHaveLength(24);
+    expect(new Set(labels).size).toBe(24);
+  });
+
+  it("generates exactly 30 distinct daily labels for a '30d' range, never duplicating a day", () => {
+    const range = resolveDateRange("30d", NOW);
+    const payload = buildMockDashboardPayload(range);
+    const labels = payload.charts.salesOverTime.map((point) => point.date);
+
+    expect(labels).toHaveLength(30);
+    expect(new Set(labels).size).toBe(30);
+  });
+
   it("generates weekly buckets for a 'week' interval range", () => {
     const range = resolveDateRange("last-year", NOW);
     const payload = buildMockDashboardPayload(range);

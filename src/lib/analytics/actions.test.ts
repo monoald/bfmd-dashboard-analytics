@@ -167,4 +167,18 @@ describe("getDashboardData", () => {
     expect(payload.errors).toEqual({});
     expect(payload.charts.salesOverTime).toHaveLength(24); // today = 24 hourly buckets
   });
+
+  it("passes a custom range's resolved bounds to the real fetchers when credentials are configured", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+
+    await getDashboardData("custom", {
+      start: new Date(2026, 6, 1),
+      end: new Date(2026, 6, 15),
+    });
+
+    expect(getRevenueStats).toHaveBeenCalledWith(
+      expect.objectContaining({ key: "custom", interval: "day" }),
+    );
+  });
 });

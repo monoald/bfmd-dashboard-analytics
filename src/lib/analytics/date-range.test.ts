@@ -217,6 +217,25 @@ describe("resolveCustomRange", () => {
     );
     expect(longRange.interval).toBe("week");
   });
+
+  it("keeps the previous period's calendar-day count equal to the current period's, exactly", () => {
+    const range = resolveCustomRange(
+      new Date(2026, 2, 9),
+      new Date(2026, 2, 14),
+    );
+    const currentDays = Math.round(
+      (range.current.end.getTime() - range.current.start.getTime()) /
+        (24 * 60 * 60 * 1000),
+    );
+    const previousDays = Math.round(
+      (range.previous.end.getTime() - range.previous.start.getTime()) /
+        (24 * 60 * 60 * 1000),
+    );
+
+    expect(range.previous.start.getHours()).toBe(0);
+    expect(range.previous.start.getMinutes()).toBe(0);
+    expect(currentDays).toBe(previousDays);
+  });
 });
 
 describe("resolveRangeKeyParam — new keys", () => {
@@ -261,6 +280,14 @@ describe("resolveCustomRangeParams", () => {
   it("returns null for invalid calendar dates that JS silently normalizes", () => {
     // Feb 30 doesn't exist; JS silently rolls it to Mar 2
     expect(resolveCustomRangeParams("2026-02-30", "2026-03-05")).toBeNull();
+  });
+
+  it("returns null when the span exceeds 366 days", () => {
+    expect(resolveCustomRangeParams("2020-01-01", "2026-01-01")).toBeNull();
+  });
+
+  it("accepts a span of exactly 366 days", () => {
+    expect(resolveCustomRangeParams("2025-01-01", "2026-01-01")).not.toBeNull();
   });
 });
 
