@@ -18,23 +18,29 @@ export interface FunnelChartProps {
   title: string;
   steps: FunnelStep[];
   headline?: FunnelHeadline;
+  // Overrides the default chart height (130) — for contexts like a
+  // standalone report page where the chart has room to be larger.
+  height?: number;
 }
 
 const CHART_WIDTH = 400;
-const CHART_HEIGHT = 130;
+const DEFAULT_CHART_HEIGHT = 130;
 // Portion of each column's width spent on the sloped connector to its
 // neighbor, rather than the flat "plateau" aligned under its label.
 const RAMP_FRACTION = 0.22;
 
-function stepHeight(step: FunnelStep): number {
+function stepHeight(step: FunnelStep, chartHeight: number): number {
   const clamped = Math.max(0, Math.min(100, step.percentage));
-  return CHART_HEIGHT - (clamped / 100) * CHART_HEIGHT;
+  return chartHeight - (clamped / 100) * chartHeight;
 }
 
-function buildTopEdgePoints(steps: FunnelStep[]): [number, number][] {
+function buildTopEdgePoints(
+  steps: FunnelStep[],
+  chartHeight: number,
+): [number, number][] {
   const segmentWidth = CHART_WIDTH / steps.length;
   const rampHalf = (segmentWidth * RAMP_FRACTION) / 2;
-  const heights = steps.map(stepHeight);
+  const heights = steps.map((step) => stepHeight(step, chartHeight));
 
   const points: [number, number][] = [[0, heights[0]]];
   for (let i = 0; i < steps.length - 1; i++) {
@@ -50,31 +56,38 @@ function toPointsAttr(points: [number, number][]): string {
   return points.map(([x, y]) => `${x},${y}`).join(" ");
 }
 
-function buildFunnelPoints(steps: FunnelStep[]): string {
+function buildFunnelPoints(steps: FunnelStep[], chartHeight: number): string {
   return toPointsAttr([
-    ...buildTopEdgePoints(steps),
-    [CHART_WIDTH, CHART_HEIGHT],
-    [0, CHART_HEIGHT],
+    ...buildTopEdgePoints(steps, chartHeight),
+    [CHART_WIDTH, chartHeight],
+    [0, chartHeight],
   ]);
 }
 
-function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
+function FunnelSvg({
+  steps,
+  chartHeight,
+}: {
+  steps: FunnelStep[];
+  chartHeight: number;
+}) {
   const segmentWidth = CHART_WIDTH / steps.length;
   const rampHalf = (segmentWidth * RAMP_FRACTION) / 2;
-  const heights = steps.map(stepHeight);
+  const heights = steps.map((step) => stepHeight(step, chartHeight));
 
   return (
     <svg
-      viewBox={`0 0 ${CHART_WIDTH} ${CHART_HEIGHT}`}
+      viewBox={`0 0 ${CHART_WIDTH} ${chartHeight}`}
       preserveAspectRatio="none"
-      className="h-[130px] w-full"
+      className="w-full"
+      style={{ height: chartHeight }}
     >
       <polygon
-        points={buildFunnelPoints(steps)}
+        points={buildFunnelPoints(steps, chartHeight)}
         fill="color-mix(in srgb, var(--analytics-accent), black 30%)"
       />
       <polyline
-        points={toPointsAttr(buildTopEdgePoints(steps))}
+        points={toPointsAttr(buildTopEdgePoints(steps, chartHeight))}
         fill="none"
         stroke="color-mix(in srgb, var(--analytics-accent), white 35%)"
         strokeWidth={2}
@@ -86,8 +99,8 @@ function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
         const points = [
           [boundary - rampHalf, heights[i]],
           [boundary + rampHalf, heights[i + 1]],
-          [boundary + rampHalf, CHART_HEIGHT],
-          [boundary - rampHalf, CHART_HEIGHT],
+          [boundary + rampHalf, chartHeight],
+          [boundary - rampHalf, chartHeight],
         ]
           .map(([x, y]) => `${x},${y}`)
           .join(" ");
@@ -103,7 +116,12 @@ function FunnelSvg({ steps }: { steps: FunnelStep[] }) {
   );
 }
 
-export function FunnelChart({ title, steps, headline }: FunnelChartProps) {
+export function FunnelChart({
+  title,
+  steps,
+  headline,
+  height = DEFAULT_CHART_HEIGHT,
+}: FunnelChartProps) {
   return (
     <div className={CARD_CLASS}>
       <div className="mb-3 flex items-start justify-between gap-2">
@@ -173,7 +191,7 @@ export function FunnelChart({ title, steps, headline }: FunnelChartProps) {
         })}
       </div>
 
-      <FunnelSvg steps={steps} />
+      <FunnelSvg steps={steps} chartHeight={height} />
     </div>
   );
 }
