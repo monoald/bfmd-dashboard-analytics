@@ -1,7 +1,9 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
+import { resolveRangeKeyParam } from "@/lib/analytics/date-range";
 import type { DateRangeKey } from "@/lib/analytics/types";
+import { CustomDateRangePicker } from "./CustomDateRangePicker";
 import { CHIP_CLASS } from "./theme";
 
 const OPTIONS: { key: DateRangeKey; label: string }[] = [
@@ -13,12 +15,15 @@ const OPTIONS: { key: DateRangeKey; label: string }[] = [
 export function DashboardDateFilter() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const activeRange =
-    (searchParams.get("range") as DateRangeKey | null) ?? "today";
+  const activeRange = resolveRangeKeyParam(
+    searchParams.get("range") ?? undefined,
+  );
 
   function handleSelect(key: DateRangeKey) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("range", key);
+    params.delete("start");
+    params.delete("end");
     router.push(`?${params.toString()}`);
   }
 
@@ -38,6 +43,7 @@ export function DashboardDateFilter() {
           {option.label}
         </button>
       ))}
+      <CustomDateRangePicker />
     </div>
   );
 }

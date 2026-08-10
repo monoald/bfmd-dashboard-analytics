@@ -2,7 +2,10 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 import { getDashboardData } from "@/lib/analytics/actions";
-import { resolveRangeKeyParam } from "@/lib/analytics/date-range";
+import {
+  buildRangeQueryParams,
+  resolveRangeSelection,
+} from "@/lib/analytics/date-range";
 import { formatCurrency, formatPercent } from "@/lib/analytics/format";
 import {
   averageSeries,
@@ -410,15 +413,16 @@ export default async function ReportPage({
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; start?: string; end?: string }>;
 }) {
   const { slug } = await params;
   const config = getReportConfig(slug);
   if (!config) notFound();
 
-  const { range } = await searchParams;
-  const rangeKey = resolveRangeKeyParam(range);
-  const data = await getDashboardData(rangeKey);
+  const { range, start, end } = await searchParams;
+  const { rangeKey, customRange } = resolveRangeSelection(range, start, end);
+  const data = await getDashboardData(rangeKey, customRange ?? undefined);
+  const rangeQuery = buildRangeQueryParams(rangeKey, customRange);
 
   return (
     <div className="min-h-screen bg-(--analytics-bg) p-6">
@@ -426,7 +430,7 @@ export default async function ReportPage({
         <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
           <div className="flex items-center gap-2.5">
             <Link
-              href={`/admin/analytics?range=${rangeKey}`}
+              href={`/admin/analytics?${rangeQuery}`}
               className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-(--analytics-accent) bg-(--analytics-accent-dim) text-[11px] font-extrabold tracking-[-0.5px] text-(--analytics-accent)"
             >
               BF
