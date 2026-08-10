@@ -135,7 +135,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
       }
       const series = data.charts.salesOverTime;
       return (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3">
           <TimeSeriesChart
             title={config.title}
             data={series}
@@ -164,7 +164,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         averageSeries(series, "previousPeriod"),
       );
       return (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3">
           <TimeSeriesChart
             title={config.title}
             data={series}
@@ -196,7 +196,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         sumSeries(series, "previousPeriod"),
       );
       return (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3">
           <TimeSeriesChart
             title={config.title}
             data={series}
@@ -228,7 +228,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
       }
       const series = data.charts.conversionRateOverTime;
       return (
-        <div className="flex flex-col gap-3">
+        <div className="grid gap-3">
           <TimeSeriesChart
             title={config.title}
             data={series}
@@ -438,6 +438,24 @@ export default async function ReportPage({
           page has no such grid, so without `display: grid` here the chart
           area renders at 0 height (verified in both dev and production
           builds) even though the headline and table below it render fine.
+
+          The same reasoning is why each line-comparison case's inner
+          chart+table stack below uses `grid gap-3` instead of
+          `flex flex-col gap-3`: once this outer wrapper is a definite-height
+          grid, a flex stack would let the chart card's `h-full` resolve as a
+          percentage of the *whole stack's* height, so flexbox's shrink
+          algorithm steals height from the table to satisfy it — and the
+          table's `min-height: auto` computes to 0 because CARD_CLASS's
+          overflow-x/y classes make it a scroll container, so the stolen
+          height is just clipped off with no visible scrollbar (verified
+          live: total-sales-over-time showed 5/7 rows with the bolded Total
+          row cut off entirely). With the inner stack also as `grid gap-3`,
+          each row (chart, table) is sized independently in the grid's auto
+          rows instead of competing for a shared flex budget, so the chart
+          still gets its own 100%-of-row height and the table renders at its
+          full natural height with every row intact. Do not "simplify" any
+          of these four inner wrappers back to flex — that silently
+          reintroduces the clipped-table regression.
         */}
         <div className={isWide ? "grid w-full" : "grid max-w-2xl"}>
           {renderReport(config, data)}
