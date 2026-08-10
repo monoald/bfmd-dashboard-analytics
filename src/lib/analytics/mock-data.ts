@@ -1,5 +1,9 @@
 import { computeChange } from "./normalize";
-import type { DashboardPayload, DateRangeKey, TimeSeriesData } from "./types";
+import type {
+  DashboardPayload,
+  ResolvedDateRange,
+  TimeSeriesData,
+} from "./types";
 
 const MONTH_NAMES = [
   "Jan",
@@ -22,21 +26,31 @@ function hourLabel(hour: number): string {
   return `${hour12} ${period}`;
 }
 
-function dayLabel(daysAgo: number, now: Date): string {
-  const date = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() - daysAgo,
-  );
-  return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`;
+function bucketStep(interval: ResolvedDateRange["interval"]): number {
+  if (interval === "hour") return 60 * 60 * 1000;
+  if (interval === "week") return 7 * 24 * 60 * 60 * 1000;
+  return 24 * 60 * 60 * 1000;
 }
 
-function bucketLabels(rangeKey: DateRangeKey, now: Date): string[] {
-  if (rangeKey === "today") {
-    return Array.from({ length: 24 }, (_, hour) => hourLabel(hour));
+function bucketDates(range: ResolvedDateRange): Date[] {
+  const step = bucketStep(range.interval);
+  const dates: Date[] = [];
+  for (
+    let t = range.current.start.getTime();
+    t <= range.current.end.getTime();
+    t += step
+  ) {
+    dates.push(new Date(t));
   }
-  const days = rangeKey === "7d" ? 7 : 30;
-  return Array.from({ length: days }, (_, i) => dayLabel(days - 1 - i, now));
+  return dates;
+}
+
+function bucketLabels(range: ResolvedDateRange): string[] {
+  return bucketDates(range).map((date) =>
+    range.interval === "hour"
+      ? hourLabel(date.getHours())
+      : `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`,
+  );
 }
 
 // Deterministic wavy value generator so mock data looks varied (not flat)
@@ -73,14 +87,15 @@ function sum(
 }
 
 export function buildMockDashboardPayload(
-  rangeKey: DateRangeKey,
+  range: ResolvedDateRange,
 ): DashboardPayload {
-  const now = new Date();
-  const labels = bucketLabels(rangeKey, now);
+  const labels = bucketLabels(range);
   const perBucketBase =
-    rangeKey === "today"
+    range.interval === "hour"
       ? { revenue: 2200, sessions: 220, orders: 5.5 }
-      : { revenue: 9000, sessions: 750, orders: 22 };
+      : range.interval === "week"
+        ? { revenue: 9000 * 7, sessions: 750 * 7, orders: 22 * 7 }
+        : { revenue: 9000, sessions: 750, orders: 22 };
 
   const salesOverTime = buildSeries(
     labels,
