@@ -144,6 +144,40 @@ describe("resolveDateRange — new named presets", () => {
   it("throws if asked to resolve 'custom' — callers must use resolveCustomRange instead", () => {
     expect(() => resolveDateRange("custom", now)).toThrow();
   });
+
+  it("clamps month-end dates correctly for 'mtd' when now is Mar 31 — previous month ends on Feb 28, not rolled forward", () => {
+    const mar31 = new Date(2026, 2, 31); // March 31, 2026
+    const range = resolveDateRange("mtd", mar31);
+
+    // Current period: Mar 1 - Mar 31
+    expect(range.current.start.getMonth()).toBe(2); // March
+    expect(range.current.start.getDate()).toBe(1);
+    expect(range.current.end.getDate()).toBe(31);
+
+    // Previous period: Feb 1 - Feb 28 (not rolled forward to Mar 2/3)
+    expect(range.previous.start.getMonth()).toBe(1); // February
+    expect(range.previous.start.getDate()).toBe(1);
+    expect(range.previous.end.getMonth()).toBe(1); // February
+    expect(range.previous.end.getDate()).toBe(28); // Clamped, not rolled
+  });
+
+  it("clamps leap-year dates correctly for 'ytd' when now is Feb 29 in a leap year — previous year ends on Feb 28 in non-leap year", () => {
+    const feb29_2028 = new Date(2028, 1, 29); // February 29, 2028 (leap year)
+    const range = resolveDateRange("ytd", feb29_2028);
+
+    // Current period: Jan 1 - Feb 29, 2028
+    expect(range.current.start.getFullYear()).toBe(2028);
+    expect(range.current.start.getMonth()).toBe(0); // January
+    expect(range.current.end.getMonth()).toBe(1); // February
+    expect(range.current.end.getDate()).toBe(29);
+
+    // Previous period: Jan 1, 2027 - Feb 28, 2027 (2027 is not a leap year)
+    expect(range.previous.start.getFullYear()).toBe(2027);
+    expect(range.previous.start.getMonth()).toBe(0); // January
+    expect(range.previous.end.getFullYear()).toBe(2027);
+    expect(range.previous.end.getMonth()).toBe(1); // February
+    expect(range.previous.end.getDate()).toBe(28); // Clamped, not rolled
+  });
 });
 
 describe("resolveCustomRange", () => {
@@ -222,6 +256,11 @@ describe("resolveCustomRangeParams", () => {
 
   it("returns null when start is after end", () => {
     expect(resolveCustomRangeParams("2026-07-15", "2026-07-01")).toBeNull();
+  });
+
+  it("returns null for invalid calendar dates that JS silently normalizes", () => {
+    // Feb 30 doesn't exist; JS silently rolls it to Mar 2
+    expect(resolveCustomRangeParams("2026-02-30", "2026-03-05")).toBeNull();
   });
 });
 
