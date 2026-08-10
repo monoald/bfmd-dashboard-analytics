@@ -73,7 +73,7 @@ async function fetchSessionsByLocationMap(
   period: PeriodBounds,
 ): Promise<Map<string, number>> {
   const rows = await runGa4Report({
-    dimensions: ["region", "city"],
+    dimensions: ["country", "region", "city"],
     metrics: ["sessions"],
     startDate: toIsoDate(period.start),
     endDate: toIsoDate(period.end),
@@ -82,7 +82,7 @@ async function fetchSessionsByLocationMap(
   const map = new Map<string, number>();
   for (const row of rows) {
     map.set(
-      `${row.dimensionValues[0]} · ${row.dimensionValues[1]}`,
+      `${row.dimensionValues[0]} · ${row.dimensionValues[1]} · ${row.dimensionValues[2]}`,
       row.metricValues[0],
     );
   }

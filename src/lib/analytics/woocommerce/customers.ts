@@ -6,6 +6,11 @@ interface WcCustomerRow {
   orders_count: number;
 }
 
+// Assumes this report's after/before params filter customers by activity
+// within the period (matching how WooCommerce's own "Returning customers"
+// report is computed), not by account registration date — verify against a
+// live store once real credentials are available; this is currently untested
+// against the real API.
 async function fetchCustomerRows(period: {
   start: Date;
   end: Date;
