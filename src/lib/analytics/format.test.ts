@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatCurrency, formatPercent } from "./format";
+import { formatCurrency, formatPercent, formatShortDate } from "./format";
 
 describe("formatCurrency", () => {
   it("formats a number as USD currency", () => {
@@ -18,5 +18,11 @@ describe("formatPercent", () => {
 
   it("pads whole numbers to one decimal place", () => {
     expect(formatPercent(10)).toBe("10.0%");
+  });
+});
+
+describe("formatShortDate", () => {
+  it("formats a date as 'Mon D, YYYY'", () => {
+    expect(formatShortDate(new Date(2026, 7, 9))).toBe("Aug 9, 2026");
   });
 });

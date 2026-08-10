@@ -1,4 +1,14 @@
-export type DateRangeKey = "today" | "7d" | "30d";
+export type DateRangeKey =
+  | "today"
+  | "7d"
+  | "30d"
+  | "yesterday"
+  | "mtd"
+  | "last-month"
+  | "ytd"
+  | "last-year"
+  | "90d"
+  | "custom";
 
 export interface PeriodBounds {
   start: Date;
@@ -7,7 +17,7 @@ export interface PeriodBounds {
 
 export interface ResolvedDateRange {
   key: DateRangeKey;
-  interval: "hour" | "day";
+  interval: "hour" | "day" | "week";
   current: PeriodBounds;
   previous: PeriodBounds;
 }
