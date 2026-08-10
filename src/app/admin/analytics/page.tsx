@@ -18,6 +18,10 @@ function formatCurrency(value: number): string {
   }).format(value);
 }
 
+// On hold until we implement a correct data source for it — hidden from the
+// dashboard for now, not removed.
+const SHOW_SALES_BY_CHANNEL = false;
+
 function formatPercent(value: number): string {
   return `${value.toFixed(1)}%`;
 }
@@ -183,17 +187,18 @@ export default async function AnalyticsPage({
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-          {data.errors.salesByChannel ? (
-            <CardError
-              title="Total sales by sales channel"
-              message={data.errors.salesByChannel}
-            />
-          ) : (
-            <DonutBreakdown
-              title="Total sales by sales channel"
-              data={data.charts.salesByChannel}
-            />
-          )}
+          {SHOW_SALES_BY_CHANNEL &&
+            (data.errors.salesByChannel ? (
+              <CardError
+                title="Total sales by sales channel"
+                message={data.errors.salesByChannel}
+              />
+            ) : (
+              <DonutBreakdown
+                title="Total sales by sales channel"
+                data={data.charts.salesByChannel}
+              />
+            ))}
           {data.errors.aovOverTime ? (
             <CardError
               title="Average order value over time"
