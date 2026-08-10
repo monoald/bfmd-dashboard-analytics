@@ -24,13 +24,6 @@ import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { TimeSeriesReportTable } from "@/components/analytics/TimeSeriesReportTable";
 
-const WIDE_SLUGS = new Set([
-  "total-sales-over-time",
-  "average-order-value-over-time",
-  "sessions-over-time",
-  "conversion-rate-over-time",
-]);
-
 function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
   switch (config.slug) {
     case "gross-sales": {
@@ -176,7 +169,11 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: headline.trend,
             }}
           />
-          <TimeSeriesReportTable data={series} formatValue={formatCurrency} />
+          <TimeSeriesReportTable
+            data={series}
+            formatValue={formatCurrency}
+            aggregate="average"
+          />
         </div>
       );
     }
@@ -241,7 +238,11 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: data.summaryCards.conversionRate.trend,
             }}
           />
-          <TimeSeriesReportTable data={series} formatValue={formatPercent} />
+          <TimeSeriesReportTable
+            data={series}
+            formatValue={formatPercent}
+            aggregate="average"
+          />
         </div>
       );
     }
@@ -380,8 +381,10 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
       );
     }
 
-    default:
-      return null;
+    default: {
+      const _exhaustive: never = config.slug;
+      return _exhaustive;
+    }
   }
 }
 
@@ -400,7 +403,7 @@ export default async function ReportPage({
   const rangeKey = resolveRangeKeyParam(range);
   const data = await getDashboardData(rangeKey);
 
-  const isWide = WIDE_SLUGS.has(config.slug);
+  const isWide = config.shape === "line-comparison";
 
   return (
     <div className="min-h-screen bg-(--analytics-bg) p-6">
@@ -414,9 +417,9 @@ export default async function ReportPage({
               BF
             </Link>
             <div>
-              <div className="text-sm font-bold tracking-tight">
+              <h1 className="text-sm font-bold tracking-tight">
                 {config.title}
-              </div>
+              </h1>
               <div className="text-[11px] text-(--analytics-t2)">
                 Black Forest Supplements
               </div>

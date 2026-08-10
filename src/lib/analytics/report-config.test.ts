@@ -28,7 +28,6 @@ describe("getReportConfig", () => {
     expect(getReportConfig("sessions-by-device-type")).toEqual({
       slug: "sessions-by-device-type",
       title: "Sessions by device type",
-      cardKey: "sessionsByDevice",
       shape: "donut",
     });
   });

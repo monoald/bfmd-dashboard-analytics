@@ -212,6 +212,7 @@ export default async function AnalyticsPage({
                 <DonutBreakdown
                   title="Total sales by sales channel"
                   data={data.charts.salesByChannel}
+                  formatValue="currency"
                 />
               </Link>
             ))}
