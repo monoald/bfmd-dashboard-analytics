@@ -6,7 +6,10 @@ import {
   sumSeries,
 } from "@/lib/analytics/normalize";
 import { formatCurrency, formatPercent } from "@/lib/analytics/format";
-import { resolveRangeKeyParam } from "@/lib/analytics/date-range";
+import {
+  buildRangeQueryParams,
+  resolveRangeSelection,
+} from "@/lib/analytics/date-range";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { SummaryMetricCard } from "@/components/analytics/SummaryMetricCard";
@@ -24,11 +27,12 @@ const SHOW_SALES_BY_CHANNEL = false;
 export default async function AnalyticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string }>;
+  searchParams: Promise<{ range?: string; start?: string; end?: string }>;
 }) {
-  const { range } = await searchParams;
-  const rangeKey = resolveRangeKeyParam(range);
-  const data = await getDashboardData(rangeKey);
+  const { range, start, end } = await searchParams;
+  const { rangeKey, customRange } = resolveRangeSelection(range, start, end);
+  const data = await getDashboardData(rangeKey, customRange ?? undefined);
+  const rangeQuery = buildRangeQueryParams(rangeKey, customRange);
 
   const sessionsHeadline = computeChange(
     sumSeries(data.charts.sessionsOverTime, "currentPeriod"),
@@ -71,7 +75,7 @@ export default async function AnalyticsPage({
             <CardError title="Gross sales" message={data.errors.grossSales} />
           ) : (
             <Link
-              href={`/admin/analytics/reports/gross-sales?range=${rangeKey}`}
+              href={`/admin/analytics/reports/gross-sales?${rangeQuery}`}
               className="block h-full"
             >
               <SummaryMetricCard
@@ -90,7 +94,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/returning-customer-rate?range=${rangeKey}`}
+              href={`/admin/analytics/reports/returning-customer-rate?${rangeQuery}`}
               className="block h-full"
             >
               <SummaryMetricCard
@@ -115,7 +119,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/orders-fulfilled?range=${rangeKey}`}
+              href={`/admin/analytics/reports/orders-fulfilled?${rangeQuery}`}
               className="block h-full"
             >
               <SummaryMetricCard
@@ -135,7 +139,7 @@ export default async function AnalyticsPage({
             <CardError title="Orders" message={data.errors.orders} />
           ) : (
             <Link
-              href={`/admin/analytics/reports/orders?range=${rangeKey}`}
+              href={`/admin/analytics/reports/orders?${rangeQuery}`}
               className="block h-full"
             >
               <SummaryMetricCard
@@ -157,7 +161,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/total-sales-over-time?range=${rangeKey}`}
+              href={`/admin/analytics/reports/total-sales-over-time?${rangeQuery}`}
               className="block h-full"
             >
               <TimeSeriesChart
@@ -181,7 +185,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/total-sales-breakdown?range=${rangeKey}`}
+              href={`/admin/analytics/reports/total-sales-breakdown?${rangeQuery}`}
               className="block h-full"
             >
               <RankedList
@@ -206,7 +210,7 @@ export default async function AnalyticsPage({
               />
             ) : (
               <Link
-                href={`/admin/analytics/reports/total-sales-by-sales-channel?range=${rangeKey}`}
+                href={`/admin/analytics/reports/total-sales-by-sales-channel?${rangeQuery}`}
                 className="block h-full"
               >
                 <DonutBreakdown
@@ -223,7 +227,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/average-order-value-over-time?range=${rangeKey}`}
+              href={`/admin/analytics/reports/average-order-value-over-time?${rangeQuery}`}
               className="block h-full"
             >
               <TimeSeriesChart
@@ -245,7 +249,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/total-sales-by-product?range=${rangeKey}`}
+              href={`/admin/analytics/reports/total-sales-by-product?${rangeQuery}`}
               className="block h-full"
             >
               <RankedList
@@ -265,7 +269,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/sessions-over-time?range=${rangeKey}`}
+              href={`/admin/analytics/reports/sessions-over-time?${rangeQuery}`}
               className="block h-full"
             >
               <TimeSeriesChart
@@ -289,7 +293,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/conversion-rate-over-time?range=${rangeKey}`}
+              href={`/admin/analytics/reports/conversion-rate-over-time?${rangeQuery}`}
               className="block h-full"
             >
               <TimeSeriesChart
@@ -314,7 +318,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/conversion-rate-breakdown?range=${rangeKey}`}
+              href={`/admin/analytics/reports/conversion-rate-breakdown?${rangeQuery}`}
               className="block h-full"
             >
               <FunnelChart
@@ -336,7 +340,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/sessions-by-device-type?range=${rangeKey}`}
+              href={`/admin/analytics/reports/sessions-by-device-type?${rangeQuery}`}
               className="block h-full"
             >
               <DonutBreakdown
@@ -352,7 +356,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/sessions-by-location?range=${rangeKey}`}
+              href={`/admin/analytics/reports/sessions-by-location?${rangeQuery}`}
               className="block h-full"
             >
               <RankedList
@@ -368,7 +372,7 @@ export default async function AnalyticsPage({
             />
           ) : (
             <Link
-              href={`/admin/analytics/reports/total-sales-by-social-referrer?range=${rangeKey}`}
+              href={`/admin/analytics/reports/total-sales-by-social-referrer?${rangeQuery}`}
               className="block h-full"
             >
               <RankedList
