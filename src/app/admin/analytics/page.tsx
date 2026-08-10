@@ -1,5 +1,11 @@
 import { getDashboardData } from "@/lib/analytics/actions";
-import { computeChange } from "@/lib/analytics/normalize";
+import {
+  computeChange,
+  averageSeries,
+  sumSeries,
+} from "@/lib/analytics/normalize";
+import { formatCurrency, formatPercent } from "@/lib/analytics/format";
+import { resolveRangeKeyParam } from "@/lib/analytics/date-range";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { SummaryMetricCard } from "@/components/analytics/SummaryMetricCard";
@@ -9,36 +15,10 @@ import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { RankedList } from "@/components/analytics/RankedList";
 import { CardError } from "@/components/analytics/CardError";
 import { CHIP_CLASS } from "@/components/analytics/theme";
-import type { DateRangeKey, TimeSeriesData } from "@/lib/analytics/types";
-
-function formatCurrency(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value);
-}
 
 // On hold until we implement a correct data source for it — hidden from the
 // dashboard for now, not removed.
 const SHOW_SALES_BY_CHANNEL = false;
-
-function formatPercent(value: number): string {
-  return `${value.toFixed(1)}%`;
-}
-
-function sumSeries(
-  series: TimeSeriesData[],
-  key: "currentPeriod" | "previousPeriod",
-): number {
-  return series.reduce((total, point) => total + point[key], 0);
-}
-
-function averageSeries(
-  series: TimeSeriesData[],
-  key: "currentPeriod" | "previousPeriod",
-): number {
-  return series.length === 0 ? 0 : sumSeries(series, key) / series.length;
-}
 
 export default async function AnalyticsPage({
   searchParams,
@@ -46,10 +26,7 @@ export default async function AnalyticsPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const { range } = await searchParams;
-  const VALID_RANGES: DateRangeKey[] = ["today", "7d", "30d"];
-  const rangeKey = VALID_RANGES.includes(range as DateRangeKey)
-    ? (range as DateRangeKey)
-    : "today";
+  const rangeKey = resolveRangeKeyParam(range);
   const data = await getDashboardData(rangeKey);
 
   const sessionsHeadline = computeChange(

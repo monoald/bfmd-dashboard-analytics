@@ -27,6 +27,28 @@ export function computeChange(current: number, previous: number): ChangeMetric {
   };
 }
 
+export function sumSeries(
+  series: TimeSeriesData[],
+  key: "currentPeriod" | "previousPeriod",
+): number {
+  return series.reduce((total, point) => total + point[key], 0);
+}
+
+export function averageSeries(
+  series: TimeSeriesData[],
+  key: "currentPeriod" | "previousPeriod",
+): number {
+  return series.length === 0 ? 0 : sumSeries(series, key) / series.length;
+}
+
+export function sparklineToSeries(sparkline: number[]): TimeSeriesData[] {
+  return sparkline.map((value) => ({
+    date: "",
+    currentPeriod: value,
+    previousPeriod: 0,
+  }));
+}
+
 export interface RawPipelineResults {
   revenueStats:
     { current: RevenueStatsResult; previous: RevenueStatsResult } | Error;

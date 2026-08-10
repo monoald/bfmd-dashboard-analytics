@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveDateRange } from "./date-range";
+import { resolveDateRange, resolveRangeKeyParam } from "./date-range";
 
 describe("resolveDateRange", () => {
   it("resolves 'today' to today vs. yesterday, hourly interval", () => {
@@ -40,5 +40,18 @@ describe("resolveDateRange", () => {
     expect(range.previous.end.getTime()).toBeLessThan(
       range.current.start.getTime(),
     );
+  });
+});
+
+describe("resolveRangeKeyParam", () => {
+  it("returns the param when it's a valid DateRangeKey", () => {
+    expect(resolveRangeKeyParam("7d")).toBe("7d");
+    expect(resolveRangeKeyParam("30d")).toBe("30d");
+    expect(resolveRangeKeyParam("today")).toBe("today");
+  });
+
+  it("falls back to 'today' for an invalid or missing param", () => {
+    expect(resolveRangeKeyParam("bogus")).toBe("today");
+    expect(resolveRangeKeyParam(undefined)).toBe("today");
   });
 });

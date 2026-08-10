@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  averageSeries,
   buildDashboardPayload,
   computeChange,
+  sparklineToSeries,
+  sumSeries,
   type RawPipelineResults,
 } from "./normalize";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
@@ -41,6 +44,50 @@ describe("computeChange", () => {
 
   it("rounds to one decimal place", () => {
     expect(computeChange(103, 100).changePercentage).toBe(3);
+  });
+});
+
+describe("sumSeries", () => {
+  it("sums the given key across all points", () => {
+    const series = [
+      { date: "Aug 1", currentPeriod: 10, previousPeriod: 5 },
+      { date: "Aug 2", currentPeriod: 20, previousPeriod: 8 },
+    ];
+    expect(sumSeries(series, "currentPeriod")).toBe(30);
+    expect(sumSeries(series, "previousPeriod")).toBe(13);
+  });
+
+  it("returns 0 for an empty series", () => {
+    expect(sumSeries([], "currentPeriod")).toBe(0);
+  });
+});
+
+describe("averageSeries", () => {
+  it("averages the given key across all points", () => {
+    const series = [
+      { date: "Aug 1", currentPeriod: 10, previousPeriod: 4 },
+      { date: "Aug 2", currentPeriod: 20, previousPeriod: 8 },
+    ];
+    expect(averageSeries(series, "currentPeriod")).toBe(15);
+    expect(averageSeries(series, "previousPeriod")).toBe(6);
+  });
+
+  it("returns 0 for an empty series instead of dividing by zero", () => {
+    expect(averageSeries([], "currentPeriod")).toBe(0);
+  });
+});
+
+describe("sparklineToSeries", () => {
+  it("maps bare sparkline numbers into TimeSeriesData points with empty dates and zeroed previousPeriod", () => {
+    expect(sparklineToSeries([10, 20, 30])).toEqual([
+      { date: "", currentPeriod: 10, previousPeriod: 0 },
+      { date: "", currentPeriod: 20, previousPeriod: 0 },
+      { date: "", currentPeriod: 30, previousPeriod: 0 },
+    ]);
+  });
+
+  it("returns an empty array for an empty sparkline", () => {
+    expect(sparklineToSeries([])).toEqual([]);
   });
 });
 
