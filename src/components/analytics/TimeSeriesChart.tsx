@@ -83,7 +83,9 @@ export function TimeSeriesChart({
   const isHero = variant === "hero";
 
   return (
-    <div className={`${CARD_CLASS} ${isHero ? CARD_GLOW_CLASS : ""}`}>
+    <div
+      className={`${CARD_CLASS} flex h-full flex-col ${isHero ? CARD_GLOW_CLASS : ""}`}
+    >
       <div className="mb-4 flex items-start justify-between gap-2">
         <div>
           <p className={`${LABEL_CLASS} mb-1.5`}>{title}</p>
@@ -107,61 +109,63 @@ export function TimeSeriesChart({
           )}
         </div>
       </div>
-      <ResponsiveContainer width="100%" height={isHero ? 200 : 160}>
-        <AreaChart data={series}>
-          <defs>
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop
-                offset="0%"
-                stopColor="var(--analytics-accent)"
-                stopOpacity={0.28}
-              />
-              <stop
-                offset="100%"
-                stopColor="var(--analytics-accent)"
-                stopOpacity={0}
-              />
-            </linearGradient>
-          </defs>
-          <CartesianGrid
-            strokeDasharray="3 3"
-            vertical={false}
-            stroke="var(--analytics-border)"
-          />
-          <XAxis
-            dataKey="date"
-            tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
-            stroke="var(--analytics-border)"
-            tickLine={false}
-            interval={isHero ? 0 : "preserveStartEnd"}
-            minTickGap={isHero ? 5 : 20}
-          />
-          <YAxis
-            tickFormatter={format}
-            tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
-            stroke="var(--analytics-border)"
-            tickLine={false}
-            axisLine={false}
-            width={isHero ? 48 : 42}
-          />
-          <Tooltip formatter={(value) => format(Number(value))} />
-          <Area
-            type="monotone"
-            dataKey="currentPeriod"
-            stroke="var(--analytics-accent)"
-            strokeWidth={2}
-            fill={`url(#${gradientId})`}
-          />
-          <Area
-            type="monotone"
-            dataKey="previousPeriod"
-            stroke="var(--analytics-t2)"
-            strokeWidth={1.25}
-            strokeDasharray="4 4"
-            fill="transparent"
-          />
-        </AreaChart>
-      </ResponsiveContainer>
+      <div className="min-h-0 flex-1" style={{ minHeight: isHero ? 200 : 160 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart data={series}>
+            <defs>
+              <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+                <stop
+                  offset="0%"
+                  stopColor="var(--analytics-accent)"
+                  stopOpacity={0.28}
+                />
+                <stop
+                  offset="100%"
+                  stopColor="var(--analytics-accent)"
+                  stopOpacity={0}
+                />
+              </linearGradient>
+            </defs>
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="var(--analytics-border)"
+            />
+            <XAxis
+              dataKey="date"
+              tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
+              stroke="var(--analytics-border)"
+              tickLine={false}
+              interval={isHero ? 0 : "preserveStartEnd"}
+              minTickGap={isHero ? 5 : 20}
+            />
+            <YAxis
+              tickFormatter={format}
+              tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
+              stroke="var(--analytics-border)"
+              tickLine={false}
+              axisLine={false}
+              width={isHero ? 48 : 42}
+            />
+            <Tooltip formatter={(value) => format(Number(value))} />
+            <Area
+              type="monotone"
+              dataKey="currentPeriod"
+              stroke="var(--analytics-accent)"
+              strokeWidth={2}
+              fill={`url(#${gradientId})`}
+            />
+            <Area
+              type="monotone"
+              dataKey="previousPeriod"
+              stroke="var(--analytics-t2)"
+              strokeWidth={1.25}
+              strokeDasharray="4 4"
+              fill="transparent"
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
 }
