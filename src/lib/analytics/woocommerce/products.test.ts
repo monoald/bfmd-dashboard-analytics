@@ -20,17 +20,17 @@ describe("getTopProductsByRevenue", () => {
         {
           product_id: 1,
           extended_info: { name: "Cocoa Flavanols" },
-          subtotals: { net_revenue: 236.4567 },
+          net_revenue: 236.4567,
         },
         {
           product_id: 2,
           extended_info: { name: "Magnesium Sleep Aid" },
-          subtotals: { net_revenue: 51.2 },
+          net_revenue: 51.2,
         },
       ])
       .mockResolvedValueOnce([
-        { product_id: 1, subtotals: { net_revenue: 200 } },
-        { product_id: 2, subtotals: { net_revenue: 60.005 } },
+        { product_id: 1, net_revenue: 200 },
+        { product_id: 2, net_revenue: 60.005 },
       ]);
 
     const result = await getTopProductsByRevenue(range);
@@ -41,7 +41,7 @@ describe("getTopProductsByRevenue", () => {
     ]);
     expect(fetchWc).toHaveBeenNthCalledWith(
       1,
-      "/wc-analytics/reports/revenue/products",
+      "/wc-analytics/reports/products",
       expect.objectContaining({
         orderby: "net_revenue",
         order: "desc",
@@ -51,7 +51,7 @@ describe("getTopProductsByRevenue", () => {
     );
     expect(fetchWc).toHaveBeenNthCalledWith(
       2,
-      "/wc-analytics/reports/revenue/products",
+      "/wc-analytics/reports/products",
       expect.objectContaining({
         products: "1,2",
         per_page: "2",
@@ -61,9 +61,7 @@ describe("getTopProductsByRevenue", () => {
 
   it("falls back to 'Unknown product' when extended_info is missing, and previousValue 0 when a product has no prior revenue", async () => {
     vi.mocked(fetchWc)
-      .mockResolvedValueOnce([
-        { product_id: 5, subtotals: { net_revenue: 10 } },
-      ])
+      .mockResolvedValueOnce([{ product_id: 5, net_revenue: 10 }])
       .mockResolvedValueOnce([]);
 
     const result = await getTopProductsByRevenue(range);

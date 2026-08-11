@@ -29,7 +29,7 @@ describe("WooCommerce client", () => {
     expect(result).toEqual({ hello: "world" });
     const [url, options] = fetchMock.mock.calls[0];
     expect(url).toBe(
-      "https://store.example.com/wc-analytics/reports/orders?status=completed",
+      "https://store.example.com/wp-json/wc-analytics/reports/orders?status=completed",
     );
     expect(options.headers.Authorization).toBe(
       `Basic ${Buffer.from("ck_test:cs_test").toString("base64")}`,
