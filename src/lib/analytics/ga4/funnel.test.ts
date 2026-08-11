@@ -104,7 +104,7 @@ describe("getConversionRateSummary", () => {
 });
 
 describe("getConversionRateOverTime", () => {
-  it("aligns current and previous per-bucket conversion rates", async () => {
+  it("aligns current and previous per-bucket conversion rates, zero-filling days GA4 didn't return", async () => {
     vi.mocked(runGa4Report)
       .mockResolvedValueOnce([
         { dimensionValues: ["20260801"], metricValues: [100] },
@@ -121,8 +121,18 @@ describe("getConversionRateOverTime", () => {
 
     const result = await getConversionRateOverTime(range);
 
-    expect(result).toEqual([
-      { date: "Aug 1", currentPeriod: 10, previousPeriod: 10 },
-    ]);
+    // range spans 7 days each side; only one active day was returned per
+    // side, the rest must be zero-filled rather than dropped.
+    expect(result).toHaveLength(7);
+    expect(result[0]).toEqual({
+      date: "Aug 1",
+      currentPeriod: 10,
+      previousPeriod: 10,
+    });
+    expect(result[1]).toEqual({
+      date: "Aug 2",
+      currentPeriod: 0,
+      previousPeriod: 0,
+    });
   });
 });

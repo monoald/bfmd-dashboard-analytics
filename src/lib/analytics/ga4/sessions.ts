@@ -32,7 +32,13 @@ export async function getSessionsOverTime(
     fetchSessionsByBucket(range.current, range.interval),
     fetchSessionsByBucket(range.previous, range.interval),
   ]);
-  return alignSeries(currentMap, previousMap, range.interval);
+  return alignSeries(
+    currentMap,
+    previousMap,
+    range.current,
+    range.previous,
+    range.interval,
+  );
 }
 
 async function fetchSessionsByDeviceMap(

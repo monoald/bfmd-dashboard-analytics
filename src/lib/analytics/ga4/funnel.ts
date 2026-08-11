@@ -120,5 +120,11 @@ export async function getConversionRateOverTime(
     fetchRateByBucket(range.current, range.interval),
     fetchRateByBucket(range.previous, range.interval),
   ]);
-  return alignSeries(currentMap, previousMap, range.interval);
+  return alignSeries(
+    currentMap,
+    previousMap,
+    range.current,
+    range.previous,
+    range.interval,
+  );
 }

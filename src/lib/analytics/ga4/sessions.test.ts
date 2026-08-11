@@ -18,7 +18,7 @@ const range: ResolvedDateRange = {
 };
 
 describe("getSessionsOverTime", () => {
-  it("fetches current and previous sessions by date and aligns them into a TimeSeriesData series", async () => {
+  it("fetches current and previous sessions by date and aligns them into a TimeSeriesData series, zero-filling days GA4 didn't return", async () => {
     vi.mocked(runGa4Report)
       .mockResolvedValueOnce([
         { dimensionValues: ["20260801"], metricValues: [100] },
@@ -29,9 +29,25 @@ describe("getSessionsOverTime", () => {
 
     const result = await getSessionsOverTime(range);
 
-    expect(result).toEqual([
-      { date: "Aug 1", currentPeriod: 100, previousPeriod: 80 },
-    ]);
+    // range spans Aug 1-7 (current) / Jul 25-31 (previous), 7 days each —
+    // GA4 only returned one active day per period, the rest must be
+    // zero-filled rather than dropped.
+    expect(result).toHaveLength(7);
+    expect(result[0]).toEqual({
+      date: "Aug 1",
+      currentPeriod: 100,
+      previousPeriod: 80,
+    });
+    expect(result[1]).toEqual({
+      date: "Aug 2",
+      currentPeriod: 0,
+      previousPeriod: 0,
+    });
+    expect(result[6]).toEqual({
+      date: "Aug 7",
+      currentPeriod: 0,
+      previousPeriod: 0,
+    });
   });
 });
 
