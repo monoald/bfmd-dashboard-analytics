@@ -33,7 +33,7 @@ async function wcRequest(
   params: Record<string, string>,
 ): Promise<Response> {
   const { storeUrl, consumerKey, consumerSecret } = getCredentials();
-  const url = new URL(path, storeUrl);
+  const url = new URL(`/wp-json${path}`, storeUrl);
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
   }
