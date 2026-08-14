@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { resolveRangeSelection } from "@/lib/analytics/date-range";
 import type { DateRangeKey } from "@/lib/analytics/types";
@@ -47,9 +46,6 @@ export function DashboardDateFilter() {
         </button>
       ))}
       <CustomDateRangePicker />
-      <Link href="/admin/analytics/live" className={CHIP_CLASS}>
-        Live View
-      </Link>
     </div>
   );
 }

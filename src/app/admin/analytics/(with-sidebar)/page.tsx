@@ -44,30 +44,17 @@ export default async function AnalyticsPage({
   );
 
   return (
-    <div className="min-h-screen bg-(--analytics-bg) p-6 ">
+    <div className="p-6">
       <div className="md:w-[90%] mx-auto text-[13px] text-(--analytics-t1) space-y-3.5">
-        <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-(--analytics-accent) bg-(--analytics-accent-dim) text-[11px] font-extrabold tracking-[-0.5px] text-(--analytics-accent)">
-              BF
-            </div>
-            <div>
-              <div className="text-sm font-bold tracking-tight">Analytics</div>
-              <div className="text-[11px] text-(--analytics-t2)">
-                Black Forest Supplements
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <DashboardDateFilter />
-            <ThemeToggle />
-            <span
-              className={`${CHIP_CLASS} border-(--analytics-up) bg-(--analytics-up-dim) text-(--analytics-up)`}
-            >
-              <span className="h-1.5 w-1.5 rounded-full bg-(--analytics-up)" />
-              Live
-            </span>
-          </div>
+        <div className="flex items-center justify-end gap-1.5 border-b border-(--analytics-border) pb-4">
+          <DashboardDateFilter />
+          <ThemeToggle />
+          <span
+            className={`${CHIP_CLASS} border-(--analytics-up) bg-(--analytics-up-dim) text-(--analytics-up)`}
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-(--analytics-up)" />
+            Live
+          </span>
         </div>
 
         <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
