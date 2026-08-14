@@ -52,14 +52,25 @@ async function fetchCustomersWithPriorOrders(
   );
 }
 
-async function computeReturningRate(period: PeriodBounds): Promise<number> {
+async function computeCustomerSplit(
+  period: PeriodBounds,
+): Promise<{ new: number; returning: number }> {
   const activeIds = await fetchActiveCustomerIds(period);
-  if (activeIds.length === 0) return 0;
+  if (activeIds.length === 0) return { new: 0, returning: 0 };
   const returningIds = await fetchCustomersWithPriorOrders(
     activeIds,
     period.start,
   );
-  return Math.round((returningIds.size / activeIds.length) * 1000) / 10;
+  return {
+    new: activeIds.length - returningIds.size,
+    returning: returningIds.size,
+  };
+}
+
+async function computeReturningRate(period: PeriodBounds): Promise<number> {
+  const { new: newCount, returning } = await computeCustomerSplit(period);
+  const total = newCount + returning;
+  return total === 0 ? 0 : Math.round((returning / total) * 1000) / 10;
 }
 
 export async function getReturningCustomerRate(
@@ -72,5 +83,17 @@ export async function getReturningCustomerRate(
   // note on fetchFunnelCounts).
   const current = await computeReturningRate(range.current);
   const previous = await computeReturningRate(range.previous);
+  return { current, previous };
+}
+
+export async function getNewAndReturningCustomerCounts(
+  range: ResolvedDateRange,
+): Promise<{
+  current: { new: number; returning: number };
+  previous: { new: number; returning: number };
+}> {
+  // Sequential, not Promise.all — same reasoning as getReturningCustomerRate.
+  const current = await computeCustomerSplit(range.current);
+  const previous = await computeCustomerSplit(range.previous);
   return { current, previous };
 }
