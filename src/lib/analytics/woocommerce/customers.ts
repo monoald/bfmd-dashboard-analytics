@@ -97,3 +97,9 @@ export async function getNewAndReturningCustomerCounts(
   const previous = await computeCustomerSplit(range.previous);
   return { current, previous };
 }
+
+export async function getCurrentCustomerSplit(
+  period: PeriodBounds,
+): Promise<{ new: number; returning: number }> {
+  return computeCustomerSplit(period);
+}

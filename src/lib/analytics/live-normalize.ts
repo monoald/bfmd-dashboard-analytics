@@ -14,12 +14,7 @@ export interface RawLiveViewResults {
   sessionsOverTime: TimeSeriesData[] | Error;
   conversionFunnel: FunnelStep[] | Error;
   sessionsByLocation: NamedValue[] | Error;
-  newAndReturningCustomers:
-    | {
-        current: { new: number; returning: number };
-        previous: { new: number; returning: number };
-      }
-    | Error;
+  newAndReturningCustomers: { new: number; returning: number } | Error;
   salesByProduct: NamedValue[] | Error;
 }
 
@@ -86,7 +81,7 @@ export function buildLiveViewPayload(
   const newAndReturningCustomers = unwrap(
     "newVsReturning",
     raw.newAndReturningCustomers,
-    { current: { new: 0, returning: 0 }, previous: { new: 0, returning: 0 } },
+    { new: 0, returning: 0 },
   );
 
   const sessionsCurrentTotal = sessionsOverTime.reduce(
@@ -126,7 +121,7 @@ export function buildLiveViewPayload(
       raw.sessionsByLocation,
       [],
     ),
-    newVsReturning: newAndReturningCustomers.current,
+    newVsReturning: newAndReturningCustomers,
     salesByProduct: unwrap("salesByProduct", raw.salesByProduct, []),
     errors,
   };
