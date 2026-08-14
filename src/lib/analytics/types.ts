@@ -100,3 +100,26 @@ export interface DashboardPayload {
   };
   errors: Partial<Record<CardKey, string>>;
 }
+
+export type LiveCardKey =
+  | "totalSales"
+  | "sessions"
+  | "orders"
+  | "customerBehavior"
+  | "sessionsByLocation"
+  | "newVsReturning"
+  | "salesByProduct";
+
+export interface LiveViewPayload {
+  visitorsRightNow: number;
+  summaryCards: {
+    totalSales: ChangeMetric;
+    sessions: ChangeMetric;
+    orders: ChangeMetric;
+  };
+  customerBehavior: FunnelStep[];
+  sessionsByLocation: NamedValue[];
+  newVsReturning: { new: number; returning: number };
+  salesByProduct: NamedValue[];
+  errors: Partial<Record<LiveCardKey, string>>;
+}
