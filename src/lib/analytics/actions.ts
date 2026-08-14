@@ -6,7 +6,10 @@ import { buildMockDashboardPayload } from "./mock-data";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
 import { getRevenueStats } from "./woocommerce/revenue";
 import { getOrdersFulfilled } from "./woocommerce/orders";
-import { getReturningCustomerRate } from "./woocommerce/customers";
+import {
+  getReturningCustomerRate,
+  getNewAndReturningCustomerCounts,
+} from "./woocommerce/customers";
 import { getTopProductsByRevenue } from "./woocommerce/products";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
 import {
@@ -20,7 +23,13 @@ import {
   getConversionRateSummary,
 } from "./ga4/funnel";
 import { getSocialReferrerRevenue } from "./ga4/referrers";
-import type { DashboardPayload, DateRangeKey } from "./types";
+import { getLiveVisitorCount } from "./ga4/realtime";
+import {
+  buildLiveViewPayload,
+  type RawLiveViewResults,
+} from "./live-normalize";
+import { buildMockLiveViewPayload } from "./mock-data";
+import type { DashboardPayload, DateRangeKey, LiveViewPayload } from "./types";
 
 const cachedRevenueStats = withRangeCache(getRevenueStats, "wc-revenue-stats");
 const cachedOrdersFulfilled = withRangeCache(
@@ -150,4 +159,45 @@ export async function getDashboardData(
   };
 
   return buildDashboardPayload(raw);
+}
+
+export async function getLiveViewData(): Promise<LiveViewPayload> {
+  const range = resolveDateRange("today", new Date());
+
+  if (!hasRealCredentials()) {
+    return buildMockLiveViewPayload(range);
+  }
+
+  const [
+    visitorsRightNow,
+    revenueStats,
+    sessionsOverTime,
+    conversionFunnel,
+    sessionsByLocation,
+    newAndReturningCustomers,
+    salesByProduct,
+  ] = await Promise.all([
+    getLiveVisitorCount().catch(() => 0),
+    settle(getRevenueStats(range)),
+    settle(getSessionsOverTime(range)),
+    settle(getConversionFunnel(range)),
+    settle(getSessionsByLocation(range)),
+    settle(getNewAndReturningCustomerCounts(range)),
+    settle(getTopProductsByRevenue(range)),
+  ]);
+
+  const raw: RawLiveViewResults = {
+    revenueStats,
+    sessionsOverTime,
+    conversionFunnel,
+    sessionsByLocation,
+    newAndReturningCustomers,
+    salesByProduct,
+  };
+
+  return buildLiveViewPayload(raw, visitorsRightNow);
+}
+
+export async function fetchLiveVisitorCount(): Promise<number> {
+  return getLiveVisitorCount();
 }
