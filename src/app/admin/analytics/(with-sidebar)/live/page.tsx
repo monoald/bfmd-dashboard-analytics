@@ -18,19 +18,14 @@ export default async function LiveViewPage() {
   const data = await getLiveViewData();
 
   return (
-    <div className="min-h-screen bg-(--analytics-bg) p-6">
+    <div className="p-6">
       <LiveViewAutoRefresh intervalMs={REFRESH_INTERVAL_MS} />
       <div className="md:w-[90%] mx-auto text-[13px] text-(--analytics-t1) space-y-3.5">
         <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-(--analytics-accent) bg-(--analytics-accent-dim) text-[11px] font-extrabold tracking-[-0.5px] text-(--analytics-accent)">
-              BF
-            </div>
-            <div>
-              <div className="text-sm font-bold tracking-tight">Live View</div>
-              <div className="text-[11px] text-(--analytics-t2)">
-                Black Forest Supplements — since midnight
-              </div>
+          <div>
+            <div className="text-sm font-bold tracking-tight">Live View</div>
+            <div className="text-[11px] text-(--analytics-t2)">
+              Black Forest Supplements — since midnight
             </div>
           </div>
           <div className="flex items-center gap-1.5">
