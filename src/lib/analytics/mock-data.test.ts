@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildMockDashboardPayload } from "./mock-data";
+import {
+  buildMockDashboardPayload,
+  buildMockLiveViewPayload,
+} from "./mock-data";
 import { resolveDateRange } from "./date-range";
 
 const NOW = new Date(2026, 7, 7, 12, 0, 0);
@@ -139,5 +142,28 @@ describe("buildMockDashboardPayload", () => {
     // can shift it by one or two).
     expect(payload.charts.salesOverTime.length).toBeGreaterThan(45);
     expect(payload.charts.salesOverTime.length).toBeLessThan(60);
+  });
+});
+
+describe("buildMockLiveViewPayload", () => {
+  it("produces a fully-populated LiveViewPayload with no errors", () => {
+    const range = resolveDateRange("today", NOW);
+    const payload = buildMockLiveViewPayload(range);
+
+    expect(payload.errors).toEqual({});
+    expect(payload.visitorsRightNow).toBeGreaterThan(0);
+    expect(payload.summaryCards.totalSales.sparkline).toHaveLength(24);
+    expect(payload.summaryCards.sessions.sparkline).toHaveLength(24);
+    expect(payload.summaryCards.orders.sparkline).toHaveLength(24);
+    expect(payload.customerBehavior).toHaveLength(3);
+    expect(payload.customerBehavior.map((step) => step.step)).toEqual([
+      "Active carts",
+      "Checking out",
+      "Purchased",
+    ]);
+    expect(payload.sessionsByLocation.length).toBeGreaterThan(0);
+    expect(payload.newVsReturning.new).toBeGreaterThanOrEqual(0);
+    expect(payload.newVsReturning.returning).toBeGreaterThanOrEqual(0);
+    expect(payload.salesByProduct.length).toBeGreaterThan(0);
   });
 });

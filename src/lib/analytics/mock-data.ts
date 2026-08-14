@@ -1,6 +1,7 @@
 import { computeChange } from "./normalize";
 import type {
   DashboardPayload,
+  LiveViewPayload,
   ResolvedDateRange,
   TimeSeriesData,
 } from "./types";
@@ -339,6 +340,99 @@ export function buildMockDashboardPayload(
         },
       ],
     },
+    errors: {},
+  };
+}
+
+export function buildMockLiveViewPayload(
+  range: ResolvedDateRange,
+): LiveViewPayload {
+  const labels = bucketLabels(range);
+  const salesOverTime = buildSeries(labels, 2200, 2200 * 0.45, 0.87);
+  const sessionsOverTime = buildSeries(labels, 220, 220 * 0.5, 0.82);
+  const ordersSeries = buildSeries(labels, 5.5, 5.5 * 0.4, 0.85);
+
+  const totalSalesCurrent = sum(salesOverTime, "currentPeriod");
+  const totalSalesPrevious = sum(salesOverTime, "previousPeriod");
+  const sessionsCurrent = sum(sessionsOverTime, "currentPeriod");
+  const sessionsPrevious = sum(sessionsOverTime, "previousPeriod");
+  const ordersCurrent = Math.round(sum(ordersSeries, "currentPeriod"));
+  const ordersPrevious = Math.round(sum(ordersSeries, "previousPeriod"));
+
+  return {
+    visitorsRightNow: 8,
+    summaryCards: {
+      totalSales: {
+        ...computeChange(
+          Math.round(totalSalesCurrent),
+          Math.round(totalSalesPrevious),
+        ),
+        sparkline: salesOverTime.map((point) => point.currentPeriod),
+      },
+      sessions: {
+        ...computeChange(
+          Math.round(sessionsCurrent),
+          Math.round(sessionsPrevious),
+        ),
+        sparkline: sessionsOverTime.map((point) => point.currentPeriod),
+      },
+      orders: {
+        ...computeChange(ordersCurrent, ordersPrevious),
+        sparkline: ordersSeries.map((point) => point.currentPeriod),
+      },
+    },
+    customerBehavior: [
+      {
+        step: "Active carts",
+        sessions: Math.round(sessionsCurrent * 0.26),
+        percentage: 26,
+        previousSessions: Math.round(sessionsPrevious * 0.285),
+      },
+      {
+        step: "Checking out",
+        sessions: Math.round(sessionsCurrent * 0.28),
+        percentage: 28,
+        previousSessions: Math.round(sessionsPrevious * 0.31),
+      },
+      {
+        step: "Purchased",
+        sessions: Math.round(sessionsCurrent * 0.1),
+        percentage: 10,
+        previousSessions: Math.round(sessionsPrevious * 0.082),
+      },
+    ],
+    sessionsByLocation: [
+      {
+        name: "United States · Florida · Miami",
+        value: Math.round(sessionsCurrent * 0.06),
+      },
+      {
+        name: "United States · Illinois · Chicago",
+        value: Math.round(sessionsCurrent * 0.055),
+      },
+      {
+        name: "United States · Georgia · Atlanta",
+        value: Math.round(sessionsCurrent * 0.05),
+      },
+    ],
+    newVsReturning: {
+      new: Math.round(sessionsCurrent * 0.42),
+      returning: Math.round(sessionsCurrent * 0.31),
+    },
+    salesByProduct: [
+      {
+        name: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",
+        value: Math.round(totalSalesCurrent * 0.316),
+      },
+      {
+        name: "Magnesium Sleep Aid 1695 MG | Melatonin-Free",
+        value: Math.round(totalSalesCurrent * 0.069),
+      },
+      {
+        name: "The Nattokinase 4-in-1 Cardio Complex 10,800 FU",
+        value: Math.round(totalSalesCurrent * 0.048),
+      },
+    ],
     errors: {},
   };
 }
