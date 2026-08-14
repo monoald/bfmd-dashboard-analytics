@@ -68,6 +68,29 @@ export async function runGa4Report(
   }));
 }
 
+export interface Ga4RealtimeReportParams {
+  metrics: string[];
+}
+
+export async function runGa4RealtimeReport(
+  params: Ga4RealtimeReportParams,
+): Promise<Ga4ReportRow[]> {
+  const propertyId = process.env.GA4_PROPERTY_ID;
+  if (!propertyId) {
+    throw new Error("Missing GA4 environment variable GA4_PROPERTY_ID");
+  }
+
+  const [response] = await getClient().runRealtimeReport({
+    property: `properties/${propertyId}`,
+    metrics: params.metrics.map((name) => ({ name })),
+  });
+
+  return (response.rows ?? []).map((row) => ({
+    dimensionValues: (row.dimensionValues ?? []).map((d) => d.value ?? ""),
+    metricValues: (row.metricValues ?? []).map((m) => Number(m.value ?? 0)),
+  }));
+}
+
 export function resetGa4ClientForTests(): void {
   client = null;
 }
