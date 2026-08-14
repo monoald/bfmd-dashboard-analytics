@@ -8,7 +8,9 @@ vi.mock("./woocommerce/revenue", () => ({ getRevenueStats: vi.fn() }));
 vi.mock("./woocommerce/orders", () => ({ getOrdersFulfilled: vi.fn() }));
 vi.mock("./woocommerce/customers", () => ({
   getReturningCustomerRate: vi.fn(),
+  getNewAndReturningCustomerCounts: vi.fn(),
 }));
+vi.mock("./ga4/realtime", () => ({ getLiveVisitorCount: vi.fn() }));
 vi.mock("./woocommerce/products", () => ({ getTopProductsByRevenue: vi.fn() }));
 vi.mock("./woocommerce/sales-channel", () => ({ getSalesByChannel: vi.fn() }));
 vi.mock("./ga4/sessions", () => ({
@@ -23,7 +25,11 @@ vi.mock("./ga4/funnel", () => ({
 }));
 vi.mock("./ga4/referrers", () => ({ getSocialReferrerRevenue: vi.fn() }));
 
-import { getReturningCustomerRate } from "./woocommerce/customers";
+import {
+  getReturningCustomerRate,
+  getNewAndReturningCustomerCounts,
+} from "./woocommerce/customers";
+import { getLiveVisitorCount } from "./ga4/realtime";
 import {
   getConversionFunnel,
   getConversionRateOverTime,
@@ -39,7 +45,11 @@ import {
   getSessionsOverTime,
 } from "./ga4/sessions";
 import { getRevenueStats } from "./woocommerce/revenue";
-import { getDashboardData } from "./actions";
+import {
+  getDashboardData,
+  getLiveViewData,
+  fetchLiveVisitorCount,
+} from "./actions";
 
 const revenueStatsResult = {
   current: {
@@ -79,6 +89,10 @@ function mockHappyPath() {
     current: 50,
     previous: 40,
   });
+  vi.mocked(getNewAndReturningCustomerCounts).mockResolvedValue({
+    current: { new: 3, returning: 2 },
+    previous: { new: 1, returning: 1 },
+  });
   vi.mocked(getTopProductsByRevenue).mockResolvedValue([]);
   vi.mocked(getSalesByChannel).mockResolvedValue([]);
   vi.mocked(getSessionsOverTime).mockResolvedValue([]);
@@ -92,6 +106,7 @@ function mockHappyPath() {
     trend: "up",
   });
   vi.mocked(getSocialReferrerRevenue).mockResolvedValue([]);
+  vi.mocked(getLiveVisitorCount).mockResolvedValue(7);
 }
 
 function stubRealCredentials() {
@@ -180,5 +195,68 @@ describe("getDashboardData", () => {
     expect(getRevenueStats).toHaveBeenCalledWith(
       expect.objectContaining({ key: "custom", interval: "day" }),
     );
+  });
+});
+
+describe("getLiveViewData", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("returns mock data when real credentials are not configured", async () => {
+    vi.unstubAllEnvs();
+    mockHappyPath();
+
+    const payload = await getLiveViewData();
+
+    expect(payload.errors).toEqual({});
+    expect(payload.summaryCards.totalSales.sparkline).toHaveLength(24);
+  });
+
+  it("assembles a full LiveViewPayload from real fetchers when credentials are configured", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+
+    const payload = await getLiveViewData();
+
+    expect(payload.errors).toEqual({});
+    expect(payload.visitorsRightNow).toBe(7);
+    expect(payload.newVsReturning).toEqual({ new: 3, returning: 2 });
+  });
+
+  it("isolates a single fetcher rejection to its card without throwing", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getSessionsByLocation).mockRejectedValue(
+      new Error("GA4 quota exceeded"),
+    );
+
+    const payload = await getLiveViewData();
+
+    expect(payload.errors.sessionsByLocation).toBe(
+      "Unable to load data for this card. Please try again later.",
+    );
+    expect(payload.summaryCards.totalSales.value).toBe(100);
+  });
+
+  it("falls back to a visitor count of 0, without an error, when the realtime fetch fails", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getLiveVisitorCount).mockRejectedValue(new Error("GA4 down"));
+
+    const payload = await getLiveViewData();
+
+    expect(payload.visitorsRightNow).toBe(0);
+    expect(payload.errors).toEqual({});
+  });
+});
+
+describe("fetchLiveVisitorCount", () => {
+  it("delegates to getLiveVisitorCount", async () => {
+    vi.mocked(getLiveVisitorCount).mockResolvedValueOnce(15);
+
+    const result = await fetchLiveVisitorCount();
+
+    expect(result).toBe(15);
   });
 });
