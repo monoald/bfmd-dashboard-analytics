@@ -1,0 +1,19 @@
+"use client";
+
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+export interface LiveViewAutoRefreshProps {
+  intervalMs: number;
+}
+
+export function LiveViewAutoRefresh({ intervalMs }: LiveViewAutoRefreshProps) {
+  const router = useRouter();
+
+  useEffect(() => {
+    const interval = setInterval(() => router.refresh(), intervalMs);
+    return () => clearInterval(interval);
+  }, [router, intervalMs]);
+
+  return null;
+}
