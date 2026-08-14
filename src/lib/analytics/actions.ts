@@ -2,13 +2,12 @@
 
 import { withFixedCache, withRangeCache } from "./cache";
 import { resolveCustomRange, resolveDateRange } from "./date-range";
-import { buildMockDashboardPayload } from "./mock-data";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
 import { getRevenueStats } from "./woocommerce/revenue";
 import { getOrdersFulfilled } from "./woocommerce/orders";
 import {
   getReturningCustomerRate,
-  getNewAndReturningCustomerCounts,
+  getCurrentCustomerSplit,
 } from "./woocommerce/customers";
 import { getTopProductsByRevenue } from "./woocommerce/products";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
@@ -28,7 +27,10 @@ import {
   buildLiveViewPayload,
   type RawLiveViewResults,
 } from "./live-normalize";
-import { buildMockLiveViewPayload } from "./mock-data";
+import {
+  buildMockDashboardPayload,
+  buildMockLiveViewPayload,
+} from "./mock-data";
 import type { DashboardPayload, DateRangeKey, LiveViewPayload } from "./types";
 
 const cachedRevenueStats = withRangeCache(getRevenueStats, "wc-revenue-stats");
@@ -177,12 +179,15 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
     newAndReturningCustomers,
     salesByProduct,
   ] = await Promise.all([
-    getLiveVisitorCount().catch(() => 0),
+    getLiveVisitorCount().catch((error) => {
+      console.error("Live visitor count fetch failed:", error);
+      return 0;
+    }),
     settle(getRevenueStats(range)),
     settle(getSessionsOverTime(range)),
     settle(getConversionFunnel(range)),
     settle(getSessionsByLocation(range)),
-    settle(getNewAndReturningCustomerCounts(range)),
+    settle(getCurrentCustomerSplit(range.current)),
     settle(getTopProductsByRevenue(range)),
   ]);
 
@@ -199,5 +204,6 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
 }
 
 export async function fetchLiveVisitorCount(): Promise<number> {
+  if (!hasRealCredentials()) return 8;
   return getLiveVisitorCount();
 }

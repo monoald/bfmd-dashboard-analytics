@@ -74,10 +74,7 @@ function happyPathRaw(): RawLiveViewResults {
       },
     ],
     sessionsByLocation: [{ name: "United States · Florida · Miami", value: 5 }],
-    newAndReturningCustomers: {
-      current: { new: 3, returning: 2 },
-      previous: { new: 1, returning: 1 },
-    },
+    newAndReturningCustomers: { new: 3, returning: 2 },
     salesByProduct: [{ name: "Widget", value: 95 }],
   };
 }

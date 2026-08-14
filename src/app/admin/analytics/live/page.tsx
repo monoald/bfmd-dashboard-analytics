@@ -10,6 +10,8 @@ import { CardError } from "@/components/analytics/CardError";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { CHIP_CLASS } from "@/components/analytics/theme";
 
+export const dynamic = "force-dynamic";
+
 const REFRESH_INTERVAL_MS = 60_000;
 
 export default async function LiveViewPage() {

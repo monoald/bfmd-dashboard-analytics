@@ -8,7 +8,7 @@ vi.mock("./woocommerce/revenue", () => ({ getRevenueStats: vi.fn() }));
 vi.mock("./woocommerce/orders", () => ({ getOrdersFulfilled: vi.fn() }));
 vi.mock("./woocommerce/customers", () => ({
   getReturningCustomerRate: vi.fn(),
-  getNewAndReturningCustomerCounts: vi.fn(),
+  getCurrentCustomerSplit: vi.fn(),
 }));
 vi.mock("./ga4/realtime", () => ({ getLiveVisitorCount: vi.fn() }));
 vi.mock("./woocommerce/products", () => ({ getTopProductsByRevenue: vi.fn() }));
@@ -27,7 +27,7 @@ vi.mock("./ga4/referrers", () => ({ getSocialReferrerRevenue: vi.fn() }));
 
 import {
   getReturningCustomerRate,
-  getNewAndReturningCustomerCounts,
+  getCurrentCustomerSplit,
 } from "./woocommerce/customers";
 import { getLiveVisitorCount } from "./ga4/realtime";
 import {
@@ -89,9 +89,9 @@ function mockHappyPath() {
     current: 50,
     previous: 40,
   });
-  vi.mocked(getNewAndReturningCustomerCounts).mockResolvedValue({
-    current: { new: 3, returning: 2 },
-    previous: { new: 1, returning: 1 },
+  vi.mocked(getCurrentCustomerSplit).mockResolvedValue({
+    new: 3,
+    returning: 2,
   });
   vi.mocked(getTopProductsByRevenue).mockResolvedValue([]);
   vi.mocked(getSalesByChannel).mockResolvedValue([]);
@@ -252,11 +252,26 @@ describe("getLiveViewData", () => {
 });
 
 describe("fetchLiveVisitorCount", () => {
-  it("delegates to getLiveVisitorCount", async () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("delegates to getLiveVisitorCount when real credentials are configured", async () => {
+    stubRealCredentials();
     vi.mocked(getLiveVisitorCount).mockResolvedValueOnce(15);
 
     const result = await fetchLiveVisitorCount();
 
     expect(result).toBe(15);
+  });
+
+  it("returns the mock visitor count without calling getLiveVisitorCount when credentials are missing", async () => {
+    vi.unstubAllEnvs();
+    const callsBefore = vi.mocked(getLiveVisitorCount).mock.calls.length;
+
+    const result = await fetchLiveVisitorCount();
+
+    expect(result).toBe(8);
+    expect(getLiveVisitorCount).toHaveBeenCalledTimes(callsBefore);
   });
 });
