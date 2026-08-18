@@ -1,5 +1,6 @@
 "use server";
 
+import { requireSession } from "@/lib/auth/require-session";
 import { withFixedCache, withRangeCache } from "./cache";
 import { resolveCustomRange, resolveDateRange } from "./date-range";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
@@ -106,6 +107,8 @@ export async function getDashboardData(
   rangeKey: DateRangeKey,
   customRange?: { start: Date; end: Date },
 ): Promise<DashboardPayload> {
+  await requireSession();
+
   const range =
     rangeKey === "custom"
       ? customRange
@@ -164,6 +167,8 @@ export async function getDashboardData(
 }
 
 export async function getLiveViewData(): Promise<LiveViewPayload> {
+  await requireSession();
+
   const range = resolveDateRange("today", new Date());
 
   if (!hasRealCredentials()) {
@@ -204,6 +209,7 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
 }
 
 export async function fetchLiveVisitorCount(): Promise<number> {
+  await requireSession();
   if (!hasRealCredentials()) return 8;
   return getLiveVisitorCount();
 }

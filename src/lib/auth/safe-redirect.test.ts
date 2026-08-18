@@ -24,6 +24,10 @@ describe("resolveSafeNextPath", () => {
     expect(resolveSafeNextPath("//evil.example.com")).toBe("/");
   });
 
+  it("falls back to / for a backslash-based protocol-relative bypass", () => {
+    expect(resolveSafeNextPath("/\\evil.example.com")).toBe("/");
+  });
+
   it("falls back to / for an absolute URL", () => {
     expect(resolveSafeNextPath("https://evil.example.com")).toBe("/");
   });
