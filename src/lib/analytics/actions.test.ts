@@ -1,5 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+vi.mock("@/lib/auth/require-session", () => ({
+  requireSession: vi.fn().mockResolvedValue({ role: "admin" }),
+}));
 vi.mock("./cache", () => ({
   withRangeCache: (fn: unknown) => fn,
   withFixedCache: (fn: unknown) => fn,
