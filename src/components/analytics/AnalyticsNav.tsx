@@ -9,8 +9,8 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/admin/analytics", label: "Dashboard" },
-  { href: "/admin/analytics/live", label: "Live View" },
+  { href: "/", label: "Dashboard" },
+  { href: "/live", label: "Live View" },
 ];
 
 export function AnalyticsNav() {

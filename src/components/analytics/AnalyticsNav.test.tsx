@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-let mockPathname = "/admin/analytics";
+let mockPathname = "/";
 
 vi.mock("next/navigation", () => ({
   usePathname: () => mockPathname,
@@ -10,8 +10,8 @@ vi.mock("next/navigation", () => ({
 import { AnalyticsNav } from "./AnalyticsNav";
 
 describe("AnalyticsNav", () => {
-  it("highlights 'Dashboard' as active when on /admin/analytics", () => {
-    mockPathname = "/admin/analytics";
+  it("highlights 'Dashboard' as active when on /", () => {
+    mockPathname = "/";
     render(<AnalyticsNav />);
 
     const dashboardLink = screen.getByText("Dashboard");
@@ -21,8 +21,8 @@ describe("AnalyticsNav", () => {
     expect(liveViewLink).not.toHaveClass("bg-(--analytics-accent-dim)");
   });
 
-  it("highlights 'Live View' as active when on /admin/analytics/live", () => {
-    mockPathname = "/admin/analytics/live";
+  it("highlights 'Live View' as active when on /live", () => {
+    mockPathname = "/live";
     render(<AnalyticsNav />);
 
     const dashboardLink = screen.getByText("Dashboard");
@@ -33,16 +33,10 @@ describe("AnalyticsNav", () => {
   });
 
   it("renders both links pointing to their correct routes", () => {
-    mockPathname = "/admin/analytics";
+    mockPathname = "/";
     render(<AnalyticsNav />);
 
-    expect(screen.getByText("Dashboard")).toHaveAttribute(
-      "href",
-      "/admin/analytics",
-    );
-    expect(screen.getByText("Live View")).toHaveAttribute(
-      "href",
-      "/admin/analytics/live",
-    );
+    expect(screen.getByText("Dashboard")).toHaveAttribute("href", "/");
+    expect(screen.getByText("Live View")).toHaveAttribute("href", "/live");
   });
 });
