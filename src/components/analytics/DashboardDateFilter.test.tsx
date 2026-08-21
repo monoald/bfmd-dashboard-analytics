@@ -17,9 +17,13 @@ describe("DashboardDateFilter", () => {
     render(<DashboardDateFilter />);
 
     const todayButton = screen.getByText("Today");
-    expect(todayButton).toHaveClass("border-(--analytics-accent)");
+    expect(todayButton).toHaveClass("!bg-(--analytics-accent)");
+    expect(todayButton).toHaveAttribute("aria-pressed", "true");
 
-    fireEvent.click(screen.getByText("Last 7 Days"));
+    const sevenDayButton = screen.getByText("Last 7 Days");
+    expect(sevenDayButton).toHaveAttribute("aria-pressed", "false");
+
+    fireEvent.click(sevenDayButton);
 
     expect(pushMock).toHaveBeenCalledWith("?range=7d");
   });
@@ -31,6 +35,6 @@ describe("DashboardDateFilter", () => {
     render(<DashboardDateFilter />);
 
     const todayButton = screen.getByText("Today");
-    expect(todayButton).toHaveClass("border-(--analytics-accent)");
+    expect(todayButton).toHaveClass("!bg-(--analytics-accent)");
   });
 });
