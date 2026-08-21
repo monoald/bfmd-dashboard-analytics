@@ -6,6 +6,7 @@ vi.mock("@/lib/auth/require-session", () => ({
 vi.mock("./cache", () => ({
   withRangeCache: (fn: unknown) => fn,
   withFixedCache: (fn: unknown) => fn,
+  withCache: (fn: unknown) => fn,
 }));
 vi.mock("./woocommerce/revenue", () => ({ getRevenueStats: vi.fn() }));
 vi.mock("./woocommerce/orders", () => ({ getOrdersFulfilled: vi.fn() }));

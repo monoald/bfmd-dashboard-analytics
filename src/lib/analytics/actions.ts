@@ -1,7 +1,7 @@
 "use server";
 
 import { requireSession } from "@/lib/auth/require-session";
-import { withFixedCache, withRangeCache } from "./cache";
+import { withCache, withFixedCache, withRangeCache } from "./cache";
 import { resolveCustomRange, resolveDateRange } from "./date-range";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
 import { getRevenueStats } from "./woocommerce/revenue";
@@ -79,6 +79,43 @@ const cachedConversionRateSummary = withRangeCache(
 const cachedSocialReferrerRevenue = withRangeCache(
   getSocialReferrerRevenue,
   "ga4-social-referrer-revenue",
+);
+
+// The live view polls itself via router.refresh() every 60s (see
+// LiveViewAutoRefresh); without this, every refresh re-issued all 6 of these
+// as fresh WC/GA4 calls, and any concurrent viewer multiplied that further.
+// A short cache keeps the view reasonably live while absorbing repeat
+// refreshes and simultaneous viewers into a shared fetch.
+const LIVE_VIEW_REVALIDATE_SECONDS = 45;
+const liveCachedRevenueStats = withCache(
+  getRevenueStats,
+  ["live-revenue-stats"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
+);
+const liveCachedSessionsOverTime = withCache(
+  getSessionsOverTime,
+  ["live-sessions-over-time"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
+);
+const liveCachedConversionFunnel = withCache(
+  getConversionFunnel,
+  ["live-conversion-funnel"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
+);
+const liveCachedSessionsByLocation = withCache(
+  getSessionsByLocation,
+  ["live-sessions-by-location"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
+);
+const liveCachedCustomerSplit = withCache(
+  getCurrentCustomerSplit,
+  ["live-customer-split"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
+);
+const liveCachedTopProducts = withCache(
+  getTopProductsByRevenue,
+  ["live-top-products"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
 );
 
 async function settle<T>(promise: Promise<T>): Promise<T | Error> {
@@ -188,12 +225,12 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
       console.error("Live visitor count fetch failed:", error);
       return 0;
     }),
-    settle(getRevenueStats(range)),
-    settle(getSessionsOverTime(range)),
-    settle(getConversionFunnel(range)),
-    settle(getSessionsByLocation(range)),
-    settle(getCurrentCustomerSplit(range.current)),
-    settle(getTopProductsByRevenue(range)),
+    settle(liveCachedRevenueStats(range)),
+    settle(liveCachedSessionsOverTime(range)),
+    settle(liveCachedConversionFunnel(range)),
+    settle(liveCachedSessionsByLocation(range)),
+    settle(liveCachedCustomerSplit(range.current)),
+    settle(liveCachedTopProducts(range)),
   ]);
 
   const raw: RawLiveViewResults = {
