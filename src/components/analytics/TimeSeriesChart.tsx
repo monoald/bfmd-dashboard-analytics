@@ -227,8 +227,8 @@ export function TimeSeriesChart({
               tick={{ fontSize: isHero ? 11 : 10, fill: "var(--analytics-t2)" }}
               stroke="var(--analytics-border)"
               tickLine={false}
-              interval={isHero ? 0 : "preserveStartEnd"}
-              minTickGap={isHero ? 5 : 20}
+              interval="preserveStartEnd"
+              minTickGap={isHero ? 40 : 20}
             />
             <YAxis
               tickFormatter={format}
