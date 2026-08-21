@@ -6,7 +6,7 @@ vi.mock("next/cache", () => ({
 }));
 
 import { unstable_cache } from "next/cache";
-import { withFixedCache, withRangeCache } from "./cache";
+import { withCache, withFixedCache, withRangeCache } from "./cache";
 
 const todayRange: ResolvedDateRange = {
   key: "today",
@@ -54,5 +54,27 @@ describe("withFixedCache", () => {
     expect(unstable_cache).toHaveBeenCalledWith(fn, ["fixed-prefix"], {
       revalidate: 14400,
     });
+  });
+});
+
+describe("withCache", () => {
+  it("wraps a function of any argument shape with the given key parts and revalidate time", () => {
+    const fn = vi.fn().mockResolvedValue("result");
+    withCache(fn, ["custom-prefix", "extra-key"], 45);
+
+    expect(unstable_cache).toHaveBeenCalledWith(
+      fn,
+      ["custom-prefix", "extra-key"],
+      { revalidate: 45 },
+    );
+  });
+
+  it("forwards call arguments to the underlying function", async () => {
+    const fn = vi.fn().mockResolvedValue("result");
+    const cached = withCache(fn, ["custom-prefix"], 45);
+
+    await cached("a", 1);
+
+    expect(fn).toHaveBeenCalledWith("a", 1);
   });
 });

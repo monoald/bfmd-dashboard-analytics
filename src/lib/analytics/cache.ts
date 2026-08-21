@@ -22,3 +22,11 @@ export function withFixedCache<T>(
 ): (range: ResolvedDateRange) => Promise<T> {
   return unstable_cache(fn, [keyPrefix], { revalidate: revalidateSeconds });
 }
+
+export function withCache<Args extends unknown[], T>(
+  fn: (...args: Args) => Promise<T>,
+  keyParts: string[],
+  revalidateSeconds: number,
+): (...args: Args) => Promise<T> {
+  return unstable_cache(fn, keyParts, { revalidate: revalidateSeconds });
+}

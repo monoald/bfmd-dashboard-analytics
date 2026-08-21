@@ -10,8 +10,6 @@ export const metadata: Metadata = {
   description: "WooCommerce + GA4 analytics dashboard",
 };
 
-// Runs before hydration so the correct theme applies on first paint instead
-// of flashing light-then-dark. Mirrors what ThemeToggle writes/reads.
 const THEME_INIT_SCRIPT = `
 (function () {
   try {

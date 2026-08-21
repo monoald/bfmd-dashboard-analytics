@@ -20,8 +20,6 @@ import { RankedList } from "@/components/analytics/RankedList";
 import { CardError } from "@/components/analytics/CardError";
 import { CHIP_CLASS } from "@/components/analytics/theme";
 
-// On hold until we implement a correct data source for it — hidden from the
-// dashboard for now, not removed.
 const SHOW_SALES_BY_CHANNEL = false;
 
 export default async function AnalyticsPage({
