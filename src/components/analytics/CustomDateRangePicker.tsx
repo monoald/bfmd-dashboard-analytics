@@ -10,7 +10,7 @@ import {
   resolveRangeSelection,
 } from "@/lib/analytics/date-range";
 import type { DateRangeKey } from "@/lib/analytics/types";
-import { CHIP_CLASS } from "./theme";
+import { CHIP_ACTIVE_CLASS, CHIP_CLASS } from "./theme";
 
 interface NamedPreset {
   key: DateRangeKey;
@@ -134,11 +134,8 @@ export function CustomDateRangePicker() {
   return (
     <Popover.Root open={open} onOpenChange={handleOpenChange}>
       <Popover.Trigger
-        className={`${CHIP_CLASS} cursor-pointer ${
-          isActive
-            ? "border-(--analytics-accent) bg-(--analytics-accent-dim) text-(--analytics-accent)"
-            : ""
-        }`}
+        aria-pressed={isActive}
+        className={`${CHIP_CLASS} cursor-pointer ${isActive ? CHIP_ACTIVE_CLASS : ""}`}
       >
         {triggerLabel}
       </Popover.Trigger>
@@ -151,10 +148,11 @@ export function CustomDateRangePicker() {
                   <button
                     type="button"
                     onClick={() => handlePresetClick(preset.key)}
-                    className={`w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left text-[12px] hover:bg-(--analytics-accent-dim) ${
+                    aria-pressed={rangeKey === preset.key}
+                    className={`w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left text-[12px] ${
                       rangeKey === preset.key
-                        ? "bg-(--analytics-accent-dim) text-(--analytics-accent)"
-                        : "text-(--analytics-t2)"
+                        ? "bg-(--analytics-accent) font-semibold text-white"
+                        : "text-(--analytics-t2) hover:bg-(--analytics-accent-dim)"
                     }`}
                   >
                     {preset.label}
@@ -165,10 +163,11 @@ export function CustomDateRangePicker() {
                 <button
                   type="button"
                   onClick={() => setShowCalendar(true)}
-                  className={`w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left text-[12px] hover:bg-(--analytics-accent-dim) ${
+                  aria-pressed={showCalendar || rangeKey === "custom"}
+                  className={`w-full cursor-pointer rounded-md px-2.5 py-1.5 text-left text-[12px] ${
                     showCalendar || rangeKey === "custom"
-                      ? "bg-(--analytics-accent-dim) text-(--analytics-accent)"
-                      : "text-(--analytics-t2)"
+                      ? "bg-(--analytics-accent) font-semibold text-white"
+                      : "text-(--analytics-t2) hover:bg-(--analytics-accent-dim)"
                   }`}
                 >
                   Custom range

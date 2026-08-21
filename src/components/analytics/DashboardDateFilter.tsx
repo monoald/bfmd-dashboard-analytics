@@ -4,7 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { resolveRangeSelection } from "@/lib/analytics/date-range";
 import type { DateRangeKey } from "@/lib/analytics/types";
 import { CustomDateRangePicker } from "./CustomDateRangePicker";
-import { CHIP_CLASS } from "./theme";
+import { CHIP_ACTIVE_CLASS, CHIP_CLASS } from "./theme";
 
 const OPTIONS: { key: DateRangeKey; label: string }[] = [
   { key: "today", label: "Today" },
@@ -36,10 +36,9 @@ export function DashboardDateFilter() {
           key={option.key}
           type="button"
           onClick={() => handleSelect(option.key)}
+          aria-pressed={activeRange === option.key}
           className={`${CHIP_CLASS} cursor-pointer ${
-            activeRange === option.key
-              ? "border-(--analytics-accent) bg-(--analytics-accent-dim) text-(--analytics-accent)"
-              : ""
+            activeRange === option.key ? CHIP_ACTIVE_CLASS : ""
           }`}
         >
           {option.label}
