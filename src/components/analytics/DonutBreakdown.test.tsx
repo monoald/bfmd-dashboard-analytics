@@ -82,7 +82,6 @@ describe("DonutBreakdown", () => {
 
     expect(screen.getByText("$800.00")).toBeInTheDocument();
     expect(screen.getByText("$200.00")).toBeInTheDocument();
-    // total: (1000-900)/900*100 = 11.1%; Buy Button row: (200-100)/100*100 = 100%
     expect(screen.getByText(/11\.1%/)).toBeInTheDocument();
     expect(screen.getByText(/100%/)).toBeInTheDocument();
   });

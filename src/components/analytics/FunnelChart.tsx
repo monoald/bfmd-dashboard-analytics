@@ -18,15 +18,11 @@ export interface FunnelChartProps {
   title: string;
   steps: FunnelStep[];
   headline?: FunnelHeadline;
-  // Overrides the default chart height (130) — for contexts like a
-  // standalone report page where the chart has room to be larger.
   height?: number;
 }
 
 const CHART_WIDTH = 400;
 const DEFAULT_CHART_HEIGHT = 130;
-// Portion of each column's width spent on the sloped connector to its
-// neighbor, rather than the flat "plateau" aligned under its label.
 const RAMP_FRACTION = 0.22;
 
 function stepHeight(step: FunnelStep, chartHeight: number): number {

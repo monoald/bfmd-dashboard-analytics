@@ -18,9 +18,6 @@ export function LiveVisitorsTile({ initialCount }: LiveVisitorsTileProps) {
       fetchLiveVisitorCount()
         .then(setCount)
         .catch(() => {
-          // Silent: a single missed poll keeps the last known count and
-          // retries on the next tick rather than surfacing an error for a
-          // value that self-corrects within POLL_INTERVAL_MS.
         });
     }, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
