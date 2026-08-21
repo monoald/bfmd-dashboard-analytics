@@ -25,13 +25,7 @@ const VALUE_FORMATTERS: Record<DonutValueFormat, (value: number) => string> = {
 export interface DonutBreakdownProps {
   title: string;
   data: NamedValue[];
-  // A serializable format key rather than a function prop: Server Components
-  // (this chart is rendered from one) can't pass plain functions to Client
-  // Components across the RSC boundary.
   formatValue?: DonutValueFormat;
-  // Overrides the default donut size (140px) — for contexts like a
-  // standalone report page where the chart has room to be larger. Inner/
-  // outer radius and the center label scale proportionally.
   size?: number;
 }
 

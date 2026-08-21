@@ -6,11 +6,6 @@ export interface RankedListProps {
   title: string;
   items: NamedValue[];
   formatValue?: (value: number) => string;
-  // "ranked" (default): a proportional bar under each item, for top-N lists
-  // (locations, products, referrers) — renders a period-over-period
-  // comparison (two bars + % change) when items carry `previousValue`.
-  // "breakdown": divider rows with the last item highlighted as a total,
-  // matching a financial line-item list.
   variant?: "ranked" | "breakdown";
 }
 

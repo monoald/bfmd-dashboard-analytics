@@ -19,9 +19,6 @@ function getSnapshot(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
-// The beforeInteractive script (see layout.tsx) hasn't run yet when the
-// server renders, so the server can only assume light mode. Once hydrated,
-// useSyncExternalStore immediately resyncs to the real getSnapshot() value.
 function getServerSnapshot(): boolean {
   return false;
 }
