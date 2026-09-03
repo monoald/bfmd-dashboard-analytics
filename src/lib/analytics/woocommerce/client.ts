@@ -67,3 +67,31 @@ export async function fetchWcCount(
   const response = await wcRequest(path, { ...params, per_page: "1" });
   return Number(response.headers.get("X-WP-Total") ?? "0");
 }
+
+// Fetches every page of a listing endpoint rather than assuming the result
+// fits in one page. A single per_page: "100" request silently truncates
+// once a store has more matching rows than that in the queried window (seen
+// live: 315 active customers in a 30-day window on a store with heavy QA
+// seed data), dropping real customers from both the numerator and
+// denominator of the returning-rate calculation with no visible error.
+export async function fetchWcAllPages<T>(
+  path: string,
+  params: Record<string, string> = {},
+  pageSize = 100,
+): Promise<T[]> {
+  const results: T[] = [];
+  let page = 1;
+  for (;;) {
+    const response = await wcRequest(path, {
+      ...params,
+      per_page: String(pageSize),
+      page: String(page),
+    });
+    const rows = (await response.json()) as T[];
+    results.push(...rows);
+    const totalPages = Number(response.headers.get("X-WP-TotalPages") ?? "1");
+    if (page >= totalPages || rows.length === 0) break;
+    page += 1;
+  }
+  return results;
+}

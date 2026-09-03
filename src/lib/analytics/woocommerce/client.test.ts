@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchWc, fetchWcCount, WooCommerceApiError } from "./client";
+import {
+  fetchWc,
+  fetchWcAllPages,
+  fetchWcCount,
+  WooCommerceApiError,
+} from "./client";
 
 describe("WooCommerce client", () => {
   beforeEach(() => {
@@ -73,5 +78,77 @@ describe("WooCommerce client", () => {
     expect(count).toBe(42);
     const [url] = fetchMock.mock.calls[0];
     expect(url).toContain("per_page=1");
+  });
+
+  describe("fetchWcAllPages", () => {
+    it("stops after one page when X-WP-TotalPages is 1", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [{ id: 1 }, { id: 2 }],
+        headers: new Headers({ "X-WP-TotalPages": "1" }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
+
+      expect(rows).toEqual([{ id: 1 }, { id: 2 }]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("fetches every page and concatenates the results, not just the first 100 rows", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 1 }, { id: 2 }],
+          headers: new Headers({ "X-WP-TotalPages": "3" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 3 }, { id: 4 }],
+          headers: new Headers({ "X-WP-TotalPages": "3" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 5 }],
+          headers: new Headers({ "X-WP-TotalPages": "3" }),
+        });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
+
+      expect(rows).toEqual([
+        { id: 1 },
+        { id: 2 },
+        { id: 3 },
+        { id: 4 },
+        { id: 5 },
+      ]);
+      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock.mock.calls[0][0]).toContain("page=1");
+      expect(fetchMock.mock.calls[1][0]).toContain("page=2");
+      expect(fetchMock.mock.calls[2][0]).toContain("page=3");
+    });
+
+    it("stops early if a page comes back empty, even if X-WP-TotalPages says more remain", async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 1 }],
+          headers: new Headers({ "X-WP-TotalPages": "5" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [],
+          headers: new Headers({ "X-WP-TotalPages": "5" }),
+        });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
+
+      expect(rows).toEqual([{ id: 1 }]);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
   });
 });
