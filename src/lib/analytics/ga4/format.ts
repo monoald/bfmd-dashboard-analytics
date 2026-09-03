@@ -1,9 +1,16 @@
 import type { PeriodBounds, TimeSeriesData } from "../types";
 
 export function toIsoDate(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  // UTC getters, not local ones: `date` may be a plain local-midnight
+  // instant (preset ranges) or an EST-pinned one (custom ranges, see
+  // resolveCustomRangeParams in date-range.ts) — UTC reads recover the
+  // intended calendar day for both on every real server this app runs on
+  // (Vercel is UTC; dev machines here run at negative UTC offsets), unlike
+  // local getters which can roll a fixed-offset instant to the wrong day
+  // depending on which timezone the current process happens to be in.
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
@@ -70,30 +77,36 @@ function expectedKeysForPeriod(
 
   if (interval === "hour") {
     // pickInterval only returns "hour" for a <=1-day span, so `period`
-    // always covers exactly one calendar day here.
-    const year = period.start.getFullYear();
-    const month = period.start.getMonth() + 1;
-    const day = period.start.getDate();
+    // always covers exactly one calendar day here. UTC getters (see
+    // toIsoDate above for why) correctly recover that day for both preset
+    // and EST-pinned custom-range instants.
+    const year = period.start.getUTCFullYear();
+    const month = period.start.getUTCMonth() + 1;
+    const day = period.start.getUTCDate();
     return Array.from(
       { length: 24 },
       (_, hour) => `${year}${pad(month)}${pad(day)}${pad(hour)}`,
     );
   }
 
+  // UTC calendar-date arithmetic, not local getters/setters — see
+  // mock-data.ts's bucketDates for why (same reasoning applies here).
   const keys: string[] = [];
-  let cursor = new Date(
-    period.start.getFullYear(),
-    period.start.getMonth(),
-    period.start.getDate(),
-  );
+  let cursor = new Date(period.start.getTime());
   while (cursor.getTime() <= period.end.getTime()) {
     keys.push(
-      `${cursor.getFullYear()}${pad(cursor.getMonth() + 1)}${pad(cursor.getDate())}`,
+      `${cursor.getUTCFullYear()}${pad(cursor.getUTCMonth() + 1)}${pad(cursor.getUTCDate())}`,
     );
     cursor = new Date(
-      cursor.getFullYear(),
-      cursor.getMonth(),
-      cursor.getDate() + 1,
+      Date.UTC(
+        cursor.getUTCFullYear(),
+        cursor.getUTCMonth(),
+        cursor.getUTCDate() + 1,
+        cursor.getUTCHours(),
+        cursor.getUTCMinutes(),
+        cursor.getUTCSeconds(),
+        cursor.getUTCMilliseconds(),
+      ),
     );
   }
   return keys;

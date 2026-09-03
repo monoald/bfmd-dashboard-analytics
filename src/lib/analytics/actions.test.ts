@@ -54,6 +54,7 @@ import {
   getLiveViewData,
   fetchLiveVisitorCount,
 } from "./actions";
+import { resolveCustomRangeParams } from "./date-range";
 
 const revenueStatsResult = {
   current: {
@@ -167,10 +168,14 @@ describe("getDashboardData", () => {
     vi.unstubAllEnvs();
     mockHappyPath();
 
-    const payload = await getDashboardData("custom", {
-      start: new Date(2026, 6, 1),
-      end: new Date(2026, 6, 15),
-    });
+    // customRange must come from resolveCustomRangeParams (as every real
+    // caller does — see reports/[slug]/page.tsx) since getDashboardData's
+    // custom-range handling expects EST-pinned day markers, not arbitrary
+    // local-midnight Dates.
+    const payload = await getDashboardData(
+      "custom",
+      resolveCustomRangeParams("2026-07-01", "2026-07-15")!,
+    );
 
     expect(payload.errors).toEqual({});
     // Jul 1 - Jul 15 inclusive is 15 daily buckets
@@ -191,10 +196,10 @@ describe("getDashboardData", () => {
     stubRealCredentials();
     mockHappyPath();
 
-    await getDashboardData("custom", {
-      start: new Date(2026, 6, 1),
-      end: new Date(2026, 6, 15),
-    });
+    await getDashboardData(
+      "custom",
+      resolveCustomRangeParams("2026-07-01", "2026-07-15")!,
+    );
 
     expect(getRevenueStats).toHaveBeenCalledWith(
       expect.objectContaining({ key: "custom", interval: "day" }),
