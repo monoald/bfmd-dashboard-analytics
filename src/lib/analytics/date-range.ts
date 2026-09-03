@@ -4,6 +4,14 @@ import type { DateRangeKey, PeriodBounds, ResolvedDateRange } from "./types";
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WEEK_INTERVAL_THRESHOLD_DAYS = 60;
 const MAX_CUSTOM_RANGE_DAYS = 366;
+// The WooCommerce store's timezone is fixed EST (UTC-5, no DST). Custom-range
+// day boundaries are pinned to this offset (see resolveCustomRangeParams)
+// instead of the server process's local timezone, so the same "2026-09-02"
+// query param produces the same absolute WC API window on every machine —
+// Vercel's serverless functions run in UTC while local dev machines vary,
+// and without pinning, the same calendar date silently maps to a different
+// hours-shifted window per environment.
+const EST_UTC_OFFSET_HOURS = 5;
 
 function startOfDay(date: Date): Date {
   return new Date(
@@ -33,17 +41,36 @@ function daysInMonth(year: number, month: number): number {
   return new Date(year, month + 1, 0).getDate();
 }
 
-// Calendar-date day count between two dates, inclusive of both endpoints.
-// Uses Date.UTC to diff pure Y/M/D values, which is immune to local DST
-// shifts (unlike diffing raw millisecond timestamps).
+// Calendar-date day count between two EST-pinned custom-range endpoints
+// (see resolveCustomRangeParams), inclusive of both endpoints. Reads Y/M/D
+// via the UTC getters rather than local ones, since `start`/`end` are UTC
+// instants representing EST midnight — local getters would misread the
+// calendar day on any server running west of EST (UTC-6 or further).
 function calendarDayCount(start: Date, end: Date): number {
   const startUtc = Date.UTC(
-    start.getFullYear(),
-    start.getMonth(),
-    start.getDate(),
+    start.getUTCFullYear(),
+    start.getUTCMonth(),
+    start.getUTCDate(),
   );
-  const endUtc = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+  const endUtc = Date.UTC(
+    end.getUTCFullYear(),
+    end.getUTCMonth(),
+    end.getUTCDate(),
+  );
   return Math.round((endUtc - startUtc) / DAY_MS) + 1;
+}
+
+// EST end-of-day (23:59:59.999 EST) for a Date already pinned to EST
+// midnight of that same calendar day.
+function estEndOfDay(date: Date): Date {
+  return new Date(
+    Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate() + 1,
+      EST_UTC_OFFSET_HOURS,
+    ) - 1,
+  );
 }
 
 // Same day-of-month in a different year/month, clamped to that month's
@@ -222,19 +249,17 @@ export function resolveDateRange(
 }
 
 export function resolveCustomRange(start: Date, end: Date): ResolvedDateRange {
+  // `start`/`end` are already EST-midnight-pinned instants from
+  // resolveCustomRangeParams, so current.start needs no further
+  // normalization; shifting by whole days in ms stays exact since EST is a
+  // fixed offset with no DST transitions to trip over.
   const current: PeriodBounds = {
-    start: startOfDay(start),
-    end: endOfDay(end),
+    start,
+    end: estEndOfDay(end),
   };
   const dayCount = calendarDayCount(start, end);
   const previous: PeriodBounds = {
-    start: startOfDay(
-      new Date(
-        current.start.getFullYear(),
-        current.start.getMonth(),
-        current.start.getDate() - dayCount,
-      ),
-    ),
+    start: new Date(current.start.getTime() - dayCount * DAY_MS),
     end: new Date(current.start.getTime() - 1),
   };
   return buildRange("custom", current, previous);
@@ -269,11 +294,13 @@ function isValidCalendarDate(dateStr: string, date: Date): boolean {
   const inputMonth = parseInt(monthStr, 10);
   const inputDay = parseInt(dayStr, 10);
 
-  // Check if the parsed values round-trip correctly
+  // Check if the parsed values round-trip correctly. Uses UTC getters
+  // since `date` is an EST-pinned instant (see resolveCustomRangeParams),
+  // not a local-midnight one.
   return (
-    date.getFullYear() === inputYear &&
-    date.getMonth() + 1 === inputMonth &&
-    date.getDate() === inputDay
+    date.getUTCFullYear() === inputYear &&
+    date.getUTCMonth() + 1 === inputMonth &&
+    date.getUTCDate() === inputDay
   );
 }
 
@@ -283,8 +310,10 @@ export function resolveCustomRangeParams(
 ): { start: Date; end: Date } | null {
   if (typeof start !== "string" || typeof end !== "string") return null;
   if (!start || !end) return null;
-  const startDate = new Date(`${start}T00:00:00`);
-  const endDate = new Date(`${end}T00:00:00`);
+  // Pin to the store's EST timezone rather than letting this parse in
+  // whatever timezone the current server process happens to run in.
+  const startDate = new Date(`${start}T00:00:00-0${EST_UTC_OFFSET_HOURS}:00`);
+  const endDate = new Date(`${end}T00:00:00-0${EST_UTC_OFFSET_HOURS}:00`);
   if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
     return null;
   }

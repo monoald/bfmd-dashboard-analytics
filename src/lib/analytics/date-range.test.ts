@@ -182,16 +182,20 @@ describe("resolveDateRange — new named presets", () => {
 
 describe("resolveCustomRange", () => {
   it("resolves an arbitrary start/end into a current period, with an equal-length previous period immediately before it", () => {
-    const range = resolveCustomRange(
-      new Date(2026, 6, 1),
-      new Date(2026, 6, 15),
-    );
+    // resolveCustomRange expects EST-pinned day markers, as produced by
+    // resolveCustomRangeParams — not arbitrary local-midnight Dates.
+    const { start, end } = resolveCustomRangeParams(
+      "2026-07-01",
+      "2026-07-15",
+    )!;
+    const range = resolveCustomRange(start, end);
 
     expect(range.key).toBe("custom");
-    expect(range.current.start.getDate()).toBe(1);
-    expect(range.current.start.getMonth()).toBe(6);
-    expect(range.current.end.getDate()).toBe(15);
-    expect(range.current.end.getMonth()).toBe(6);
+    // EST midnight Jul 1 = 05:00 UTC Jul 1; EST end-of-day Jul 15
+    // (23:59:59.999 EST) = 04:59:59.999 UTC Jul 16 — one UTC calendar day
+    // later, since EST end-of-day instants always fall after UTC midnight.
+    expect(range.current.start.getTime()).toBe(Date.UTC(2026, 6, 1, 5));
+    expect(range.current.end.getTime()).toBe(Date.UTC(2026, 6, 16, 5) - 1);
     // current span is 15 days (Jul 1 - Jul 15 inclusive), so previous should
     // end right before current starts and be the same length
     expect(range.previous.end.getTime()).toBeLessThan(
@@ -219,17 +223,16 @@ describe("resolveCustomRange", () => {
   });
 
   it("keeps the previous period's calendar-day count equal to the current period's, exactly", () => {
-    const range = resolveCustomRange(
-      new Date(2026, 6, 1),
-      new Date(2026, 6, 15),
-    );
-    // current: Jul 1 - Jul 15 inclusive = 15 calendar days
-    expect(range.previous.start.getDate()).toBe(16);
-    expect(range.previous.start.getMonth()).toBe(5); // June
-    expect(range.previous.end.getDate()).toBe(30);
-    expect(range.previous.end.getMonth()).toBe(5); // June
-    expect(range.previous.start.getHours()).toBe(0);
-    expect(range.previous.start.getMinutes()).toBe(0);
+    const { start, end } = resolveCustomRangeParams(
+      "2026-07-01",
+      "2026-07-15",
+    )!;
+    const range = resolveCustomRange(start, end);
+    // current: Jul 1 - Jul 15 inclusive = 15 calendar days, so previous is
+    // Jun 16 - Jun 30 (EST midnight to EST end-of-day, i.e. right before
+    // current.start).
+    expect(range.previous.start.getTime()).toBe(Date.UTC(2026, 5, 16, 5));
+    expect(range.previous.end.getTime()).toBe(Date.UTC(2026, 6, 1, 5) - 1);
   });
 });
 
@@ -253,10 +256,12 @@ describe("resolveCustomRangeParams", () => {
   it("parses two valid YYYY-MM-DD strings", () => {
     const result = resolveCustomRangeParams("2026-07-01", "2026-07-15");
     expect(result).not.toBeNull();
-    expect(result!.start.getFullYear()).toBe(2026);
-    expect(result!.start.getMonth()).toBe(6);
-    expect(result!.start.getDate()).toBe(1);
-    expect(result!.end.getDate()).toBe(15);
+    // Asserted via UTC getters since these Dates are EST-pinned (UTC-5)
+    // instants, independent of whatever timezone the test runner is in.
+    expect(result!.start.getUTCFullYear()).toBe(2026);
+    expect(result!.start.getUTCMonth()).toBe(6);
+    expect(result!.start.getUTCDate()).toBe(1);
+    expect(result!.end.getUTCDate()).toBe(15);
   });
 
   it("returns null when either param is missing", () => {

@@ -38,24 +38,36 @@ function bucketDates(range: ResolvedDateRange): Date[] {
   // narrow enough (2 days/year, cosmetic only) to not warrant the
   // complexity of detecting and special-casing the skipped hour.
   if (range.interval === "hour") {
-    const year = start.getFullYear();
-    const month = start.getMonth();
-    const day = start.getDate();
+    const year = start.getUTCFullYear();
+    const month = start.getUTCMonth();
+    const day = start.getUTCDate();
     return Array.from(
       { length: 24 },
-      (_, hour) => new Date(year, month, day, hour, 0, 0, 0),
+      (_, hour) => new Date(Date.UTC(year, month, day, hour, 0, 0, 0)),
     );
   }
 
+  // Walk via UTC calendar-date arithmetic rather than local getters/setters:
+  // `start` may be a plain local-midnight instant (preset ranges) or an
+  // EST-pinned one (custom ranges, see resolveCustomRangeParams), and UTC
+  // arithmetic correctly advances whole calendar days for either, since it
+  // never applies local DST rules that would otherwise reinterpret the
+  // fixed hour-of-day baked into `start`.
   const step = range.interval === "week" ? 7 : 1;
   const dates: Date[] = [];
-  let cursor = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+  let cursor = new Date(start.getTime());
   while (cursor.getTime() <= end.getTime()) {
     dates.push(cursor);
     cursor = new Date(
-      cursor.getFullYear(),
-      cursor.getMonth(),
-      cursor.getDate() + step,
+      Date.UTC(
+        cursor.getUTCFullYear(),
+        cursor.getUTCMonth(),
+        cursor.getUTCDate() + step,
+        cursor.getUTCHours(),
+        cursor.getUTCMinutes(),
+        cursor.getUTCSeconds(),
+        cursor.getUTCMilliseconds(),
+      ),
     );
   }
   return dates;
@@ -64,8 +76,8 @@ function bucketDates(range: ResolvedDateRange): Date[] {
 function bucketLabels(range: ResolvedDateRange): string[] {
   return bucketDates(range).map((date) =>
     range.interval === "hour"
-      ? hourLabel(date.getHours())
-      : `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}`,
+      ? hourLabel(date.getUTCHours())
+      : `${MONTH_NAMES[date.getUTCMonth()]} ${date.getUTCDate()}`,
   );
 }
 
