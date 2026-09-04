@@ -224,6 +224,10 @@ export function buildDashboardPayload(
         returningCustomerRate.current,
         returningCustomerRate.previous,
       ),
+      averageOrderValue: computeChange(
+        revenueStats.current.totals.averageOrderValue,
+        revenueStats.previous.totals.averageOrderValue,
+      ),
     },
     charts: {
       sessionsOverTime: unwrap("sessionsOverTime", raw.sessionsOverTime, []),

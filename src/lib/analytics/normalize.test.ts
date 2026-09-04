@@ -169,6 +169,57 @@ describe("buildDashboardPayload", () => {
       trend: "up",
       sparkline: [10],
     });
+    // current: netRevenue 90 / ordersCount 4 = 22.5; previous: 90 / 3 = 30.
+    expect(payload.summaryCards.averageOrderValue.value).toBe(22.5);
+  });
+
+  it("computes averageOrderValue from period totals, not an average of the sparse per-bucket aovOverTime series", () => {
+    // Regression test: aovOverTime zero-fills empty buckets (see
+    // aovOverTimeFrom), so naively averaging that series across many mostly-
+    // empty buckets massively understates the true AOV whenever order
+    // activity is concentrated in a few buckets — e.g. a single busy hour
+    // out of 24. The headline must come from totals.averageOrderValue
+    // (total net revenue / total orders for the whole period) instead.
+    const sparseIntervals = (ordersInBucket: number) =>
+      Array.from({ length: 24 }, (_, i) => ({
+        date: `${i}:00`,
+        grossSales: i === 0 ? 1194 : 0,
+        netRevenue: i === 0 ? 796 : 0,
+        discounts: 0,
+        refunds: 0,
+        shipping: 0,
+        taxes: 0,
+        totalSales: i === 0 ? 796 : 0,
+        ordersCount: i === 0 ? ordersInBucket : 0,
+      }));
+    const sparseRevenueStats = (ordersInBucket: number): RevenueStatsResult => ({
+      intervals: sparseIntervals(ordersInBucket),
+      totals: {
+        grossSales: 1194,
+        netRevenue: 796,
+        discounts: 398,
+        refunds: 0,
+        shipping: 0,
+        taxes: 0,
+        totalSales: 796,
+        ordersCount: ordersInBucket,
+        averageOrderValue: 796 / ordersInBucket,
+      },
+    });
+    const raw = baseRaw();
+    raw.revenueStats = {
+      current: sparseRevenueStats(6),
+      previous: sparseRevenueStats(3),
+    };
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.summaryCards.averageOrderValue.value).toBeCloseTo(
+      796 / 6,
+    );
+    // The naive (buggy) calculation would average 24 mostly-zero buckets:
+    // (796/6) / 24 ≈ 5.53 — assert we're nowhere near that.
+    expect(payload.summaryCards.averageOrderValue.value).toBeGreaterThan(100);
   });
 
   it("derives salesOverTime, aovOverTime, and salesBreakdown from revenue stats intervals/totals", () => {

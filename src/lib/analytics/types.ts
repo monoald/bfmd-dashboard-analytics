@@ -84,6 +84,7 @@ export interface DashboardPayload {
     ordersFulfilled: ChangeMetric;
     orders: ChangeMetric;
     returningCustomerRate: ChangeMetric;
+    averageOrderValue: ChangeMetric;
   };
   charts: {
     sessionsOverTime: TimeSeriesData[];
