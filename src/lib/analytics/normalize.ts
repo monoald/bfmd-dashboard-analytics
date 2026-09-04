@@ -1,9 +1,11 @@
+import { formatWcIntervalLabel } from "./format";
 import type {
   CardKey,
   ChangeMetric,
   DashboardPayload,
   FunnelStep,
   NamedValue,
+  RevenueBreakdownRow,
   SalesBreakdownLine,
   TimeSeriesData,
 } from "./types";
@@ -125,6 +127,51 @@ function aovOverTimeFrom(stats: {
   return series;
 }
 
+function revenueBreakdownOverTimeFrom(
+  stats: {
+    current: RevenueStatsResult;
+    previous: RevenueStatsResult;
+  },
+  interval: "hour" | "day" | "week",
+): RevenueBreakdownRow[] {
+  const count = Math.max(
+    stats.current.intervals.length,
+    stats.previous.intervals.length,
+  );
+  const includeTime = interval === "hour";
+  const rows: RevenueBreakdownRow[] = [];
+  for (let i = 0; i < count; i++) {
+    const cur = stats.current.intervals[i];
+    const prev = stats.previous.intervals[i];
+    rows.push({
+      currentDateLabel: cur
+        ? formatWcIntervalLabel(cur.date, includeTime)
+        : "",
+      previousDateLabel: prev
+        ? formatWcIntervalLabel(prev.date, includeTime)
+        : "",
+      grossSales: {
+        current: cur?.grossSales ?? 0,
+        previous: prev?.grossSales ?? 0,
+      },
+      discounts: {
+        current: cur ? -Math.abs(cur.discounts) : 0,
+        previous: prev ? -Math.abs(prev.discounts) : 0,
+      },
+      orders: {
+        current: cur?.ordersCount ?? 0,
+        previous: prev?.ordersCount ?? 0,
+      },
+      averageOrderValue: {
+        current: cur && cur.ordersCount > 0 ? cur.netRevenue / cur.ordersCount : 0,
+        previous:
+          prev && prev.ordersCount > 0 ? prev.netRevenue / prev.ordersCount : 0,
+      },
+    });
+  }
+  return rows;
+}
+
 function salesBreakdownFrom(stats: RevenueStatsResult): SalesBreakdownLine[] {
   const t = stats.totals;
   return [
@@ -140,6 +187,7 @@ function salesBreakdownFrom(stats: RevenueStatsResult): SalesBreakdownLine[] {
 
 export function buildDashboardPayload(
   raw: RawPipelineResults,
+  interval: "hour" | "day" | "week" = "hour",
 ): DashboardPayload {
   const errors: Partial<Record<CardKey, string>> = {};
 
@@ -248,6 +296,10 @@ export function buildDashboardPayload(
       salesBreakdown: salesBreakdownFrom(revenueStats.current),
       salesByChannel: unwrap("salesByChannel", raw.salesByChannel, []),
       aovOverTime: aovOverTimeFrom(revenueStats),
+      revenueBreakdownOverTime: revenueBreakdownOverTimeFrom(
+        revenueStats,
+        interval,
+      ),
       salesByProduct: unwrap("salesByProduct", raw.salesByProduct, []),
     },
     errors,

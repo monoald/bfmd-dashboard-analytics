@@ -59,6 +59,20 @@ export interface SalesBreakdownLine {
   value: number;
 }
 
+// One row of the "Average order value over time" report's detail table:
+// several related metrics for the same interval, each as a current/previous
+// pair, plus pre-formatted date labels (see formatWcIntervalLabel) so the
+// table component doesn't need to know about WooCommerce's raw date_start
+// format or the period's interval granularity.
+export interface RevenueBreakdownRow {
+  currentDateLabel: string;
+  previousDateLabel: string;
+  grossSales: { current: number; previous: number };
+  discounts: { current: number; previous: number };
+  orders: { current: number; previous: number };
+  averageOrderValue: { current: number; previous: number };
+}
+
 export type CardKey =
   | "grossSales"
   | "conversionRate"
@@ -97,6 +111,7 @@ export interface DashboardPayload {
     salesBreakdown: SalesBreakdownLine[];
     salesByChannel: NamedValue[];
     aovOverTime: TimeSeriesData[];
+    revenueBreakdownOverTime: RevenueBreakdownRow[];
     salesByProduct: NamedValue[];
   };
   errors: Partial<Record<CardKey, string>>;

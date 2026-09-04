@@ -328,6 +328,26 @@ export function buildMockDashboardPayload(
         { name: "Draft Orders", value: 0 },
       ],
       aovOverTime,
+      revenueBreakdownOverTime: labels.map((label, i) => ({
+        currentDateLabel: label,
+        previousDateLabel: label,
+        grossSales: {
+          current: Math.round(salesOverTime[i].currentPeriod),
+          previous: Math.round(salesOverTime[i].previousPeriod),
+        },
+        discounts: {
+          current: -Math.round(salesOverTime[i].currentPeriod * 0.259),
+          previous: -Math.round(salesOverTime[i].previousPeriod * 0.259),
+        },
+        orders: {
+          current: Math.round(ordersSeries[i].currentPeriod),
+          previous: Math.round(ordersSeries[i].previousPeriod),
+        },
+        averageOrderValue: {
+          current: Math.round(aovOverTime[i].currentPeriod),
+          previous: Math.round(aovOverTime[i].previousPeriod),
+        },
+      })),
       salesByProduct: [
         {
           name: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",
