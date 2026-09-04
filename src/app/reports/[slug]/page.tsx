@@ -22,6 +22,7 @@ import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter"
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { RankedList } from "@/components/analytics/RankedList";
+import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { TimeSeriesReportTable } from "@/components/analytics/TimeSeriesReportTable";
@@ -178,11 +179,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: headline.trend,
             }}
           />
-          <TimeSeriesReportTable
-            data={series}
-            formatValue={formatCurrency}
-            aggregate="average"
-          />
+          <RevenueBreakdownTable data={data.charts.revenueBreakdownOverTime} />
         </div>
       );
     }
