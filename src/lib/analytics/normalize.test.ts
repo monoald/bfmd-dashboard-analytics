@@ -173,6 +173,28 @@ describe("buildDashboardPayload", () => {
     expect(payload.summaryCards.averageOrderValue.value).toBe(22.5);
   });
 
+  it("formats revenueBreakdownOverTime date labels from real WC date_start strings, including time only for an 'hour' interval", () => {
+    const raw = baseRaw();
+    raw.revenueStats = {
+      current: revenueStats({ grossSales: 100, ordersCount: 4 }),
+      previous: revenueStats({ grossSales: 80, ordersCount: 3 }),
+    };
+    raw.revenueStats.current.intervals[0].date = "2026-09-02 23:00:00";
+    raw.revenueStats.previous.intervals[0].date = "2026-09-01 23:00:00";
+
+    const hourly = buildDashboardPayload(raw, "hour");
+    expect(hourly.charts.revenueBreakdownOverTime[0]).toMatchObject({
+      currentDateLabel: "Sep 2, 2026, 11:00 PM",
+      previousDateLabel: "Sep 1, 2026, 11:00 PM",
+    });
+
+    const daily = buildDashboardPayload(raw, "day");
+    expect(daily.charts.revenueBreakdownOverTime[0]).toMatchObject({
+      currentDateLabel: "Sep 2, 2026",
+      previousDateLabel: "Sep 1, 2026",
+    });
+  });
+
   it("computes averageOrderValue from period totals, not an average of the sparse per-bucket aovOverTime series", () => {
     // Regression test: aovOverTime zero-fills empty buckets (see
     // aovOverTimeFrom), so naively averaging that series across many mostly-
@@ -231,6 +253,18 @@ describe("buildDashboardPayload", () => {
     // previous period has netRevenue 90 and ordersCount 3 (overridden), so AOV is 90 / 3.
     expect(payload.charts.aovOverTime).toEqual([
       { date: "Aug 1", currentPeriod: 90 / 4, previousPeriod: 90 / 3 },
+    ]);
+    expect(payload.charts.revenueBreakdownOverTime).toEqual([
+      {
+        // baseRaw()'s fixture date ("Aug 1") isn't real WC date_start
+        // format, so formatWcIntervalLabel falls back to it unchanged.
+        currentDateLabel: "Aug 1",
+        previousDateLabel: "Aug 1",
+        grossSales: { current: 100, previous: 80 },
+        discounts: { current: -5, previous: -5 },
+        orders: { current: 4, previous: 3 },
+        averageOrderValue: { current: 90 / 4, previous: 90 / 3 },
+      },
     ]);
     expect(payload.charts.salesBreakdown).toEqual([
       { label: "Gross sales", value: 100 },

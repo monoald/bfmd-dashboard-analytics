@@ -200,7 +200,7 @@ export async function getDashboardData(
     totalSalesBySocialReferrer,
   };
 
-  return buildDashboardPayload(raw);
+  return buildDashboardPayload(raw, range.interval);
 }
 
 export async function getLiveViewData(): Promise<LiveViewPayload> {
