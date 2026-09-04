@@ -206,6 +206,10 @@ export function buildMockDashboardPayload(
           (point) => point.currentPeriod,
         ),
       },
+      averageOrderValue: computeChange(
+        Math.round(sum(aovOverTime, "currentPeriod") / labels.length),
+        Math.round(sum(aovOverTime, "previousPeriod") / labels.length),
+      ),
     },
     charts: {
       sessionsOverTime,

@@ -1,10 +1,6 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/analytics/actions";
-import {
-  computeChange,
-  averageSeries,
-  sumSeries,
-} from "@/lib/analytics/normalize";
+import { computeChange, sumSeries } from "@/lib/analytics/normalize";
 import { formatCurrency, formatPercent } from "@/lib/analytics/format";
 import {
   buildRangeQueryParams,
@@ -35,10 +31,6 @@ export default async function AnalyticsPage({
   const sessionsHeadline = computeChange(
     sumSeries(data.charts.sessionsOverTime, "currentPeriod"),
     sumSeries(data.charts.sessionsOverTime, "previousPeriod"),
-  );
-  const aovHeadline = computeChange(
-    averageSeries(data.charts.aovOverTime, "currentPeriod"),
-    averageSeries(data.charts.aovOverTime, "previousPeriod"),
   );
 
   return (
@@ -220,9 +212,10 @@ export default async function AnalyticsPage({
                 data={data.charts.aovOverTime}
                 formatValue="currency"
                 headline={{
-                  value: formatCurrency(aovHeadline.value),
-                  changePercentage: aovHeadline.changePercentage,
-                  trend: aovHeadline.trend,
+                  value: formatCurrency(data.summaryCards.averageOrderValue.value),
+                  changePercentage:
+                    data.summaryCards.averageOrderValue.changePercentage,
+                  trend: data.summaryCards.averageOrderValue.trend,
                 }}
               />
             </Link>
