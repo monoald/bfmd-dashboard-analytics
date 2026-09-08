@@ -32,6 +32,18 @@ vi.mock("./ga4/funnel", () => ({
 vi.mock("./ga4/referrers", () => ({ getSocialReferrerRevenue: vi.fn() }));
 vi.mock("./woocommerce/cohort", () => ({ getCustomerCohortAnalysis: vi.fn() }));
 
+// `SHOW_CUSTOMER_COHORT_ANALYSIS` is a plain exported const, not a function —
+// mocked via a getter backed by this hoisted, mutable flag so each test can
+// control it directly rather than depending on report-config.ts's real
+// (environment-dependent) value, which would make these tests pass or fail
+// based on production config instead of the behavior under test.
+const cohortFlag = vi.hoisted(() => ({ enabled: false }));
+vi.mock("./report-config", () => ({
+  get SHOW_CUSTOMER_COHORT_ANALYSIS() {
+    return cohortFlag.enabled;
+  },
+}));
+
 import {
   getReturningCustomerRate,
   getCurrentCustomerSplit,
@@ -135,6 +147,7 @@ function stubRealCredentials() {
 describe("getDashboardData", () => {
   afterEach(() => {
     vi.unstubAllEnvs();
+    cohortFlag.enabled = false;
   });
 
   it("returns mock data without calling any fetcher when credentials are missing", async () => {
@@ -248,6 +261,7 @@ describe("getDashboardData", () => {
   });
 
   it("does not fetch customer cohort analysis while its feature flag is disabled, defaulting the chart to an empty array", async () => {
+    cohortFlag.enabled = false;
     stubRealCredentials();
     mockHappyPath();
 
@@ -255,6 +269,21 @@ describe("getDashboardData", () => {
 
     expect(getCustomerCohortAnalysis).not.toHaveBeenCalled();
     expect(payload.charts.customerCohortAnalysis).toEqual([]);
+    expect(payload.errors.customerCohortAnalysis).toBeUndefined();
+  });
+
+  it("fetches and populates customer cohort analysis once its feature flag is enabled", async () => {
+    cohortFlag.enabled = true;
+    stubRealCredentials();
+    mockHappyPath();
+    const rows = [{ cohortMonth: "2026-06", cohortSize: 2, retentionByMonth: [50] }];
+    vi.mocked(getCustomerCohortAnalysis).mockResolvedValue(rows);
+
+    const payload = await getDashboardData("7d");
+
+    expect(getCustomerCohortAnalysis).toHaveBeenCalledTimes(1);
+    expect(getCustomerCohortAnalysis).toHaveBeenCalledWith();
+    expect(payload.charts.customerCohortAnalysis).toEqual(rows);
     expect(payload.errors.customerCohortAnalysis).toBeUndefined();
   });
 });
