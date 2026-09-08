@@ -10,20 +10,31 @@ export interface TimeSeriesReportTableProps {
   data: TimeSeriesData[];
   formatValue: (value: number) => string;
   aggregate?: "sum" | "average";
+  // For a rate/ratio series (e.g. conversion rate), neither summing nor
+  // averaging the per-bucket values gives the correct period total — pass
+  // the correctly-weighted current/previous here instead (see
+  // normalize.ts's weightedRate) and `aggregate` is ignored.
+  totalOverride?: { current: number; previous: number };
 }
 
 export function TimeSeriesReportTable({
   data,
   formatValue,
   aggregate = "sum",
+  totalOverride,
 }: TimeSeriesReportTableProps) {
   if (data.length === 0) return null;
 
   const aggregateFn = aggregate === "average" ? averageSeries : sumSeries;
-  const totalCurrent = aggregateFn(data, "currentPeriod");
-  const totalPrevious = aggregateFn(data, "previousPeriod");
+  const totalCurrent = totalOverride?.current ?? aggregateFn(data, "currentPeriod");
+  const totalPrevious =
+    totalOverride?.previous ?? aggregateFn(data, "previousPeriod");
   const totalChange = computeChange(totalCurrent, totalPrevious);
-  const totalLabel = aggregate === "average" ? "Average" : "Total";
+  const totalLabel = totalOverride
+    ? "Total"
+    : aggregate === "average"
+      ? "Average"
+      : "Total";
 
   return (
     <div className={`${CARD_CLASS} overflow-x-auto`}>

@@ -62,4 +62,25 @@ describe("TimeSeriesReportTable", () => {
     expect(screen.queryByText("$30.00")).not.toBeInTheDocument();
     expect(screen.queryByText("$12.00")).not.toBeInTheDocument();
   });
+
+  it("uses totalOverride for the footer instead of summing or averaging the series, when provided", () => {
+    render(
+      <TimeSeriesReportTable
+        data={[
+          { date: "Aug 1", currentPeriod: 0, previousPeriod: 0 },
+          { date: "Aug 2", currentPeriod: 82, previousPeriod: 44 },
+        ]}
+        formatValue={(v) => `${v}%`}
+        totalOverride={{ current: 90, previous: 45 }}
+      />,
+    );
+
+    expect(screen.getByText("Total")).toBeInTheDocument();
+    expect(screen.getByText("90%")).toBeInTheDocument();
+    expect(screen.getByText("45%")).toBeInTheDocument();
+    // Naive sum (0+82=82) and average (82/2=41) must not appear in the
+    // footer — "82%" should only be the Aug 2 row's own value (1 match).
+    expect(screen.getAllByText("82%")).toHaveLength(1);
+    expect(screen.queryByText("41%")).not.toBeInTheDocument();
+  });
 });

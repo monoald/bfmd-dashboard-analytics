@@ -11,6 +11,7 @@ import {
   computeChange,
   sparklineToSeries,
   sumSeries,
+  weightedRate,
 } from "@/lib/analytics/normalize";
 import {
   getReportConfig,
@@ -249,7 +250,18 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           <TimeSeriesReportTable
             data={series}
             formatValue={formatPercent}
-            aggregate="average"
+            totalOverride={{
+              // Reuse the headline's own value for "current" so the table
+              // can't drift from it even by a rounding hair — weightedRate
+              // is only needed for "previous", since summaryCards.conversionRate
+              // (a ChangeMetric) doesn't expose that raw number.
+              current: data.summaryCards.conversionRate.value,
+              previous: weightedRate(
+                series,
+                data.charts.sessionsOverTime,
+                "previousPeriod",
+              ),
+            }}
           />
         </div>
       );
