@@ -41,18 +41,41 @@ describe("CustomerCohortTable", () => {
     expect(screen.getByText("5%")).toBeInTheDocument();
   });
 
-  it("shows a tooltip naming the month and cohort only while a cell is hovered", () => {
+  it("shows a Month 0 tooltip describing a same-month repeat order, only while hovered", () => {
     render(
       <CustomerCohortTable
-        rows={[row({ cohortMonth: "2026-01", retentionByMonth: [42] })]}
+        rows={[row({ cohortMonth: "2026-01", retentionByMonth: [42, 30] })]}
       />,
     );
 
     expect(
-      screen.queryByText("Month 1 · Jan 2026 cohort"),
+      screen.queryByText("Month 0 · Jan 2026 cohort"),
     ).not.toBeInTheDocument();
 
     fireEvent.mouseEnter(screen.getByText("42%"));
+
+    expect(screen.getByText("Month 0 · Jan 2026 cohort")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "Customers who placed a repeat order within their first month (Jan 2026)",
+      ),
+    ).toBeInTheDocument();
+
+    fireEvent.mouseLeave(screen.getByText("42%"));
+
+    expect(
+      screen.queryByText("Month 0 · Jan 2026 cohort"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("shows a Month N (N>0) tooltip describing a return purchase in a later month", () => {
+    render(
+      <CustomerCohortTable
+        rows={[row({ cohortMonth: "2026-01", retentionByMonth: [42, 30] })]}
+      />,
+    );
+
+    fireEvent.mouseEnter(screen.getByText("30%"));
 
     expect(screen.getByText("Month 1 · Jan 2026 cohort")).toBeInTheDocument();
     expect(
@@ -60,12 +83,6 @@ describe("CustomerCohortTable", () => {
         "Customers who returned to purchase from you in Feb 2026",
       ),
     ).toBeInTheDocument();
-
-    fireEvent.mouseLeave(screen.getByText("42%"));
-
-    expect(
-      screen.queryByText("Month 1 · Jan 2026 cohort"),
-    ).not.toBeInTheDocument();
   });
 
   it("preview variant shows only the last 4 rows and at most 3 columns", () => {
@@ -96,23 +113,24 @@ describe("CustomerCohortTable", () => {
     fireEvent.mouseEnter(screen.getByText("42%"));
 
     expect(
-      screen.queryByText("Month 1 · Jan 2026 cohort"),
+      screen.queryByText("Month 0 · Jan 2026 cohort"),
     ).not.toBeInTheDocument();
   });
 
-  it("renders a 'Month N' header for each column in the full variant", () => {
+  it("renders a 'Month N' header (starting at Month 0) for each column in the full variant", () => {
     render(
       <CustomerCohortTable
         rows={[row({ cohortMonth: "2026-01", retentionByMonth: [20, 15, 10] })]}
       />,
     );
 
+    expect(screen.getByText("Month 0")).toBeInTheDocument();
     expect(screen.getByText("Month 1")).toBeInTheDocument();
     expect(screen.getByText("Month 2")).toBeInTheDocument();
-    expect(screen.getByText("Month 3")).toBeInTheDocument();
+    expect(screen.queryByText("Month 3")).not.toBeInTheDocument();
   });
 
-  it("renders a 'Month N' header for each column in the preview variant", () => {
+  it("renders a 'Month N' header (starting at Month 0) for each column in the preview variant", () => {
     render(
       <CustomerCohortTable
         rows={[row({ cohortMonth: "2026-01", retentionByMonth: [20, 15] })]}
@@ -120,8 +138,8 @@ describe("CustomerCohortTable", () => {
       />,
     );
 
+    expect(screen.getByText("Month 0")).toBeInTheDocument();
     expect(screen.getByText("Month 1")).toBeInTheDocument();
-    expect(screen.getByText("Month 2")).toBeInTheDocument();
-    expect(screen.queryByText("Month 3")).not.toBeInTheDocument();
+    expect(screen.queryByText("Month 2")).not.toBeInTheDocument();
   });
 });

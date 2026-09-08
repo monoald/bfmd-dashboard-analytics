@@ -146,7 +146,7 @@ describe("buildMockDashboardPayload", () => {
 });
 
 describe("buildMockDashboardPayload customer cohort analysis", () => {
-  it("returns 12 cohort rows with elapsed-month lengths decreasing toward the most recent", () => {
+  it("returns 12 cohort rows with Month-0-plus-elapsed-month lengths decreasing toward the most recent", () => {
     const range = resolveDateRange("7d", NOW);
     const payload = buildMockDashboardPayload(range);
 
@@ -155,7 +155,7 @@ describe("buildMockDashboardPayload customer cohort analysis", () => {
       payload.charts.customerCohortAnalysis.map(
         (row) => row.retentionByMonth.length,
       ),
-    ).toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+    ).toEqual([13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
   });
 
   it("gives every cohort row a positive cohort size and every retention value a plausible percentage", () => {

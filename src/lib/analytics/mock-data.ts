@@ -124,6 +124,9 @@ function buildMockCohortRows(referenceDate: Date): CohortRow[] {
     const cohortIndex = 12 - i;
     const cohortSize = Math.round(wave(cohortIndex, 45, 15, 1.2));
     const retentionByMonth: number[] = [];
+    // Month 0: repeat orders within the cohort's own first month.
+    const month0Value = wave(cohortIndex, 8, 3, cohortIndex * 0.4);
+    retentionByMonth.push(Math.round(month0Value * 10) / 10);
     for (let n = 1; n <= i; n++) {
       const decay = Math.max(3, 14 - n * 1.1);
       const value = wave(n + cohortIndex, decay, 4, cohortIndex * 0.5);

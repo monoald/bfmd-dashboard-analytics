@@ -121,12 +121,15 @@ export interface SalesOverTimeBreakdownRow {
 }
 
 // One row of the "Customer cohort analysis" report: customers grouped by
-// the calendar month of their first-ever order. retentionByMonth[0] is
-// "Month 1" (the first full/partial calendar month after cohortMonth);
-// its length equals how many calendar months have elapsed since
-// cohortMonth, not a fixed 12 — the most recent cohort row has exactly 1
-// entry (the current, still-in-progress month), the oldest visible row
-// has up to 12.
+// the calendar month of their first-ever order (cohort membership never
+// changes after that). retentionByMonth[0] is "Month 0" — customers who
+// placed a *repeat* order within that same first month, not the first
+// order itself, which is what defines the cohort. retentionByMonth[1] is
+// "Month 1" (the next calendar month after cohortMonth), and so on.
+// Length is 1 (Month 0) plus however many calendar months have elapsed
+// since cohortMonth, not a fixed 13 — the most recent cohort row has
+// exactly 2 entries (Month 0 plus the current, still-in-progress month),
+// the oldest visible row has up to 13.
 export interface CohortRow {
   cohortMonth: string; // ISO month, e.g. "2026-01"
   cohortSize: number;

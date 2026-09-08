@@ -53,7 +53,11 @@ export async function getCustomerCohortAnalysis(
     },
   );
 
-  const activeMonthsByCustomer = new Map<number, Set<string>>();
+  // Per customer, every order's month, counting duplicates — a plain
+  // Set of months isn't enough because Month 0 (below) needs to tell a
+  // customer's first order apart from a *repeat* order in that same
+  // calendar month, which requires a count, not just presence.
+  const orderMonthCountsByCustomer = new Map<number, Map<string, number>>();
   for (const order of orders) {
     // WcOrderRow types customer_id as `number`, but that's an unverified
     // assumption about this endpoint's actual live response shape (no
@@ -63,15 +67,15 @@ export async function getCustomerCohortAnalysis(
     if (Number(order.customer_id) === 0) continue;
     const month = wcDateToIsoMonth(order.date_created);
     if (!month) continue;
-    const months =
-      activeMonthsByCustomer.get(order.customer_id) ?? new Set<string>();
-    months.add(month);
-    activeMonthsByCustomer.set(order.customer_id, months);
+    const counts =
+      orderMonthCountsByCustomer.get(order.customer_id) ?? new Map<string, number>();
+    counts.set(month, (counts.get(month) ?? 0) + 1);
+    orderMonthCountsByCustomer.set(order.customer_id, counts);
   }
 
   const customerIdsByCohortMonth = new Map<string, number[]>();
-  for (const [customerId, months] of activeMonthsByCustomer) {
-    const cohortMonth = [...months].sort()[0];
+  for (const [customerId, counts] of orderMonthCountsByCustomer) {
+    const cohortMonth = [...counts.keys()].sort()[0];
     const ids = customerIdsByCohortMonth.get(cohortMonth) ?? [];
     ids.push(customerId);
     customerIdsByCohortMonth.set(cohortMonth, ids);
@@ -86,10 +90,18 @@ export async function getCustomerCohortAnalysis(
 
     const retentionByMonth: number[] = [];
     if (cohortSize > 0) {
+      // Month 0: customers who placed a *repeat* order within the same
+      // calendar month as their first-ever order (their first order
+      // itself doesn't count — that's what defines cohort membership).
+      const month0ActiveCount = cohortCustomerIds.filter(
+        (id) => (orderMonthCountsByCustomer.get(id)?.get(cohortMonth) ?? 0) >= 2,
+      ).length;
+      retentionByMonth.push(round1((month0ActiveCount / cohortSize) * 100));
+
       for (let n = 1; n <= elapsed; n++) {
         const targetMonth = addIsoMonths(cohortMonth, n);
         const activeCount = cohortCustomerIds.filter((id) =>
-          activeMonthsByCustomer.get(id)?.has(targetMonth),
+          orderMonthCountsByCustomer.get(id)?.has(targetMonth),
         ).length;
         retentionByMonth.push(round1((activeCount / cohortSize) * 100));
       }

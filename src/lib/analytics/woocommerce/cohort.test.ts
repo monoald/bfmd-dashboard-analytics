@@ -56,7 +56,7 @@ describe("getCustomerCohortAnalysis", () => {
     ]);
   });
 
-  it("gives the most recent cohort row exactly 1 elapsed-month column and the oldest row 12", async () => {
+  it("gives the most recent cohort row Month 0 + 1 elapsed month, and the oldest row Month 0 + 12", async () => {
     vi.mocked(fetchWcAllPages).mockResolvedValue([
       orderRow(10, "2025-09-05 10:00:00"), // oldest visible cohort month
       orderRow(11, "2026-08-05 10:00:00"), // most recent visible cohort month
@@ -65,9 +65,9 @@ describe("getCustomerCohortAnalysis", () => {
     const rows = await getCustomerCohortAnalysis(NOW);
 
     expect(rows[0].cohortMonth).toBe("2025-09");
-    expect(rows[0].retentionByMonth).toHaveLength(12);
+    expect(rows[0].retentionByMonth).toHaveLength(13); // Month 0 + 12
     expect(rows[11].cohortMonth).toBe("2026-08");
-    expect(rows[11].retentionByMonth).toHaveLength(1);
+    expect(rows[11].retentionByMonth).toHaveLength(2); // Month 0 + 1
   });
 
   it("gives a cohort with zero customers an empty retentionByMonth array regardless of elapsed months", async () => {
@@ -81,7 +81,8 @@ describe("getCustomerCohortAnalysis", () => {
 
   it("groups a customer's orders under the calendar month of their first order, computing per-month (non-cumulative) retention", async () => {
     vi.mocked(fetchWcAllPages).mockResolvedValue([
-      // Customer A: first order June 2026, repeats in July and August.
+      // Customer A: first order June 2026, repeats in July and August (but
+      // not a second time within June itself).
       orderRow(1, "2026-06-05 10:00:00"),
       orderRow(1, "2026-07-10 10:00:00"),
       orderRow(1, "2026-08-02 10:00:00"),
@@ -93,9 +94,27 @@ describe("getCustomerCohortAnalysis", () => {
     const juneCohort = rows.find((r) => r.cohortMonth === "2026-06");
 
     expect(juneCohort?.cohortSize).toBe(2);
+    // Month 0: neither customer placed a second order within June itself (0%).
     // Elapsed months from 2026-06 to 2026-09 (current) = 3: Jul, Aug, Sep.
     // Jul: A active (1/2=50%). Aug: A active (1/2=50%). Sep: neither (0%).
-    expect(juneCohort?.retentionByMonth).toEqual([50, 50, 0]);
+    expect(juneCohort?.retentionByMonth).toEqual([0, 50, 50, 0]);
+  });
+
+  it("computes Month 0 as repeat orders within the cohort's own first month, not the first order itself", async () => {
+    vi.mocked(fetchWcAllPages).mockResolvedValue([
+      // Customer A: two orders in June — a first order plus a same-month repeat.
+      orderRow(1, "2026-06-02 10:00:00"),
+      orderRow(1, "2026-06-20 10:00:00"),
+      // Customer B: a single order in June — first order, no same-month repeat.
+      orderRow(2, "2026-06-10 10:00:00"),
+    ]);
+
+    const rows = await getCustomerCohortAnalysis(NOW);
+    const juneCohort = rows.find((r) => r.cohortMonth === "2026-06");
+
+    expect(juneCohort?.cohortSize).toBe(2);
+    // Only customer A ordered a second time within June itself: 1/2 = 50%.
+    expect(juneCohort?.retentionByMonth[0]).toBe(50);
   });
 
   it("excludes guest checkouts (customer_id 0) from cohort membership", async () => {
