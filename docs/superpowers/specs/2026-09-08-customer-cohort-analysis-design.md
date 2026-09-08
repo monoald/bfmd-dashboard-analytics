@@ -16,23 +16,34 @@ later."* No cohort code exists anywhere in the codebase today.
 - **Cohort row** = customers grouped by the calendar month of their true
   first-ever order (all-time, not just first order within any displayed
   window).
-- **Column** = "Month N" (N = 1, 2, 3, ...), the Nth calendar month after
-  the cohort's first-purchase month. Month 0 (the acquisition month
-  itself) is not shown as a column — the grid starts at Month 1.
+- **Column** = "Month N" (N = 0, 1, 2, ...), counting time since the
+  cohort's first order, not calendar dates. **Month 0 is not the first
+  order itself** — it's the same calendar month as the first order, and
+  its cell counts customers who placed a *repeat* order within that same
+  month (a customer whose only order is their first order contributes to
+  the cohort's size but not to Month 0's numerator). Month 1 is the next
+  calendar month after the cohort's first-purchase month, and so on.
+  (Corrected 2026-09-08 to match Shopify's own cohort model, after
+  originally omitting Month 0 on the mistaken assumption it would
+  trivially read 100%.)
 - **Cell value** = percentage of the cohort's customers who placed
-  **at least one qualifying order** in that specific calendar month,
-  independent of every other month (not cumulative — a customer who
-  ordered in Month 1 but not Month 2 does not count toward Month 2's
-  cell). This matches the non-monotonic pattern in the reference
-  screenshots (e.g. 4.86% → 13.76% → 12.15% → 9.45% → ...).
-- A row simply has as many columns as calendar months have elapsed since
-  that cohort's first-purchase month (`retentionByMonth: number[]`, no
-  `null` padding needed) — there is no such thing as a "month that hasn't
-  happened yet" to represent, since that column doesn't exist in the
-  array at all. This is why older cohorts have more populated columns
-  than newer ones: the most-recent visible cohort (last full month) has
-  exactly 1 column (the current, still-in-progress month), while the
-  oldest visible cohort (12 months back) has up to 12.
+  **at least one qualifying order** in that specific period (Month 0's
+  "repeat order in the first month" for index 0, "any order in that
+  calendar month" for index N ≥ 1), independent of every other column
+  (not cumulative — a customer who ordered in Month 1 but not Month 2
+  does not count toward Month 2's cell). This matches the non-monotonic
+  pattern in the reference screenshots (e.g. 4.86% → 13.76% → 12.15% →
+  9.45% → ...).
+- A row has one column for Month 0 plus as many additional columns as
+  calendar months have elapsed since that cohort's first-purchase month
+  (`retentionByMonth: number[]`, no `null` padding needed) — there is no
+  such thing as a "month that hasn't happened yet" to represent, since
+  that column doesn't exist in the array at all. Month 0 itself is always
+  populated (it's already-completed data by the time a cohort is old
+  enough to appear as a row), so every row has at least 2 entries: the
+  most-recent visible cohort (last full month) has Month 0 plus 1 more
+  column (the current, still-in-progress month), while the oldest visible
+  cohort (12 months back) has Month 0 plus up to 12 more.
 - **Qualifying order** = an order from `/wc-analytics/reports/orders`
   (WooCommerce's Analytics API order-listing endpoint) with an explicit
   `status_is[]=completed` filter — this endpoint does **not** auto-exclude
@@ -55,10 +66,9 @@ month — regardless of the dashboard's date-range picker. Cohort analysis
 is inherently about all-time customer behavior, not a comparable
 current-vs-previous-period window, so it doesn't fit that picker's model;
 changing the date range has no effect on this report. The current
-in-progress month is never shown as its own cohort row (it would always
-have zero columns, since its own "Month 1" hasn't started yet) — its
-partial data does appear, though, as the newest row's one populated
-column (Month 1).
+in-progress month is never shown as its own cohort row (Month 0 for that
+month would still be forming) — its partial repeat-purchase data does
+appear, though, as the newest row's Month 1 column.
 
 To correctly identify a customer's *true* first order (not just their
 first order within whatever window is fetched), the data fetch pulls
@@ -123,7 +133,7 @@ will be added to `format.ts` reusing that same parsing logic.
 export interface CohortRow {
   cohortMonth: string;         // ISO month, e.g. "2026-01"
   cohortSize: number;          // customers whose first-ever order was this month
-  retentionByMonth: number[];  // index 0 = "Month 1"; length = months elapsed since cohortMonth
+  retentionByMonth: number[];  // index 0 = "Month 0" (repeat orders in the cohort's own first month); length = 1 + months elapsed since cohortMonth
 }
 ```
 

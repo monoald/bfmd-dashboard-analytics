@@ -65,18 +65,15 @@ export function CustomerCohortTable({
           {columnCount > 0 && (
             <tr>
               <th className="py-1 pr-4" />
-              {Array.from({ length: columnCount }, (_, colIndex) => {
-                const monthIndex = colIndex + 1;
-                return (
-                  <th
-                    key={monthIndex}
-                    scope="col"
-                    className="py-1 text-center text-[11px] font-medium text-(--analytics-t2)"
-                  >
-                    Month {monthIndex}
-                  </th>
-                );
-              })}
+              {Array.from({ length: columnCount }, (_, monthIndex) => (
+                <th
+                  key={monthIndex}
+                  scope="col"
+                  className="py-1 text-center text-[11px] font-medium text-(--analytics-t2)"
+                >
+                  Month {monthIndex}
+                </th>
+              ))}
             </tr>
           )}
         </thead>
@@ -86,9 +83,8 @@ export function CustomerCohortTable({
               <td className="whitespace-nowrap py-1 pr-4 text-(--analytics-t1)">
                 {formatIsoMonthLabel(row.cohortMonth)}
               </td>
-              {Array.from({ length: columnCount }, (_, colIndex) => {
-                const monthIndex = colIndex + 1;
-                const value = row.retentionByMonth[colIndex];
+              {Array.from({ length: columnCount }, (_, monthIndex) => {
+                const value = row.retentionByMonth[monthIndex];
                 if (value === undefined) {
                   return <td key={monthIndex} className="p-1" />;
                 }
@@ -122,9 +118,18 @@ export function CustomerCohortTable({
                           {formatIsoMonthLabel(row.cohortMonth)} cohort
                         </p>
                         <p className="mt-1 text-[11px] text-(--analytics-t2)">
-                          Customers who returned to purchase from you in{" "}
-                          {formatIsoMonthLabel(
-                            addIsoMonths(row.cohortMonth, monthIndex),
+                          {monthIndex === 0 ? (
+                            <>
+                              Customers who placed a repeat order within
+                              their first month ({formatIsoMonthLabel(row.cohortMonth)})
+                            </>
+                          ) : (
+                            <>
+                              Customers who returned to purchase from you in{" "}
+                              {formatIsoMonthLabel(
+                                addIsoMonths(row.cohortMonth, monthIndex),
+                              )}
+                            </>
                           )}
                         </p>
                       </div>
