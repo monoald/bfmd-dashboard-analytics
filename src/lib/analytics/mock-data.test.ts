@@ -145,6 +145,32 @@ describe("buildMockDashboardPayload", () => {
   });
 });
 
+describe("buildMockDashboardPayload customer cohort analysis", () => {
+  it("returns 12 cohort rows with elapsed-month lengths decreasing toward the most recent", () => {
+    const range = resolveDateRange("7d", NOW);
+    const payload = buildMockDashboardPayload(range);
+
+    expect(payload.charts.customerCohortAnalysis).toHaveLength(12);
+    expect(
+      payload.charts.customerCohortAnalysis.map(
+        (row) => row.retentionByMonth.length,
+      ),
+    ).toEqual([12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+  });
+
+  it("gives every cohort row a positive cohort size and every retention value a plausible percentage", () => {
+    const payload = buildMockDashboardPayload(resolveDateRange("7d", NOW));
+
+    for (const row of payload.charts.customerCohortAnalysis) {
+      expect(row.cohortSize).toBeGreaterThan(0);
+      for (const value of row.retentionByMonth) {
+        expect(value).toBeGreaterThanOrEqual(0);
+        expect(value).toBeLessThan(100);
+      }
+    }
+  });
+});
+
 describe("buildMockLiveViewPayload", () => {
   it("produces a fully-populated LiveViewPayload with no errors", () => {
     const range = resolveDateRange("today", NOW);
