@@ -7,12 +7,13 @@
 // direct URL either.
 export const SHOW_SALES_BY_CHANNEL = false;
 
-// New, never verified against live order data (full order-history
-// aggregation across a 24-month window via the WC Analytics orders
-// endpoint). Disabled pending verification against the live store —
-// same gating pattern as SHOW_SALES_BY_CHANNEL above. See
-// docs/superpowers/specs/2026-09-08-customer-cohort-analysis-design.md.
-export const SHOW_CUSTOMER_COHORT_ANALYSIS = false;
+// Never verified against live order data (full order-history aggregation
+// across a 24-month window via the WC Analytics orders endpoint) —
+// enabled 2026-09-08 for preview only, at the user's request. If real WC
+// credentials are configured, treat these numbers as unverified until
+// the live-data checklist in project memory (pending_credentials_verification)
+// is run. See docs/superpowers/specs/2026-09-08-customer-cohort-analysis-design.md.
+export const SHOW_CUSTOMER_COHORT_ANALYSIS = true;
 
 export type ReportShape =
   | "line-comparison"
