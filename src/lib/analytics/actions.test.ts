@@ -19,6 +19,7 @@ vi.mock("./woocommerce/products", () => ({ getTopProductsByRevenue: vi.fn() }));
 vi.mock("./woocommerce/sales-channel", () => ({ getSalesByChannel: vi.fn() }));
 vi.mock("./ga4/sessions", () => ({
   getSessionsOverTime: vi.fn(),
+  getSessionsOverTimeBreakdown: vi.fn(),
   getSessionsByDevice: vi.fn(),
   getSessionsByLocation: vi.fn(),
 }));
@@ -47,6 +48,7 @@ import {
   getSessionsByDevice,
   getSessionsByLocation,
   getSessionsOverTime,
+  getSessionsOverTimeBreakdown,
 } from "./ga4/sessions";
 import { getRevenueStats } from "./woocommerce/revenue";
 import {
@@ -101,6 +103,7 @@ function mockHappyPath() {
   vi.mocked(getTopProductsByRevenue).mockResolvedValue([]);
   vi.mocked(getSalesByChannel).mockResolvedValue([]);
   vi.mocked(getSessionsOverTime).mockResolvedValue([]);
+  vi.mocked(getSessionsOverTimeBreakdown).mockResolvedValue([]);
   vi.mocked(getSessionsByDevice).mockResolvedValue([]);
   vi.mocked(getSessionsByLocation).mockResolvedValue([]);
   vi.mocked(getConversionFunnel).mockResolvedValue([]);
@@ -161,6 +164,22 @@ describe("getDashboardData", () => {
     expect(payload.errors.sessionsOverTime).toBe(
       "Unable to load data for this card. Please try again later.",
     );
+    expect(payload.summaryCards.grossSales.value).toBe(100);
+  });
+
+  it("isolates a sessionsOverTimeBreakdown fetcher rejection to its own card, without affecting the plain sessionsOverTime chart", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getSessionsOverTimeBreakdown).mockRejectedValue(
+      new Error("GA4 quota exceeded"),
+    );
+
+    const payload = await getDashboardData("7d");
+
+    expect(payload.errors.sessionsOverTimeBreakdown).toBe(
+      "Unable to load data for this card. Please try again later.",
+    );
+    expect(payload.errors.sessionsOverTime).toBeUndefined();
     expect(payload.summaryCards.grossSales.value).toBe(100);
   });
 

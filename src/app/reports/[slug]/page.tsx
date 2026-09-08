@@ -25,6 +25,7 @@ import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { RankedList } from "@/components/analytics/RankedList";
 import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTable";
+import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { TimeSeriesReportTable } from "@/components/analytics/TimeSeriesReportTable";
@@ -188,11 +189,14 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     }
 
     case "sessions-over-time": {
-      if (data.errors.sessionsOverTime) {
+      if (data.errors.sessionsOverTime || data.errors.sessionsOverTimeBreakdown) {
         return (
           <CardError
             title={config.title}
-            message={data.errors.sessionsOverTime}
+            message={
+              data.errors.sessionsOverTime ??
+              data.errors.sessionsOverTimeBreakdown!
+            }
           />
         );
       }
@@ -214,10 +218,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: headline.trend,
             }}
           />
-          <TimeSeriesReportTable
-            data={series}
-            formatValue={(v) => v.toLocaleString()}
-          />
+          <SessionsOverTimeTable data={data.charts.sessionsOverTimeBreakdown} />
         </div>
       );
     }

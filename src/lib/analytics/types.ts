@@ -45,6 +45,17 @@ export interface NamedValue {
   previousValue?: number;
 }
 
+// One row of the "Sessions over time" report's detail table: GA4's series
+// is already in chronological (ascending) order — unlike WooCommerce's
+// revenue/stats intervals, which come back most-recent-first — so unlike
+// RevenueBreakdownRow/SalesOverTimeBreakdownRow this needs only one date
+// label per row, not separate current/previous ones.
+export interface SessionsOverTimeBreakdownRow {
+  date: string;
+  onlineStoreVisitors: { current: number; previous: number };
+  sessions: { current: number; previous: number };
+}
+
 export interface FunnelStep {
   step: string;
   sessions: number;
@@ -101,6 +112,7 @@ export type CardKey =
   | "orders"
   | "returningCustomerRate"
   | "sessionsOverTime"
+  | "sessionsOverTimeBreakdown"
   | "conversionRateOverTime"
   | "conversionFunnel"
   | "sessionsByDevice"
@@ -123,6 +135,7 @@ export interface DashboardPayload {
   };
   charts: {
     sessionsOverTime: TimeSeriesData[];
+    sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[];
     conversionRateOverTime: TimeSeriesData[];
     conversionFunnel: FunnelStep[];
     sessionsByDevice: NamedValue[];
