@@ -15,6 +15,7 @@ import {
 } from "@/lib/analytics/normalize";
 import {
   getReportConfig,
+  SHOW_SALES_BY_CHANNEL,
   type ReportConfig,
 } from "@/lib/analytics/report-config";
 import type { DashboardPayload } from "@/lib/analytics/types";
@@ -290,6 +291,18 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     }
 
     case "total-sales-by-sales-channel": {
+      // See SHOW_SALES_BY_CHANNEL's comment in report-config.ts: this
+      // metric currently counts cancelled/failed/pending orders as sales,
+      // unlike every other revenue card. Gated here too so navigating
+      // directly to this URL can't surface the known-wrong numbers.
+      if (!SHOW_SALES_BY_CHANNEL) {
+        return (
+          <CardError
+            title={config.title}
+            message="This report is temporarily disabled while its data source is being corrected."
+          />
+        );
+      }
       if (data.errors.salesByChannel) {
         return (
           <CardError

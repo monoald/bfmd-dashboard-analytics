@@ -1,3 +1,12 @@
+// "Total sales by sales channel" hits the core `/wc/v3/orders` REST
+// endpoint with status: "any", which counts cancelled/failed/pending
+// orders as sales — unlike every other revenue card, which goes through
+// the Analytics API's own valid-order filtering (see sales-channel.ts).
+// Disabled pending a rewrite; gates both the main dashboard card and the
+// dedicated report page so the known-wrong data can't be reached via a
+// direct URL either.
+export const SHOW_SALES_BY_CHANNEL = false;
+
 export type ReportShape =
   "line-comparison" | "line-simple" | "donut" | "list" | "ranked" | "funnel";
 
