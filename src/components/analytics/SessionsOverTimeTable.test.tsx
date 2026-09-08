@@ -74,9 +74,10 @@ describe("SessionsOverTimeTable", () => {
     render(<SessionsOverTimeTable data={data} />);
 
     const summaryRow = screen.getAllByRole("row")[1]; // [0] is the header row
-    expect(within(summaryRow).getByText("25")).toBeInTheDocument(); // visitors current 10+15
+    // visitors current 10+15=25, sessions previous 11+14=25 — "25"
+    // legitimately appears twice.
+    expect(within(summaryRow).getAllByText("25")).toHaveLength(2);
     expect(within(summaryRow).getByText("13")).toBeInTheDocument(); // visitors previous 5+8
     expect(within(summaryRow).getByText("50")).toBeInTheDocument(); // sessions current 20+30
-    expect(within(summaryRow).getByText("25")).toBeInTheDocument(); // sessions previous 11+14
   });
 });

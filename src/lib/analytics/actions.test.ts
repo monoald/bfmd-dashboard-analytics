@@ -26,6 +26,7 @@ vi.mock("./ga4/sessions", () => ({
 vi.mock("./ga4/funnel", () => ({
   getConversionFunnel: vi.fn(),
   getConversionRateOverTime: vi.fn(),
+  getConversionRateOverTimeBreakdown: vi.fn(),
   getConversionRateSummary: vi.fn(),
 }));
 vi.mock("./ga4/referrers", () => ({ getSocialReferrerRevenue: vi.fn() }));
@@ -38,6 +39,7 @@ import { getLiveVisitorCount } from "./ga4/realtime";
 import {
   getConversionFunnel,
   getConversionRateOverTime,
+  getConversionRateOverTimeBreakdown,
   getConversionRateSummary,
 } from "./ga4/funnel";
 import { getOrdersFulfilled } from "./woocommerce/orders";
@@ -108,6 +110,7 @@ function mockHappyPath() {
   vi.mocked(getSessionsByLocation).mockResolvedValue([]);
   vi.mocked(getConversionFunnel).mockResolvedValue([]);
   vi.mocked(getConversionRateOverTime).mockResolvedValue([]);
+  vi.mocked(getConversionRateOverTimeBreakdown).mockResolvedValue([]);
   vi.mocked(getConversionRateSummary).mockResolvedValue({
     value: 10,
     changePercentage: 5,
@@ -180,6 +183,22 @@ describe("getDashboardData", () => {
       "Unable to load data for this card. Please try again later.",
     );
     expect(payload.errors.sessionsOverTime).toBeUndefined();
+    expect(payload.summaryCards.grossSales.value).toBe(100);
+  });
+
+  it("isolates a conversionRateOverTimeBreakdown fetcher rejection to its own card, without affecting the plain conversionRateOverTime chart", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getConversionRateOverTimeBreakdown).mockRejectedValue(
+      new Error("GA4 quota exceeded"),
+    );
+
+    const payload = await getDashboardData("7d");
+
+    expect(payload.errors.conversionRateOverTimeBreakdown).toBe(
+      "Unable to load data for this card. Please try again later.",
+    );
+    expect(payload.errors.conversionRateOverTime).toBeUndefined();
     expect(payload.summaryCards.grossSales.value).toBe(100);
   });
 

@@ -11,7 +11,6 @@ import {
   computeChange,
   sparklineToSeries,
   sumSeries,
-  weightedRate,
 } from "@/lib/analytics/normalize";
 import {
   getReportConfig,
@@ -20,6 +19,7 @@ import {
 } from "@/lib/analytics/report-config";
 import type { DashboardPayload } from "@/lib/analytics/types";
 import { CardError } from "@/components/analytics/CardError";
+import { ConversionRateOverTimeTable } from "@/components/analytics/ConversionRateOverTimeTable";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
@@ -28,7 +28,6 @@ import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTa
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
-import { TimeSeriesReportTable } from "@/components/analytics/TimeSeriesReportTable";
 import { TotalSalesOverTimeTable } from "@/components/analytics/TotalSalesOverTimeTable";
 
 const REPORT_CHART_HEIGHT = 420;
@@ -224,12 +223,18 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     }
 
     case "conversion-rate-over-time": {
-      if (data.errors.conversionRateOverTime || data.errors.conversionRate) {
+      if (
+        data.errors.conversionRateOverTime ||
+        data.errors.conversionRate ||
+        data.errors.conversionRateOverTimeBreakdown
+      ) {
         return (
           <CardError
             title={config.title}
             message={
-              data.errors.conversionRateOverTime ?? data.errors.conversionRate!
+              data.errors.conversionRateOverTime ??
+              data.errors.conversionRate ??
+              data.errors.conversionRateOverTimeBreakdown!
             }
           />
         );
@@ -250,21 +255,8 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: data.summaryCards.conversionRate.trend,
             }}
           />
-          <TimeSeriesReportTable
-            data={series}
-            formatValue={formatPercent}
-            totalOverride={{
-              // Reuse the headline's own value for "current" so the table
-              // can't drift from it even by a rounding hair — weightedRate
-              // is only needed for "previous", since summaryCards.conversionRate
-              // (a ChangeMetric) doesn't expose that raw number.
-              current: data.summaryCards.conversionRate.value,
-              previous: weightedRate(
-                series,
-                data.charts.sessionsOverTime,
-                "previousPeriod",
-              ),
-            }}
+          <ConversionRateOverTimeTable
+            data={data.charts.conversionRateOverTimeBreakdown}
           />
         </div>
       );

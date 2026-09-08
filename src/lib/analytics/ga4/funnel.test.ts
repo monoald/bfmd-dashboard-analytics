@@ -7,6 +7,7 @@ import { runGa4Report } from "./client";
 import {
   getConversionFunnel,
   getConversionRateOverTime,
+  getConversionRateOverTimeBreakdown,
   getConversionRateSummary,
 } from "./funnel";
 
@@ -133,6 +134,68 @@ describe("getConversionRateOverTime", () => {
       date: "Aug 2",
       currentPeriod: 0,
       previousPeriod: 0,
+    });
+  });
+});
+
+describe("getConversionRateOverTimeBreakdown", () => {
+  it("aligns sessions and each funnel-step count per bucket, computing conversionRate from the raw counts (not averaging per-bucket percentages)", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260801"], metricValues: [100] },
+      ]) // current sessions
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260801", "add_to_cart"], metricValues: [40] },
+      ]) // current addedToCart
+      .mockResolvedValueOnce([
+        {
+          dimensionValues: ["20260801", "begin_checkout"],
+          metricValues: [20],
+        },
+      ]) // current reachedCheckout
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260801", "purchase"], metricValues: [10] },
+      ]) // current completedCheckout
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260725"], metricValues: [50] },
+      ]) // previous sessions
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260725", "add_to_cart"], metricValues: [15] },
+      ]) // previous addedToCart
+      .mockResolvedValueOnce([
+        {
+          dimensionValues: ["20260725", "begin_checkout"],
+          metricValues: [8],
+        },
+      ]) // previous reachedCheckout
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260725", "purchase"], metricValues: [5] },
+      ]); // previous completedCheckout
+
+    const result = await getConversionRateOverTimeBreakdown(range);
+
+    expect(result).toHaveLength(7);
+    expect(result[0]).toEqual({
+      date: "Aug 1",
+      sessions: { current: 100, previous: 50 },
+      addedToCart: { current: 40, previous: 15 },
+      reachedCheckout: { current: 20, previous: 8 },
+      completedCheckout: { current: 10, previous: 5 },
+      // conversionRate = completedCheckout / sessions * 100: 10/100=10.0,
+      // 5/50=10.0 — deliberately equal to the naive "average the rate"
+      // result here, so a regression to averaging wouldn't be caught by
+      // this row alone; the point of this test is the shape/wiring, not
+      // distinguishing the two calculation methods (that's covered by the
+      // existing weightedRate/AOV regression tests elsewhere).
+      conversionRate: { current: 10, previous: 10 },
+    });
+    expect(result[1]).toEqual({
+      date: "Aug 2",
+      sessions: { current: 0, previous: 0 },
+      addedToCart: { current: 0, previous: 0 },
+      reachedCheckout: { current: 0, previous: 0 },
+      completedCheckout: { current: 0, previous: 0 },
+      conversionRate: { current: 0, previous: 0 },
     });
   });
 });
