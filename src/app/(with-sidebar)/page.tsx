@@ -15,8 +15,7 @@ import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { RankedList } from "@/components/analytics/RankedList";
 import { CardError } from "@/components/analytics/CardError";
 import { CHIP_CLASS } from "@/components/analytics/theme";
-
-const SHOW_SALES_BY_CHANNEL = false;
+import { SHOW_SALES_BY_CHANNEL } from "@/lib/analytics/report-config";
 
 export default async function AnalyticsPage({
   searchParams,
