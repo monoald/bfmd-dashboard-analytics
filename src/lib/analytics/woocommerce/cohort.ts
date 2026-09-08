@@ -7,7 +7,7 @@ import {
 } from "../format";
 import type { CohortRow } from "../types";
 
-interface WcOrderRow {
+export interface WcOrderRow {
   customer_id: number;
   date_created: string;
 }
@@ -55,7 +55,12 @@ export async function getCustomerCohortAnalysis(
 
   const activeMonthsByCustomer = new Map<number, Set<string>>();
   for (const order of orders) {
-    if (order.customer_id === 0) continue;
+    // WcOrderRow types customer_id as `number`, but that's an unverified
+    // assumption about this endpoint's actual live response shape (no
+    // fetcher in this codebase reads this endpoint's response body, only
+    // its X-WP-Total header) — coerce defensively in case the live API
+    // returns customer_id as a numeric string instead.
+    if (Number(order.customer_id) === 0) continue;
     const month = wcDateToIsoMonth(order.date_created);
     if (!month) continue;
     const months =
