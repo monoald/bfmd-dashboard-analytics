@@ -62,6 +62,23 @@ export function CustomerCohortTable({
               </th>
             )}
           </tr>
+          {columnCount > 0 && (
+            <tr>
+              <th className="py-1 pr-4" />
+              {Array.from({ length: columnCount }, (_, colIndex) => {
+                const monthIndex = colIndex + 1;
+                return (
+                  <th
+                    key={monthIndex}
+                    scope="col"
+                    className="py-1 text-center text-[11px] font-medium text-(--analytics-t2)"
+                  >
+                    Month {monthIndex}
+                  </th>
+                );
+              })}
+            </tr>
+          )}
         </thead>
         <tbody>
           {visibleRows.map((row, rowIndex) => (
@@ -76,18 +93,26 @@ export function CustomerCohortTable({
                   return <td key={monthIndex} className="p-1" />;
                 }
                 const isHovered =
+                  variant === "full" &&
                   hovered?.rowIndex === rowIndex &&
                   hovered?.monthIndex === monthIndex;
+                const interactiveProps =
+                  variant === "full"
+                    ? {
+                        tabIndex: 0,
+                        onMouseEnter: () =>
+                          setHovered({ rowIndex, monthIndex }),
+                        onMouseLeave: () => setHovered(null),
+                        onFocus: () => setHovered({ rowIndex, monthIndex }),
+                        onBlur: () => setHovered(null),
+                      }
+                    : {};
                 return (
                   <td
                     key={monthIndex}
                     className="relative p-1 text-center tabular-nums text-(--analytics-t1)"
                     style={{ backgroundColor: cellBackground(value) }}
-                    tabIndex={0}
-                    onMouseEnter={() => setHovered({ rowIndex, monthIndex })}
-                    onMouseLeave={() => setHovered(null)}
-                    onFocus={() => setHovered({ rowIndex, monthIndex })}
-                    onBlur={() => setHovered(null)}
+                    {...interactiveProps}
                   >
                     {value}%
                     {isHovered && (

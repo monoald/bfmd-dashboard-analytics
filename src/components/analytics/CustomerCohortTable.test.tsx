@@ -84,4 +84,44 @@ describe("CustomerCohortTable", () => {
     expect(screen.getByText("May 2026")).toBeInTheDocument();
     expect(screen.queryByText("4%")).not.toBeInTheDocument();
   });
+
+  it("preview variant does not show a tooltip even when a cell is hovered", () => {
+    render(
+      <CustomerCohortTable
+        rows={[row({ cohortMonth: "2026-01", retentionByMonth: [42] })]}
+        variant="preview"
+      />,
+    );
+
+    fireEvent.mouseEnter(screen.getByText("42%"));
+
+    expect(
+      screen.queryByText("Month 1 · Jan 2026 cohort"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders a 'Month N' header for each column in the full variant", () => {
+    render(
+      <CustomerCohortTable
+        rows={[row({ cohortMonth: "2026-01", retentionByMonth: [20, 15, 10] })]}
+      />,
+    );
+
+    expect(screen.getByText("Month 1")).toBeInTheDocument();
+    expect(screen.getByText("Month 2")).toBeInTheDocument();
+    expect(screen.getByText("Month 3")).toBeInTheDocument();
+  });
+
+  it("renders a 'Month N' header for each column in the preview variant", () => {
+    render(
+      <CustomerCohortTable
+        rows={[row({ cohortMonth: "2026-01", retentionByMonth: [20, 15] })]}
+        variant="preview"
+      />,
+    );
+
+    expect(screen.getByText("Month 1")).toBeInTheDocument();
+    expect(screen.getByText("Month 2")).toBeInTheDocument();
+    expect(screen.queryByText("Month 3")).not.toBeInTheDocument();
+  });
 });
