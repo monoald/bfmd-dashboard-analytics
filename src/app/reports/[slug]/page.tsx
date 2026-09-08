@@ -14,12 +14,14 @@ import {
 } from "@/lib/analytics/normalize";
 import {
   getReportConfig,
+  SHOW_CUSTOMER_COHORT_ANALYSIS,
   SHOW_SALES_BY_CHANNEL,
   type ReportConfig,
 } from "@/lib/analytics/report-config";
 import type { DashboardPayload } from "@/lib/analytics/types";
 import { CardError } from "@/components/analytics/CardError";
 import { ConversionRateOverTimeTable } from "@/components/analytics/ConversionRateOverTimeTable";
+import { CustomerCohortTable } from "@/components/analytics/CustomerCohortTable";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
@@ -312,6 +314,32 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           formatValue="currency"
           size={REPORT_DONUT_SIZE}
         />
+      );
+    }
+
+    case "customer-cohort-analysis": {
+      // See SHOW_CUSTOMER_COHORT_ANALYSIS's comment in report-config.ts:
+      // this metric has never been verified against live order data.
+      // Gated here too so navigating directly to this URL can't surface
+      // unverified numbers.
+      if (!SHOW_CUSTOMER_COHORT_ANALYSIS) {
+        return (
+          <CardError
+            title={config.title}
+            message="This report is temporarily disabled while its data is being verified."
+          />
+        );
+      }
+      if (data.errors.customerCohortAnalysis) {
+        return (
+          <CardError
+            title={config.title}
+            message={data.errors.customerCohortAnalysis}
+          />
+        );
+      }
+      return (
+        <CustomerCohortTable rows={data.charts.customerCohortAnalysis} />
       );
     }
 
