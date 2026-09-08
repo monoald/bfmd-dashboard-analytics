@@ -187,6 +187,16 @@ function baseRaw(): RawPipelineResults {
     conversionRateOverTime: [
       { date: "Aug 1", currentPeriod: 10, previousPeriod: 5 },
     ],
+    conversionRateOverTimeBreakdown: [
+      {
+        date: "Aug 1",
+        sessions: { current: 100, previous: 80 },
+        addedToCart: { current: 30, previous: 24 },
+        reachedCheckout: { current: 15, previous: 12 },
+        completedCheckout: { current: 10, previous: 4 },
+        conversionRate: { current: 10, previous: 5 },
+      },
+    ],
     conversionRateSummary: { value: 10, changePercentage: 100, trend: "up" },
     totalSalesBySocialReferrer: [{ name: "youtube", value: 50 }],
   };
@@ -357,6 +367,31 @@ describe("buildDashboardPayload", () => {
         sessions: { current: 10, previous: 8 },
         onlineStoreVisitors: { current: 7, previous: 6 },
       },
+    ]);
+    expect(payload.charts.conversionRateOverTimeBreakdown).toEqual([
+      {
+        date: "Aug 1",
+        sessions: { current: 100, previous: 80 },
+        addedToCart: { current: 30, previous: 24 },
+        reachedCheckout: { current: 15, previous: 12 },
+        completedCheckout: { current: 10, previous: 4 },
+        conversionRate: { current: 10, previous: 5 },
+      },
+    ]);
+  });
+
+  it("isolates a conversionRateOverTimeBreakdown failure without affecting the plain conversionRateOverTime chart", () => {
+    const raw = baseRaw();
+    raw.conversionRateOverTimeBreakdown = new Error("GA4 quota exceeded");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.conversionRateOverTimeBreakdown).toBe(
+      "GA4 quota exceeded",
+    );
+    expect(payload.charts.conversionRateOverTimeBreakdown).toEqual([]);
+    expect(payload.charts.conversionRateOverTime).toEqual([
+      { date: "Aug 1", currentPeriod: 10, previousPeriod: 5 },
     ]);
   });
 

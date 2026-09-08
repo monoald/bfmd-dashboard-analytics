@@ -2,6 +2,7 @@ import { formatWcIntervalLabel } from "./format";
 import type {
   CardKey,
   ChangeMetric,
+  ConversionRateOverTimeBreakdownRow,
   DashboardPayload,
   FunnelStep,
   NamedValue,
@@ -93,6 +94,7 @@ export interface RawPipelineResults {
   sessionsByLocation: NamedValue[] | Error;
   conversionFunnel: FunnelStep[] | Error;
   conversionRateOverTime: TimeSeriesData[] | Error;
+  conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[] | Error;
   conversionRateSummary: ChangeMetric | Error;
   totalSalesBySocialReferrer: NamedValue[] | Error;
 }
@@ -377,6 +379,11 @@ export function buildDashboardPayload(
         [],
       ),
       conversionRateOverTime: conversionRateOverTimeSeries,
+      conversionRateOverTimeBreakdown: unwrap(
+        "conversionRateOverTimeBreakdown",
+        raw.conversionRateOverTimeBreakdown,
+        [],
+      ),
       conversionFunnel: unwrap("conversionFunnel", raw.conversionFunnel, []),
       sessionsByDevice: unwrap("sessionsByDevice", raw.sessionsByDevice, []),
       sessionsByLocation: unwrap(

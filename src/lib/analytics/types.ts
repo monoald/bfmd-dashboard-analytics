@@ -56,6 +56,21 @@ export interface SessionsOverTimeBreakdownRow {
   sessions: { current: number; previous: number };
 }
 
+// One row of the "Conversion rate over time" report's detail table:
+// GA4's series is chronological (see SessionsOverTimeBreakdownRow), so only
+// one date label per row. `conversionRate` is computed per-bucket directly
+// from that bucket's raw completedCheckout/sessions counts, never by
+// averaging already-computed rate percentages across buckets (the class of
+// bug documented on weightedRate in normalize.ts).
+export interface ConversionRateOverTimeBreakdownRow {
+  date: string;
+  sessions: { current: number; previous: number };
+  addedToCart: { current: number; previous: number };
+  reachedCheckout: { current: number; previous: number };
+  completedCheckout: { current: number; previous: number };
+  conversionRate: { current: number; previous: number };
+}
+
 export interface FunnelStep {
   step: string;
   sessions: number;
@@ -114,6 +129,7 @@ export type CardKey =
   | "sessionsOverTime"
   | "sessionsOverTimeBreakdown"
   | "conversionRateOverTime"
+  | "conversionRateOverTimeBreakdown"
   | "conversionFunnel"
   | "sessionsByDevice"
   | "sessionsByLocation"
@@ -137,6 +153,7 @@ export interface DashboardPayload {
     sessionsOverTime: TimeSeriesData[];
     sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[];
     conversionRateOverTime: TimeSeriesData[];
+    conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[];
     conversionFunnel: FunnelStep[];
     sessionsByDevice: NamedValue[];
     sessionsByLocation: NamedValue[];

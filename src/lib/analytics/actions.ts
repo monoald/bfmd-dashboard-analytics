@@ -21,6 +21,7 @@ import {
 import {
   getConversionFunnel,
   getConversionRateOverTime,
+  getConversionRateOverTimeBreakdown,
   getConversionRateSummary,
 } from "./ga4/funnel";
 import { getSocialReferrerRevenue } from "./ga4/referrers";
@@ -77,6 +78,10 @@ const cachedConversionRateOverTime = withRangeCache(
   getConversionRateOverTime,
   "ga4-conversion-rate-over-time",
 );
+const cachedConversionRateOverTimeBreakdown = withRangeCache(
+  getConversionRateOverTimeBreakdown,
+  "ga4-conversion-rate-over-time-breakdown",
+);
 const cachedConversionRateSummary = withRangeCache(
   getConversionRateSummary,
   "ga4-conversion-rate-summary",
@@ -86,11 +91,6 @@ const cachedSocialReferrerRevenue = withRangeCache(
   "ga4-social-referrer-revenue",
 );
 
-// The live view polls itself via router.refresh() every 60s (see
-// LiveViewAutoRefresh); without this, every refresh re-issued all 6 of these
-// as fresh WC/GA4 calls, and any concurrent viewer multiplied that further.
-// A short cache keeps the view reasonably live while absorbing repeat
-// refreshes and simultaneous viewers into a shared fetch.
 const LIVE_VIEW_REVALIDATE_SECONDS = 45;
 const liveCachedRevenueStats = withCache(
   getRevenueStats,
@@ -174,6 +174,7 @@ export async function getDashboardData(
     sessionsByLocation,
     conversionFunnel,
     conversionRateOverTime,
+    conversionRateOverTimeBreakdown,
     conversionRateSummary,
     totalSalesBySocialReferrer,
   ] = await Promise.all([
@@ -188,6 +189,7 @@ export async function getDashboardData(
     settle(cachedSessionsByLocation(range)),
     settle(cachedConversionFunnel(range)),
     settle(cachedConversionRateOverTime(range)),
+    settle(cachedConversionRateOverTimeBreakdown(range)),
     settle(cachedConversionRateSummary(range)),
     settle(cachedSocialReferrerRevenue(range)),
   ]);
@@ -204,6 +206,7 @@ export async function getDashboardData(
     sessionsByLocation,
     conversionFunnel,
     conversionRateOverTime,
+    conversionRateOverTimeBreakdown,
     conversionRateSummary,
     totalSalesBySocialReferrer,
   };

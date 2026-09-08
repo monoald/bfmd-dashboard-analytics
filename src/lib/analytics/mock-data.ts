@@ -228,6 +228,43 @@ export function buildMockDashboardPayload(
         },
       })),
       conversionRateOverTime,
+      // Same per-step ratios used for the conversionFunnel snapshot below,
+      // applied per-bucket instead of to the period total.
+      conversionRateOverTimeBreakdown: labels.map((label, i) => {
+        const sessions = {
+          current: Math.round(sessionsOverTime[i].currentPeriod),
+          previous: Math.round(sessionsOverTime[i].previousPeriod),
+        };
+        const addedToCart = {
+          current: Math.round(sessions.current * 0.26),
+          previous: Math.round(sessions.previous * 0.285),
+        };
+        const reachedCheckout = {
+          current: Math.round(sessions.current * 0.28),
+          previous: Math.round(sessions.previous * 0.31),
+        };
+        const completedCheckout = {
+          current: Math.round(sessions.current * 0.1),
+          previous: Math.round(sessions.previous * 0.082),
+        };
+        return {
+          date: label,
+          sessions,
+          addedToCart,
+          reachedCheckout,
+          completedCheckout,
+          conversionRate: {
+            current: sessions.current
+              ? Math.round((completedCheckout.current / sessions.current) * 1000) / 10
+              : 0,
+            previous: sessions.previous
+              ? Math.round(
+                  (completedCheckout.previous / sessions.previous) * 1000,
+                ) / 10
+              : 0,
+          },
+        };
+      }),
       conversionFunnel: [
         {
           step: "Sessions",

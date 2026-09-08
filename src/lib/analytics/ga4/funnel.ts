@@ -3,6 +3,7 @@ import { alignSeries, toIsoDate } from "./format";
 import { computeChange } from "../normalize";
 import type {
   ChangeMetric,
+  ConversionRateOverTimeBreakdownRow,
   FunnelStep,
   PeriodBounds,
   ResolvedDateRange,
@@ -44,9 +45,6 @@ async function fetchFunnelCounts(period: PeriodBounds): Promise<number[]> {
 export async function getConversionFunnel(
   range: ResolvedDateRange,
 ): Promise<FunnelStep[]> {
-  // Sequential, not Promise.all: fetchFunnelCounts itself issues its GA4 calls
-  // sequentially, and racing two of these against each other reorders results
-  // when a test's mocked call queue is shared (see getConversionRateSummary).
   const currentCounts = await fetchFunnelCounts(range.current);
   const previousCounts = await fetchFunnelCounts(range.previous);
   const sessions = currentCounts[0] || 1;
@@ -127,4 +125,107 @@ export async function getConversionRateOverTime(
     range.previous,
     range.interval,
   );
+}
+
+function toBucketMap(rows: { dimensionValues: string[]; metricValues: number[] }[]): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const row of rows) map.set(row.dimensionValues[0], row.metricValues[0]);
+  return map;
+}
+
+async function fetchFunnelCountsByBucket(
+  period: PeriodBounds,
+  interval: "hour" | "day" | "week",
+): Promise<{
+  sessions: Map<string, number>;
+  addedToCart: Map<string, number>;
+  reachedCheckout: Map<string, number>;
+  completedCheckout: Map<string, number>;
+}> {
+  const dimension = interval === "hour" ? "dateHour" : "date";
+  const commonParams = {
+    startDate: toIsoDate(period.start),
+    endDate: toIsoDate(period.end),
+  };
+
+  const [sessionsRows, addToCartRows, beginCheckoutRows, purchaseRows] =
+    await Promise.all([
+      runGa4Report({ dimensions: [dimension], metrics: ["sessions"], ...commonParams }),
+      runGa4Report({
+        dimensions: [dimension, "eventName"],
+        metrics: ["sessions"],
+        ...commonParams,
+        dimensionFilter: { fieldName: "eventName", value: "add_to_cart" },
+      }),
+      runGa4Report({
+        dimensions: [dimension, "eventName"],
+        metrics: ["sessions"],
+        ...commonParams,
+        dimensionFilter: { fieldName: "eventName", value: "begin_checkout" },
+      }),
+      runGa4Report({
+        dimensions: [dimension, "eventName"],
+        metrics: ["sessions"],
+        ...commonParams,
+        dimensionFilter: { fieldName: "eventName", value: "purchase" },
+      }),
+    ]);
+
+  return {
+    sessions: toBucketMap(sessionsRows),
+    addedToCart: toBucketMap(addToCartRows),
+    reachedCheckout: toBucketMap(beginCheckoutRows),
+    completedCheckout: toBucketMap(purchaseRows),
+  };
+}
+
+export async function getConversionRateOverTimeBreakdown(
+  range: ResolvedDateRange,
+): Promise<ConversionRateOverTimeBreakdownRow[]> {
+  const [current, previous] = await Promise.all([
+    fetchFunnelCountsByBucket(range.current, range.interval),
+    fetchFunnelCountsByBucket(range.previous, range.interval),
+  ]);
+
+  const align = (currentMap: Map<string, number>, previousMap: Map<string, number>) =>
+    alignSeries(currentMap, previousMap, range.current, range.previous, range.interval);
+
+  const sessionsSeries = align(current.sessions, previous.sessions);
+  const addedToCartSeries = align(current.addedToCart, previous.addedToCart);
+  const reachedCheckoutSeries = align(
+    current.reachedCheckout,
+    previous.reachedCheckout,
+  );
+  const completedCheckoutSeries = align(
+    current.completedCheckout,
+    previous.completedCheckout,
+  );
+
+  function rate(completed: number, sessions: number): number {
+    return sessions === 0 ? 0 : Math.round((completed / sessions) * 1000) / 10;
+  }
+
+  return sessionsSeries.map((point, i) => {
+    const completed = completedCheckoutSeries[i];
+    return {
+      date: point.date,
+      sessions: { current: point.currentPeriod, previous: point.previousPeriod },
+      addedToCart: {
+        current: addedToCartSeries[i].currentPeriod,
+        previous: addedToCartSeries[i].previousPeriod,
+      },
+      reachedCheckout: {
+        current: reachedCheckoutSeries[i].currentPeriod,
+        previous: reachedCheckoutSeries[i].previousPeriod,
+      },
+      completedCheckout: {
+        current: completed.currentPeriod,
+        previous: completed.previousPeriod,
+      },
+      conversionRate: {
+        current: rate(completed.currentPeriod, point.currentPeriod),
+        previous: rate(completed.previousPeriod, point.previousPeriod),
+      },
+    };
+  });
 }
