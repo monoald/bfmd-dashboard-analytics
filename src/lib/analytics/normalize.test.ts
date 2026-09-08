@@ -199,6 +199,7 @@ function baseRaw(): RawPipelineResults {
     ],
     conversionRateSummary: { value: 10, changePercentage: 100, trend: "up" },
     totalSalesBySocialReferrer: [{ name: "youtube", value: 50 }],
+    customerCohortAnalysis: [],
   };
 }
 
@@ -407,6 +408,31 @@ describe("buildDashboardPayload", () => {
     expect(payload.charts.sessionsOverTimeBreakdown).toEqual([]);
     expect(payload.charts.sessionsOverTime).toEqual([
       { date: "Aug 1", currentPeriod: 10, previousPeriod: 8 },
+    ]);
+  });
+
+  it("isolates a customerCohortAnalysis failure to its own card, defaulting to an empty array", () => {
+    const raw = baseRaw();
+    raw.customerCohortAnalysis = new Error("WooCommerce API error 500");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.customerCohortAnalysis).toBe(
+      "WooCommerce API error 500",
+    );
+    expect(payload.charts.customerCohortAnalysis).toEqual([]);
+  });
+
+  it("passes through customerCohortAnalysis rows unchanged on success", () => {
+    const raw = baseRaw();
+    raw.customerCohortAnalysis = [
+      { cohortMonth: "2026-06", cohortSize: 2, retentionByMonth: [50] },
+    ];
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.charts.customerCohortAnalysis).toEqual([
+      { cohortMonth: "2026-06", cohortSize: 2, retentionByMonth: [50] },
     ]);
   });
 

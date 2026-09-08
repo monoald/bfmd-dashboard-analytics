@@ -2,6 +2,7 @@ import { formatWcIntervalLabel } from "./format";
 import type {
   CardKey,
   ChangeMetric,
+  CohortRow,
   ConversionRateOverTimeBreakdownRow,
   DashboardPayload,
   FunnelStep,
@@ -97,6 +98,7 @@ export interface RawPipelineResults {
   conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[] | Error;
   conversionRateSummary: ChangeMetric | Error;
   totalSalesBySocialReferrer: NamedValue[] | Error;
+  customerCohortAnalysis: CohortRow[] | Error;
 }
 
 const EMPTY_REVENUE_STATS: RevenueStatsResult = {
@@ -409,6 +411,11 @@ export function buildDashboardPayload(
         interval,
       ),
       salesByProduct: unwrap("salesByProduct", raw.salesByProduct, []),
+      customerCohortAnalysis: unwrap(
+        "customerCohortAnalysis",
+        raw.customerCohortAnalysis,
+        [],
+      ),
     },
     errors,
   };

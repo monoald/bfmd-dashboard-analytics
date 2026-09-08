@@ -151,7 +151,8 @@ export type CardKey =
   | "salesBreakdown"
   | "salesByChannel"
   | "aovOverTime"
-  | "salesByProduct";
+  | "salesByProduct"
+  | "customerCohortAnalysis";
 
 export interface DashboardPayload {
   summaryCards: {
@@ -178,6 +179,7 @@ export interface DashboardPayload {
     revenueBreakdownOverTime: RevenueBreakdownRow[];
     salesOverTimeBreakdown: SalesOverTimeBreakdownRow[];
     salesByProduct: NamedValue[];
+    customerCohortAnalysis: CohortRow[];
   };
   errors: Partial<Record<CardKey, string>>;
 }
