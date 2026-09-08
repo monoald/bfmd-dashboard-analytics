@@ -1,5 +1,7 @@
 import { computeChange } from "./normalize";
+import { addIsoMonths, dateToIsoMonth } from "./format";
 import type {
+  CohortRow,
   DashboardPayload,
   LiveViewPayload,
   ResolvedDateRange,
@@ -112,6 +114,24 @@ function sum(
   key: "currentPeriod" | "previousPeriod",
 ): number {
   return series.reduce((total, point) => total + point[key], 0);
+}
+
+function buildMockCohortRows(referenceDate: Date): CohortRow[] {
+  const currentMonth = dateToIsoMonth(referenceDate);
+  const rows: CohortRow[] = [];
+  for (let i = 12; i >= 1; i--) {
+    const cohortMonth = addIsoMonths(currentMonth, -i);
+    const cohortIndex = 12 - i;
+    const cohortSize = Math.round(wave(cohortIndex, 45, 15, 1.2));
+    const retentionByMonth: number[] = [];
+    for (let n = 1; n <= i; n++) {
+      const decay = Math.max(3, 14 - n * 1.1);
+      const value = wave(n + cohortIndex, decay, 4, cohortIndex * 0.5);
+      retentionByMonth.push(Math.round(value * 10) / 10);
+    }
+    rows.push({ cohortMonth, cohortSize, retentionByMonth });
+  }
+  return rows;
 }
 
 export function buildMockDashboardPayload(
@@ -484,6 +504,7 @@ export function buildMockDashboardPayload(
           previousValue: Math.round(grossSalesPrevious * 0.019),
         },
       ],
+      customerCohortAnalysis: buildMockCohortRows(range.current.end),
     },
     errors: {},
   };
