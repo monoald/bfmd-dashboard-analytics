@@ -4,6 +4,7 @@ vi.mock("./client", () => ({ fetchWcAllPages: vi.fn() }));
 
 import { fetchWcAllPages } from "./client";
 import { getCustomerCohortAnalysis } from "./cohort";
+import type { WcOrderRow } from "./cohort";
 
 afterEach(() => {
   vi.resetAllMocks();
@@ -102,6 +103,23 @@ describe("getCustomerCohortAnalysis", () => {
       orderRow(0, "2026-06-05 10:00:00"),
       orderRow(0, "2026-07-05 10:00:00"),
     ]);
+
+    const rows = await getCustomerCohortAnalysis(NOW);
+    const juneCohort = rows.find((r) => r.cohortMonth === "2026-06");
+
+    expect(juneCohort?.cohortSize).toBe(0);
+  });
+
+  it("excludes guest checkouts even when the live API returns customer_id as the string \"0\" instead of the number 0", async () => {
+    // WcOrderRow types customer_id as `number`, but that's an unverified
+    // assumption about the live API's actual response shape (see cohort.ts).
+    // Deliberately bypass the type here to simulate the live API returning
+    // customer_id as a numeric string.
+    const guestOrderWithStringId = {
+      customer_id: "0",
+      date_created: "2026-06-05 10:00:00",
+    } as unknown as WcOrderRow;
+    vi.mocked(fetchWcAllPages).mockResolvedValue([guestOrderWithStringId]);
 
     const rows = await getCustomerCohortAnalysis(NOW);
     const juneCohort = rows.find((r) => r.cohortMonth === "2026-06");
