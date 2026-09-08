@@ -5,6 +5,7 @@ import {
   computeChange,
   sparklineToSeries,
   sumSeries,
+  weightedRate,
   type RawPipelineResults,
 } from "./normalize";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
@@ -74,6 +75,42 @@ describe("averageSeries", () => {
 
   it("returns 0 for an empty series instead of dividing by zero", () => {
     expect(averageSeries([], "currentPeriod")).toBe(0);
+  });
+});
+
+describe("weightedRate", () => {
+  it("weights by the paired count series instead of averaging the raw rates", () => {
+    // Hour 0: 1 session, 0% conversion. Hour 1: 9 sessions, 100% conversion.
+    // Plain average of rates = (0+100)/2 = 50%, but the true period rate is
+    // 9 conversions out of 10 sessions = 90%.
+    const rateSeries = [
+      { date: "0", currentPeriod: 0, previousPeriod: 0 },
+      { date: "1", currentPeriod: 100, previousPeriod: 0 },
+    ];
+    const weightSeries = [
+      { date: "0", currentPeriod: 1, previousPeriod: 0 },
+      { date: "1", currentPeriod: 9, previousPeriod: 0 },
+    ];
+
+    expect(weightedRate(rateSeries, weightSeries, "currentPeriod")).toBe(90);
+  });
+
+  it("returns 0 when total weight is 0, instead of dividing by zero", () => {
+    const rateSeries = [{ date: "0", currentPeriod: 50, previousPeriod: 0 }];
+    const weightSeries = [{ date: "0", currentPeriod: 0, previousPeriod: 0 }];
+
+    expect(weightedRate(rateSeries, weightSeries, "currentPeriod")).toBe(0);
+  });
+
+  it("treats a bucket missing from the weight series as zero weight", () => {
+    const rateSeries = [
+      { date: "0", currentPeriod: 50, previousPeriod: 0 },
+      { date: "1", currentPeriod: 20, previousPeriod: 0 },
+    ];
+    const weightSeries = [{ date: "0", currentPeriod: 10, previousPeriod: 0 }];
+
+    // Only bucket 0 has weight, so it fully determines the result.
+    expect(weightedRate(rateSeries, weightSeries, "currentPeriod")).toBe(50);
   });
 });
 

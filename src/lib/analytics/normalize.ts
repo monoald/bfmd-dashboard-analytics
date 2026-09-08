@@ -43,6 +43,33 @@ export function averageSeries(
   return series.length === 0 ? 0 : sumSeries(series, key) / series.length;
 }
 
+// For a percentage-rate series (e.g. conversion rate) bucketed alongside a
+// count series it's a rate *of* (e.g. sessions) — same alignment as
+// alignSeries, so index i in both corresponds to the same bucket. A plain
+// averageSeries of the rate values understates/distorts the true period
+// rate whenever activity is concentrated in a few buckets out of many
+// (the same class of bug the AOV headline had — see
+// summaryCards.averageOrderValue's comment). This instead reconstructs
+// each bucket's raw numerator (rate% * weight), sums those, and divides by
+// total weight — equivalent to (total numerator / total denominator) for
+// the whole period, which is what a correct overall rate actually means.
+// Returns raw current/previous rather than a ChangeMetric so callers can
+// still show both period values (a ChangeMetric collapses the previous
+// value away into just a percentage, which can't be recovered exactly).
+export function weightedRate(
+  rateSeries: TimeSeriesData[],
+  weightSeries: TimeSeriesData[],
+  key: "currentPeriod" | "previousPeriod",
+): number {
+  const totalWeight = sumSeries(weightSeries, key);
+  if (totalWeight === 0) return 0;
+  const totalNumerator = rateSeries.reduce((total, point, i) => {
+    const weight = weightSeries[i]?.[key] ?? 0;
+    return total + (point[key] / 100) * weight;
+  }, 0);
+  return Math.round((totalNumerator / totalWeight) * 1000) / 10;
+}
+
 export function sparklineToSeries(sparkline: number[]): TimeSeriesData[] {
   return sparkline.map((value) => ({
     date: "",
