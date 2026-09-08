@@ -14,8 +14,12 @@ import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { RankedList } from "@/components/analytics/RankedList";
 import { CardError } from "@/components/analytics/CardError";
+import { CustomerCohortTable } from "@/components/analytics/CustomerCohortTable";
 import { CHIP_CLASS } from "@/components/analytics/theme";
-import { SHOW_SALES_BY_CHANNEL } from "@/lib/analytics/report-config";
+import {
+  SHOW_CUSTOMER_COHORT_ANALYSIS,
+  SHOW_SALES_BY_CHANNEL,
+} from "@/lib/analytics/report-config";
 
 export default async function AnalyticsPage({
   searchParams,
@@ -360,6 +364,24 @@ export default async function AnalyticsPage({
             </Link>
           )}
         </div>
+
+        {SHOW_CUSTOMER_COHORT_ANALYSIS &&
+          (data.errors.customerCohortAnalysis ? (
+            <CardError
+              title="Customer cohort analysis"
+              message={data.errors.customerCohortAnalysis}
+            />
+          ) : (
+            <Link
+              href={`/reports/customer-cohort-analysis?${rangeQuery}`}
+              className="block"
+            >
+              <CustomerCohortTable
+                rows={data.charts.customerCohortAnalysis}
+                variant="preview"
+              />
+            </Link>
+          ))}
       </div>
     </div>
   );
