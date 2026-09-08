@@ -128,4 +128,20 @@ describe("TotalSalesOverTimeTable", () => {
     expect(within(summaryRow).getByText("$300.00")).toBeInTheDocument();
     expect(within(summaryRow).getByText("$200.00")).toBeInTheDocument();
   });
+
+  it("shows a % change badge per column in the summary row, computed from the summed totals", () => {
+    const data: SalesOverTimeBreakdownRow[] = [
+      row({
+        orders: { current: 30, previous: 20 },
+        totalSales: { current: 150, previous: 100 },
+      }),
+    ];
+
+    render(<TotalSalesOverTimeTable data={data} />);
+
+    expect(screen.getByText("% Change")).toBeInTheDocument();
+    const summaryRow = screen.getAllByRole("row")[1];
+    // Orders: 30 vs 20 -> +50%. Total sales: 150 vs 100 -> +50%.
+    expect(within(summaryRow).getAllByText("↑ 50%")).toHaveLength(2);
+  });
 });
