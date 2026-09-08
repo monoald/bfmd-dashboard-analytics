@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
+  addIsoMonths,
+  dateToIsoMonth,
   formatCurrency,
+  formatIsoMonthLabel,
   formatPercent,
   formatShortDate,
   formatWcIntervalLabel,
+  isoMonthsBetween,
+  wcDateToIsoMonth,
 } from "./format";
 
 describe("formatCurrency", () => {
@@ -80,5 +85,72 @@ describe("formatWcIntervalLabel", () => {
 
   it("returns the original string unchanged if it doesn't match the expected format", () => {
     expect(formatWcIntervalLabel("not-a-date", true)).toBe("not-a-date");
+  });
+});
+
+describe("dateToIsoMonth", () => {
+  it("formats a UTC date as YYYY-MM", () => {
+    expect(dateToIsoMonth(new Date(Date.UTC(2026, 8, 8)))).toBe("2026-09");
+  });
+
+  it("pads single-digit months", () => {
+    expect(dateToIsoMonth(new Date(Date.UTC(2026, 0, 15)))).toBe("2026-01");
+  });
+});
+
+describe("addIsoMonths", () => {
+  it("adds a positive delta within the same year", () => {
+    expect(addIsoMonths("2026-06", 3)).toBe("2026-09");
+  });
+
+  it("subtracts a delta within the same year", () => {
+    expect(addIsoMonths("2026-09", -3)).toBe("2026-06");
+  });
+
+  it("rolls over into the next year", () => {
+    expect(addIsoMonths("2026-09", 4)).toBe("2027-01");
+  });
+
+  it("rolls back into the previous year", () => {
+    expect(addIsoMonths("2026-01", -1)).toBe("2025-12");
+  });
+
+  it("rolls back a full year", () => {
+    expect(addIsoMonths("2026-01", -12)).toBe("2025-01");
+  });
+});
+
+describe("isoMonthsBetween", () => {
+  it("counts whole months between two iso months", () => {
+    expect(isoMonthsBetween("2026-01", "2026-09")).toBe(8);
+  });
+
+  it("returns 0 for the same month", () => {
+    expect(isoMonthsBetween("2026-09", "2026-09")).toBe(0);
+  });
+
+  it("spans a year boundary", () => {
+    expect(isoMonthsBetween("2025-09", "2026-09")).toBe(12);
+  });
+});
+
+describe("formatIsoMonthLabel", () => {
+  it("formats an iso month as 'Mon YYYY'", () => {
+    expect(formatIsoMonthLabel("2026-01")).toBe("Jan 2026");
+    expect(formatIsoMonthLabel("2025-12")).toBe("Dec 2025");
+  });
+});
+
+describe("wcDateToIsoMonth", () => {
+  it("extracts the iso month from a space-separated WC date string", () => {
+    expect(wcDateToIsoMonth("2026-06-15 10:30:00")).toBe("2026-06");
+  });
+
+  it("extracts the iso month from a T-separated WC date string", () => {
+    expect(wcDateToIsoMonth("2026-06-15T10:30:00")).toBe("2026-06");
+  });
+
+  it("returns null for an unparseable string", () => {
+    expect(wcDateToIsoMonth("not a date")).toBeNull();
   });
 });
