@@ -30,6 +30,7 @@ vi.mock("./ga4/funnel", () => ({
   getConversionRateSummary: vi.fn(),
 }));
 vi.mock("./ga4/referrers", () => ({ getSocialReferrerRevenue: vi.fn() }));
+vi.mock("./woocommerce/cohort", () => ({ getCustomerCohortAnalysis: vi.fn() }));
 
 import {
   getReturningCustomerRate,
@@ -53,6 +54,7 @@ import {
   getSessionsOverTimeBreakdown,
 } from "./ga4/sessions";
 import { getRevenueStats } from "./woocommerce/revenue";
+import { getCustomerCohortAnalysis } from "./woocommerce/cohort";
 import {
   getDashboardData,
   getLiveViewData,
@@ -117,6 +119,7 @@ function mockHappyPath() {
     trend: "up",
   });
   vi.mocked(getSocialReferrerRevenue).mockResolvedValue([]);
+  vi.mocked(getCustomerCohortAnalysis).mockResolvedValue([]);
   vi.mocked(getLiveVisitorCount).mockResolvedValue(7);
 }
 
@@ -242,6 +245,17 @@ describe("getDashboardData", () => {
     expect(getRevenueStats).toHaveBeenCalledWith(
       expect.objectContaining({ key: "custom", interval: "day" }),
     );
+  });
+
+  it("does not fetch customer cohort analysis while its feature flag is disabled, defaulting the chart to an empty array", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+
+    const payload = await getDashboardData("7d");
+
+    expect(getCustomerCohortAnalysis).not.toHaveBeenCalled();
+    expect(payload.charts.customerCohortAnalysis).toEqual([]);
+    expect(payload.errors.customerCohortAnalysis).toBeUndefined();
   });
 });
 

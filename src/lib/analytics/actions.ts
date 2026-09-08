@@ -12,6 +12,8 @@ import {
 } from "./woocommerce/customers";
 import { getTopProductsByRevenue } from "./woocommerce/products";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
+import { getCustomerCohortAnalysis } from "./woocommerce/cohort";
+import { SHOW_CUSTOMER_COHORT_ANALYSIS } from "./report-config";
 import {
   getSessionsByDevice,
   getSessionsByLocation,
@@ -34,7 +36,12 @@ import {
   buildMockDashboardPayload,
   buildMockLiveViewPayload,
 } from "./mock-data";
-import type { DashboardPayload, DateRangeKey, LiveViewPayload } from "./types";
+import type {
+  CohortRow,
+  DashboardPayload,
+  DateRangeKey,
+  LiveViewPayload,
+} from "./types";
 
 const cachedRevenueStats = withRangeCache(getRevenueStats, "wc-revenue-stats");
 const cachedOrdersFulfilled = withRangeCache(
@@ -89,6 +96,12 @@ const cachedConversionRateSummary = withRangeCache(
 const cachedSocialReferrerRevenue = withRangeCache(
   getSocialReferrerRevenue,
   "ga4-social-referrer-revenue",
+);
+const cachedCustomerCohortAnalysis = withCache(
+  getCustomerCohortAnalysis,
+  ["wc-customer-cohort-analysis"],
+  21600, // 6h — full order-history aggregation is expensive and this
+         // data doesn't meaningfully change minute to minute
 );
 
 const LIVE_VIEW_REVALIDATE_SECONDS = 45;
@@ -162,6 +175,16 @@ export async function getDashboardData(
     return buildMockDashboardPayload(range);
   }
 
+  // Unlike every other card, this fetch must be skipped entirely while its
+  // display flag is off — full order-history aggregation is far more
+  // expensive than a bounded-range request. Built as a conditional promise
+  // (rather than an unconditional settle(cachedX(range)) call like the rest)
+  // so the cached fetcher is never invoked while the flag is disabled.
+  const customerCohortAnalysisPromise: Promise<CohortRow[] | Error> =
+    SHOW_CUSTOMER_COHORT_ANALYSIS
+      ? settle(cachedCustomerCohortAnalysis())
+      : Promise.resolve<CohortRow[]>([]);
+
   const [
     revenueStats,
     ordersFulfilled,
@@ -177,6 +200,7 @@ export async function getDashboardData(
     conversionRateOverTimeBreakdown,
     conversionRateSummary,
     totalSalesBySocialReferrer,
+    customerCohortAnalysis,
   ] = await Promise.all([
     settle(cachedRevenueStats(range)),
     settle(cachedOrdersFulfilled(range)),
@@ -192,6 +216,7 @@ export async function getDashboardData(
     settle(cachedConversionRateOverTimeBreakdown(range)),
     settle(cachedConversionRateSummary(range)),
     settle(cachedSocialReferrerRevenue(range)),
+    customerCohortAnalysisPromise,
   ]);
 
   const raw: RawPipelineResults = {
@@ -209,6 +234,7 @@ export async function getDashboardData(
     conversionRateOverTimeBreakdown,
     conversionRateSummary,
     totalSalesBySocialReferrer,
+    customerCohortAnalysis,
   };
 
   return buildDashboardPayload(raw, range.interval);
