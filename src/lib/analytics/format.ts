@@ -70,3 +70,36 @@ export function formatWcIntervalLabel(
   const hour12 = hour % 12 === 0 ? 12 : hour % 12;
   return `${datePart}, ${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 }
+
+export function dateToIsoMonth(date: Date): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export function addIsoMonths(isoMonth: string, delta: number): string {
+  const [year, month] = isoMonth.split("-").map(Number);
+  const total = year * 12 + (month - 1) + delta;
+  const resultYear = Math.floor(total / 12);
+  const resultMonth = (total % 12) + 1;
+  return `${resultYear}-${String(resultMonth).padStart(2, "0")}`;
+}
+
+export function isoMonthsBetween(a: string, b: string): number {
+  const [ay, am] = a.split("-").map(Number);
+  const [by, bm] = b.split("-").map(Number);
+  return by * 12 + bm - (ay * 12 + am);
+}
+
+export function formatIsoMonthLabel(isoMonth: string): string {
+  const [year, month] = isoMonth.split("-").map(Number);
+  return `${SHORT_DATE_MONTH_NAMES[month - 1]} ${year}`;
+}
+
+// Reuses parseWcIntervalDate's regex-based parsing (see its comment above)
+// rather than `new Date(dateStr)`, for the same reason: dateStr is already
+// in the store's own timezone with no offset, so re-parsing it with `Date`
+// would reinterpret it in whatever timezone the server process runs in.
+export function wcDateToIsoMonth(dateStr: string): string | null {
+  const parsed = parseWcIntervalDate(dateStr);
+  if (!parsed) return null;
+  return `${parsed.year}-${String(parsed.month + 1).padStart(2, "0")}`;
+}
