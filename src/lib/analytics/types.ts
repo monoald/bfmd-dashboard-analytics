@@ -120,6 +120,19 @@ export interface SalesOverTimeBreakdownRow {
   totalSales: { current: number; previous: number };
 }
 
+// One row of the "Customer cohort analysis" report: customers grouped by
+// the calendar month of their first-ever order. retentionByMonth[0] is
+// "Month 1" (the first full/partial calendar month after cohortMonth);
+// its length equals how many calendar months have elapsed since
+// cohortMonth, not a fixed 12 — the most recent cohort row has exactly 1
+// entry (the current, still-in-progress month), the oldest visible row
+// has up to 12.
+export interface CohortRow {
+  cohortMonth: string; // ISO month, e.g. "2026-01"
+  cohortSize: number;
+  retentionByMonth: number[];
+}
+
 export type CardKey =
   | "grossSales"
   | "conversionRate"
