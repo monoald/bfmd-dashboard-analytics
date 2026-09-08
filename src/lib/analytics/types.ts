@@ -73,6 +73,27 @@ export interface RevenueBreakdownRow {
   averageOrderValue: { current: number; previous: number };
 }
 
+// One row of the "Total sales over time" report's detail table: the full
+// Shopify-style sales breakdown (Orders through Total sales) for a single
+// interval, each as a current/previous pair. `duties` and `additionalFees`
+// are always {current: 0, previous: 0} — WooCommerce's revenue/stats
+// endpoint has no equivalent field for either (both are Shopify-specific
+// order charges); kept as columns for layout parity with Shopify's report.
+export interface SalesOverTimeBreakdownRow {
+  currentDateLabel: string;
+  previousDateLabel: string;
+  orders: { current: number; previous: number };
+  grossSales: { current: number; previous: number };
+  discounts: { current: number; previous: number };
+  salesReversals: { current: number; previous: number };
+  netSales: { current: number; previous: number };
+  shippingCharges: { current: number; previous: number };
+  duties: { current: number; previous: number };
+  additionalFees: { current: number; previous: number };
+  taxes: { current: number; previous: number };
+  totalSales: { current: number; previous: number };
+}
+
 export type CardKey =
   | "grossSales"
   | "conversionRate"
@@ -112,6 +133,7 @@ export interface DashboardPayload {
     salesByChannel: NamedValue[];
     aovOverTime: TimeSeriesData[];
     revenueBreakdownOverTime: RevenueBreakdownRow[];
+    salesOverTimeBreakdown: SalesOverTimeBreakdownRow[];
     salesByProduct: NamedValue[];
   };
   errors: Partial<Record<CardKey, string>>;

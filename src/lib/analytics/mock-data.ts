@@ -348,6 +348,64 @@ export function buildMockDashboardPayload(
           previous: Math.round(aovOverTime[i].previousPeriod),
         },
       })),
+      salesOverTimeBreakdown: labels.map((label, i) => {
+        // Same fractions used for the summary card totals above (discounts,
+        // salesReversals, shipping, taxes), applied per-bucket instead of to
+        // the period total.
+        const bucketDiscounts = (period: "currentPeriod" | "previousPeriod") =>
+          -Math.round(salesOverTime[i][period] * 0.259);
+        const bucketReversals = (period: "currentPeriod" | "previousPeriod") =>
+          -Math.round(salesOverTime[i][period] * 0.0167);
+        const bucketShipping = (period: "currentPeriod" | "previousPeriod") =>
+          Math.round(salesOverTime[i][period] * 0.015);
+        const bucketTaxes = (period: "currentPeriod" | "previousPeriod") =>
+          Math.round(salesOverTime[i][period] * 0.0233);
+        const bucketNetSales = (period: "currentPeriod" | "previousPeriod") =>
+          Math.round(salesOverTime[i][period]) +
+          bucketDiscounts(period) +
+          bucketReversals(period);
+        const bucketTotalSales = (period: "currentPeriod" | "previousPeriod") =>
+          bucketNetSales(period) + bucketShipping(period) + bucketTaxes(period);
+
+        return {
+          currentDateLabel: label,
+          previousDateLabel: label,
+          orders: {
+            current: Math.round(ordersSeries[i].currentPeriod),
+            previous: Math.round(ordersSeries[i].previousPeriod),
+          },
+          grossSales: {
+            current: Math.round(salesOverTime[i].currentPeriod),
+            previous: Math.round(salesOverTime[i].previousPeriod),
+          },
+          discounts: {
+            current: bucketDiscounts("currentPeriod"),
+            previous: bucketDiscounts("previousPeriod"),
+          },
+          salesReversals: {
+            current: bucketReversals("currentPeriod"),
+            previous: bucketReversals("previousPeriod"),
+          },
+          netSales: {
+            current: bucketNetSales("currentPeriod"),
+            previous: bucketNetSales("previousPeriod"),
+          },
+          shippingCharges: {
+            current: bucketShipping("currentPeriod"),
+            previous: bucketShipping("previousPeriod"),
+          },
+          duties: { current: 0, previous: 0 },
+          additionalFees: { current: 0, previous: 0 },
+          taxes: {
+            current: bucketTaxes("currentPeriod"),
+            previous: bucketTaxes("previousPeriod"),
+          },
+          totalSales: {
+            current: bucketTotalSales("currentPeriod"),
+            previous: bucketTotalSales("previousPeriod"),
+          },
+        };
+      }),
       salesByProduct: [
         {
           name: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",

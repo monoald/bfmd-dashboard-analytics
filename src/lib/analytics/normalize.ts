@@ -7,6 +7,7 @@ import type {
   NamedValue,
   RevenueBreakdownRow,
   SalesBreakdownLine,
+  SalesOverTimeBreakdownRow,
   TimeSeriesData,
 } from "./types";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
@@ -199,6 +200,68 @@ function revenueBreakdownOverTimeFrom(
   return rows;
 }
 
+function salesOverTimeBreakdownFrom(
+  stats: {
+    current: RevenueStatsResult;
+    previous: RevenueStatsResult;
+  },
+  interval: "hour" | "day" | "week",
+): SalesOverTimeBreakdownRow[] {
+  const count = Math.max(
+    stats.current.intervals.length,
+    stats.previous.intervals.length,
+  );
+  const includeTime = interval === "hour";
+  const rows: SalesOverTimeBreakdownRow[] = [];
+  for (let i = 0; i < count; i++) {
+    const cur = stats.current.intervals[i];
+    const prev = stats.previous.intervals[i];
+    rows.push({
+      currentDateLabel: cur
+        ? formatWcIntervalLabel(cur.date, includeTime)
+        : "",
+      previousDateLabel: prev
+        ? formatWcIntervalLabel(prev.date, includeTime)
+        : "",
+      orders: {
+        current: cur?.ordersCount ?? 0,
+        previous: prev?.ordersCount ?? 0,
+      },
+      grossSales: {
+        current: cur?.grossSales ?? 0,
+        previous: prev?.grossSales ?? 0,
+      },
+      discounts: {
+        current: cur ? -Math.abs(cur.discounts) : 0,
+        previous: prev ? -Math.abs(prev.discounts) : 0,
+      },
+      salesReversals: {
+        current: cur ? -Math.abs(cur.refunds) : 0,
+        previous: prev ? -Math.abs(prev.refunds) : 0,
+      },
+      netSales: {
+        current: cur?.netRevenue ?? 0,
+        previous: prev?.netRevenue ?? 0,
+      },
+      shippingCharges: {
+        current: cur?.shipping ?? 0,
+        previous: prev?.shipping ?? 0,
+      },
+      duties: { current: 0, previous: 0 },
+      additionalFees: { current: 0, previous: 0 },
+      taxes: {
+        current: cur?.taxes ?? 0,
+        previous: prev?.taxes ?? 0,
+      },
+      totalSales: {
+        current: cur?.totalSales ?? 0,
+        previous: prev?.totalSales ?? 0,
+      },
+    });
+  }
+  return rows;
+}
+
 function salesBreakdownFrom(stats: RevenueStatsResult): SalesBreakdownLine[] {
   const t = stats.totals;
   return [
@@ -324,6 +387,10 @@ export function buildDashboardPayload(
       salesByChannel: unwrap("salesByChannel", raw.salesByChannel, []),
       aovOverTime: aovOverTimeFrom(revenueStats),
       revenueBreakdownOverTime: revenueBreakdownOverTimeFrom(
+        revenueStats,
+        interval,
+      ),
+      salesOverTimeBreakdown: salesOverTimeBreakdownFrom(
         revenueStats,
         interval,
       ),
