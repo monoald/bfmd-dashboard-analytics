@@ -213,6 +213,20 @@ export function buildMockDashboardPayload(
     },
     charts: {
       sessionsOverTime,
+      // "Online store visitors" (GA4's totalUsers) always trails "Sessions"
+      // (GA4's sessions) somewhat, since one visitor can open several
+      // sessions — 0.85 is an arbitrary but plausible mock ratio.
+      sessionsOverTimeBreakdown: labels.map((label, i) => ({
+        date: label,
+        sessions: {
+          current: Math.round(sessionsOverTime[i].currentPeriod),
+          previous: Math.round(sessionsOverTime[i].previousPeriod),
+        },
+        onlineStoreVisitors: {
+          current: Math.round(sessionsOverTime[i].currentPeriod * 0.85),
+          previous: Math.round(sessionsOverTime[i].previousPeriod * 0.85),
+        },
+      })),
       conversionRateOverTime,
       conversionFunnel: [
         {

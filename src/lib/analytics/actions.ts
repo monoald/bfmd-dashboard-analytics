@@ -16,6 +16,7 @@ import {
   getSessionsByDevice,
   getSessionsByLocation,
   getSessionsOverTime,
+  getSessionsOverTimeBreakdown,
 } from "./ga4/sessions";
 import {
   getConversionFunnel,
@@ -55,6 +56,10 @@ const cachedSalesByChannel = withFixedCache(
 const cachedSessionsOverTime = withRangeCache(
   getSessionsOverTime,
   "ga4-sessions-over-time",
+);
+const cachedSessionsOverTimeBreakdown = withRangeCache(
+  getSessionsOverTimeBreakdown,
+  "ga4-sessions-over-time-breakdown",
 );
 const cachedSessionsByDevice = withRangeCache(
   getSessionsByDevice,
@@ -164,6 +169,7 @@ export async function getDashboardData(
     salesByProduct,
     salesByChannel,
     sessionsOverTime,
+    sessionsOverTimeBreakdown,
     sessionsByDevice,
     sessionsByLocation,
     conversionFunnel,
@@ -177,6 +183,7 @@ export async function getDashboardData(
     settle(cachedTopProducts(range)),
     settle(cachedSalesByChannel(range)),
     settle(cachedSessionsOverTime(range)),
+    settle(cachedSessionsOverTimeBreakdown(range)),
     settle(cachedSessionsByDevice(range)),
     settle(cachedSessionsByLocation(range)),
     settle(cachedConversionFunnel(range)),
@@ -192,6 +199,7 @@ export async function getDashboardData(
     salesByProduct,
     salesByChannel,
     sessionsOverTime,
+    sessionsOverTimeBreakdown,
     sessionsByDevice,
     sessionsByLocation,
     conversionFunnel,

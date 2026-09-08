@@ -174,6 +174,13 @@ function baseRaw(): RawPipelineResults {
     salesByProduct: [{ name: "Widget", value: 100 }],
     salesByChannel: [{ name: "Online Store", value: 100 }],
     sessionsOverTime: [{ date: "Aug 1", currentPeriod: 10, previousPeriod: 8 }],
+    sessionsOverTimeBreakdown: [
+      {
+        date: "Aug 1",
+        sessions: { current: 10, previous: 8 },
+        onlineStoreVisitors: { current: 7, previous: 6 },
+      },
+    ],
     sessionsByDevice: [{ name: "mobile", value: 10 }],
     sessionsByLocation: [{ name: "US · NY", value: 10 }],
     conversionFunnel: [{ step: "Sessions", sessions: 10, percentage: 100 }],
@@ -343,6 +350,28 @@ describe("buildDashboardPayload", () => {
     ]);
     expect(payload.charts.totalSalesBySocialReferrer).toEqual([
       { name: "youtube", value: 50 },
+    ]);
+    expect(payload.charts.sessionsOverTimeBreakdown).toEqual([
+      {
+        date: "Aug 1",
+        sessions: { current: 10, previous: 8 },
+        onlineStoreVisitors: { current: 7, previous: 6 },
+      },
+    ]);
+  });
+
+  it("isolates a sessionsOverTimeBreakdown failure without affecting the plain sessionsOverTime chart", () => {
+    const raw = baseRaw();
+    raw.sessionsOverTimeBreakdown = new Error("GA4 quota exceeded");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.sessionsOverTimeBreakdown).toBe(
+      "GA4 quota exceeded",
+    );
+    expect(payload.charts.sessionsOverTimeBreakdown).toEqual([]);
+    expect(payload.charts.sessionsOverTime).toEqual([
+      { date: "Aug 1", currentPeriod: 10, previousPeriod: 8 },
     ]);
   });
 

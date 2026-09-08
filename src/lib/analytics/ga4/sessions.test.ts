@@ -8,6 +8,7 @@ import {
   getSessionsByDevice,
   getSessionsByLocation,
   getSessionsOverTime,
+  getSessionsOverTimeBreakdown,
 } from "./sessions";
 
 const range: ResolvedDateRange = {
@@ -47,6 +48,35 @@ describe("getSessionsOverTime", () => {
       date: "Aug 7",
       currentPeriod: 0,
       previousPeriod: 0,
+    });
+  });
+});
+
+describe("getSessionsOverTimeBreakdown", () => {
+  it("fetches sessions and totalUsers together per bucket and zero-fills gaps GA4 didn't return", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260801"], metricValues: [100, 40] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["20260725"], metricValues: [80, 30] },
+      ]);
+
+    const result = await getSessionsOverTimeBreakdown(range);
+
+    expect(runGa4Report).toHaveBeenCalledWith(
+      expect.objectContaining({ metrics: ["sessions", "totalUsers"] }),
+    );
+    expect(result).toHaveLength(7);
+    expect(result[0]).toEqual({
+      date: "Aug 1",
+      sessions: { current: 100, previous: 80 },
+      onlineStoreVisitors: { current: 40, previous: 30 },
+    });
+    expect(result[1]).toEqual({
+      date: "Aug 2",
+      sessions: { current: 0, previous: 0 },
+      onlineStoreVisitors: { current: 0, previous: 0 },
     });
   });
 });

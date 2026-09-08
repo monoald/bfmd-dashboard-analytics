@@ -8,6 +8,7 @@ import type {
   RevenueBreakdownRow,
   SalesBreakdownLine,
   SalesOverTimeBreakdownRow,
+  SessionsOverTimeBreakdownRow,
   TimeSeriesData,
 } from "./types";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
@@ -87,6 +88,7 @@ export interface RawPipelineResults {
   salesByProduct: NamedValue[] | Error;
   salesByChannel: NamedValue[] | Error;
   sessionsOverTime: TimeSeriesData[] | Error;
+  sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[] | Error;
   sessionsByDevice: NamedValue[] | Error;
   sessionsByLocation: NamedValue[] | Error;
   conversionFunnel: FunnelStep[] | Error;
@@ -369,6 +371,11 @@ export function buildDashboardPayload(
     },
     charts: {
       sessionsOverTime: unwrap("sessionsOverTime", raw.sessionsOverTime, []),
+      sessionsOverTimeBreakdown: unwrap(
+        "sessionsOverTimeBreakdown",
+        raw.sessionsOverTimeBreakdown,
+        [],
+      ),
       conversionRateOverTime: conversionRateOverTimeSeries,
       conversionFunnel: unwrap("conversionFunnel", raw.conversionFunnel, []),
       sessionsByDevice: unwrap("sessionsByDevice", raw.sessionsByDevice, []),

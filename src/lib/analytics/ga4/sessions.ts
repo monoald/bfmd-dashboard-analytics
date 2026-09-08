@@ -4,6 +4,7 @@ import type {
   NamedValue,
   PeriodBounds,
   ResolvedDateRange,
+  SessionsOverTimeBreakdownRow,
   TimeSeriesData,
 } from "../types";
 
@@ -39,6 +40,62 @@ export async function getSessionsOverTime(
     range.previous,
     range.interval,
   );
+}
+
+async function fetchSessionsAndVisitorsByBucket(
+  period: PeriodBounds,
+  interval: "hour" | "day" | "week",
+): Promise<{ sessions: Map<string, number>; visitors: Map<string, number> }> {
+  const rows = await runGa4Report({
+    dimensions: [interval === "hour" ? "dateHour" : "date"],
+    metrics: ["sessions", "totalUsers"],
+    startDate: toIsoDate(period.start),
+    endDate: toIsoDate(period.end),
+  });
+
+  const sessions = new Map<string, number>();
+  const visitors = new Map<string, number>();
+  for (const row of rows) {
+    sessions.set(row.dimensionValues[0], row.metricValues[0]);
+    visitors.set(row.dimensionValues[0], row.metricValues[1]);
+  }
+  return { sessions, visitors };
+}
+
+export async function getSessionsOverTimeBreakdown(
+  range: ResolvedDateRange,
+): Promise<SessionsOverTimeBreakdownRow[]> {
+  const [current, previous] = await Promise.all([
+    fetchSessionsAndVisitorsByBucket(range.current, range.interval),
+    fetchSessionsAndVisitorsByBucket(range.previous, range.interval),
+  ]);
+
+  const sessionsSeries = alignSeries(
+    current.sessions,
+    previous.sessions,
+    range.current,
+    range.previous,
+    range.interval,
+  );
+  const visitorsSeries = alignSeries(
+    current.visitors,
+    previous.visitors,
+    range.current,
+    range.previous,
+    range.interval,
+  );
+
+  return sessionsSeries.map((point, i) => ({
+    date: point.date,
+    sessions: {
+      current: point.currentPeriod,
+      previous: point.previousPeriod,
+    },
+    onlineStoreVisitors: {
+      current: visitorsSeries[i].currentPeriod,
+      previous: visitorsSeries[i].previousPeriod,
+    },
+  }));
 }
 
 async function fetchSessionsByDeviceMap(
