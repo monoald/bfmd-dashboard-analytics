@@ -25,27 +25,40 @@ later."* No cohort code exists anywhere in the codebase today.
   ordered in Month 1 but not Month 2 does not count toward Month 2's
   cell). This matches the non-monotonic pattern in the reference
   screenshots (e.g. 4.86% → 13.76% → 12.15% → 9.45% → ...).
-- A cell for a month that hasn't happened yet (not enough time has
-  elapsed since that cohort's first-purchase month) is `null`, not `0` —
-  rendered as blank/absent, not as "0% retention." This is why older
-  cohorts have more populated columns than newer ones in the grid.
-- **Qualifying order** = any order returned by
-  `/wc-analytics/reports/orders` (WooCommerce's Analytics API, which
-  already excludes cancelled/failed/pending orders server-side — the
-  same class of endpoint every other revenue card uses, deliberately
-  avoiding the still-disabled sales-by-channel card's mistake of using
-  the core `/wc/v3/orders` endpoint with `status: "any"`).
+- A row simply has as many columns as calendar months have elapsed since
+  that cohort's first-purchase month (`retentionByMonth: number[]`, no
+  `null` padding needed) — there is no such thing as a "month that hasn't
+  happened yet" to represent, since that column doesn't exist in the
+  array at all. This is why older cohorts have more populated columns
+  than newer ones: the most-recent visible cohort (last full month) has
+  exactly 1 column (the current, still-in-progress month), while the
+  oldest visible cohort (12 months back) has up to 12.
+- **Qualifying order** = an order from `/wc-analytics/reports/orders`
+  (WooCommerce's Analytics API order-listing endpoint) with an explicit
+  `status_is[]=completed` filter — this endpoint does **not** auto-exclude
+  invalid statuses on its own (only the separate `/wc-analytics/reports/revenue/*`
+  stats endpoint does that); `status_is[]=completed` is the same filter
+  `orders.ts`'s `getOrdersFulfilled` already applies to this same endpoint,
+  so cohort analysis defines "qualifying" identically to "Orders Fulfilled"
+  rather than guessing a new definition. This still avoids the disabled
+  sales-by-channel card's mistake of using the core `/wc/v3/orders`
+  endpoint with `status: "any"`.
 - **Guest checkouts** (`customer_id: 0`) are excluded entirely — repeat
   purchases can't be attributed to an anonymous customer, so they can
   never form or contribute to a cohort.
 
 ## Data window & known limitation
 
-The grid always shows the **last 12 cohort months** (rows), ending at the
-current calendar month, regardless of the dashboard's date-range picker —
-cohort analysis is inherently about all-time customer behavior, not a
-comparable current-vs-previous-period window, so it doesn't fit that
-picker's model. Changing the date range has no effect on this report.
+The grid always shows the **last 12 completed cohort months** (rows) —
+the 12 calendar months immediately before the current, still-in-progress
+month — regardless of the dashboard's date-range picker. Cohort analysis
+is inherently about all-time customer behavior, not a comparable
+current-vs-previous-period window, so it doesn't fit that picker's model;
+changing the date range has no effect on this report. The current
+in-progress month is never shown as its own cohort row (it would always
+have zero columns, since its own "Month 1" hasn't started yet) — its
+partial data does appear, though, as the newest row's one populated
+column (Month 1).
 
 To correctly identify a customer's *true* first order (not just their
 first order within whatever window is fetched), the data fetch pulls
@@ -90,29 +103,34 @@ export async function getCustomerCohortAnalysis(): Promise<CohortRow[]>
   customers with ≥1 qualifying order in that specific calendar month.
 
 The exact field names on `/wc-analytics/reports/orders` (`customer_id`,
-`date_created` vs `date_created_gmt`, etc.) are a best-effort assumption
-pending verification against the live store — same category of
-unverified-guess as other WC Analytics fields already flagged in project
-history. Flag this for the live-credentials verification pass before
-enabling the feature flag.
+`date_created`) are a best-effort assumption pending verification against
+the live store — same category of unverified-guess as other WC Analytics
+fields already flagged in project history. Flag this for the
+live-credentials verification pass before enabling the feature flag.
+
+**Date parsing note:** `date_created` must be parsed the same
+regex-based way `format.ts`'s `parseWcIntervalDate` already parses WC
+interval date strings — reading the year/month digits directly out of
+the string rather than `new Date(dateStr)` — to avoid reinterpreting an
+already-site-timezone string in whatever timezone the server process
+happens to run in (the exact class of bug already fixed once in
+`date-range.ts`, per project memory). A small `wcDateToIsoMonth` helper
+will be added to `format.ts` reusing that same parsing logic.
 
 ## Types (`src/lib/analytics/types.ts`)
 
 ```ts
 export interface CohortRow {
-  cohortMonth: string; // ISO month, e.g. "2026-01"
-  cohortSize: number;  // customers whose first-ever order was this month
-  retentionByMonth: (number | null)[]; // index 0 = "Month 1"
-}
-
-export interface CustomerCohortAnalysis {
-  rows: CohortRow[];
+  cohortMonth: string;         // ISO month, e.g. "2026-01"
+  cohortSize: number;          // customers whose first-ever order was this month
+  retentionByMonth: number[];  // index 0 = "Month 1"; length = months elapsed since cohortMonth
 }
 ```
 
 Add `"customerCohortAnalysis"` to `CardKey`, and
-`customerCohortAnalysis: CustomerCohortAnalysis` to
-`DashboardPayload["charts"]`.
+`customerCohortAnalysis: CohortRow[]` to `DashboardPayload["charts"]`
+(a plain array, consistent with every other `charts` field — no wrapper
+object needed for a single-field shape).
 
 ## Report config (`src/lib/analytics/report-config.ts`)
 
@@ -155,14 +173,14 @@ Add `"customerCohortAnalysis"` to `CardKey`, and
   computation is materially more expensive (24 months of paginated order
   history vs. one bounded-range request), so there's no reason to pay for
   it while the feature is dark. When skipped, `raw.customerCohortAnalysis`
-  is set to an empty `{ rows: [] }` result rather than being fetched.
+  is set to `[]` rather than being fetched.
 
 ## Normalization (`src/lib/analytics/normalize.ts`)
 
-`RawPipelineResults` gains `customerCohortAnalysis: CustomerCohortAnalysis | Error`.
+`RawPipelineResults` gains `customerCohortAnalysis: CohortRow[] | Error`.
 `buildDashboardPayload` unwraps it into `charts.customerCohortAnalysis`
-the same way every other chart field is unwrapped, with an empty
-`{ rows: [] }` fallback on error.
+the same way every other chart field is unwrapped, with an empty `[]`
+fallback on error.
 
 ## Mock data (`src/lib/analytics/mock-data.ts`)
 
