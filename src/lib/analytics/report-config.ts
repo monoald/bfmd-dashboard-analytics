@@ -7,8 +7,21 @@
 // direct URL either.
 export const SHOW_SALES_BY_CHANNEL = false;
 
+// New, never verified against live order data (full order-history
+// aggregation across a 24-month window via the WC Analytics orders
+// endpoint). Disabled pending verification against the live store —
+// same gating pattern as SHOW_SALES_BY_CHANNEL above. See
+// docs/superpowers/specs/2026-09-08-customer-cohort-analysis-design.md.
+export const SHOW_CUSTOMER_COHORT_ANALYSIS = false;
+
 export type ReportShape =
-  "line-comparison" | "line-simple" | "donut" | "list" | "ranked" | "funnel";
+  | "line-comparison"
+  | "line-simple"
+  | "donut"
+  | "list"
+  | "ranked"
+  | "funnel"
+  | "cohort-grid";
 
 export type ReportSlug =
   | "gross-sales"
@@ -25,7 +38,8 @@ export type ReportSlug =
   | "sessions-by-device-type"
   | "sessions-by-location"
   | "total-sales-by-social-referrer"
-  | "conversion-rate-breakdown";
+  | "conversion-rate-breakdown"
+  | "customer-cohort-analysis";
 
 export interface ReportConfig {
   slug: ReportSlug;
@@ -108,6 +122,11 @@ export const REPORT_CONFIGS: ReportConfig[] = [
     slug: "conversion-rate-breakdown",
     title: "Conversion rate breakdown",
     shape: "funnel",
+  },
+  {
+    slug: "customer-cohort-analysis",
+    title: "Customer cohort analysis",
+    shape: "cohort-grid",
   },
 ];
 
