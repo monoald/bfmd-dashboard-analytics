@@ -1,6 +1,7 @@
-import type { SalesOverTimeBreakdownRow } from "@/lib/analytics/types";
+import type { ChangeMetric, SalesOverTimeBreakdownRow } from "@/lib/analytics/types";
 import { formatCurrency } from "@/lib/analytics/format";
-import { CARD_CLASS } from "./theme";
+import { computeChange } from "@/lib/analytics/normalize";
+import { CARD_CLASS, trendArrow, trendBadgeClass } from "./theme";
 
 export interface TotalSalesOverTimeTableProps {
   data: SalesOverTimeBreakdownRow[];
@@ -22,6 +23,7 @@ interface ColumnSummary {
   bold?: boolean;
   current: number;
   previous: number;
+  change: ChangeMetric;
   row: (r: SalesOverTimeBreakdownRow) => { current: number; previous: number };
 }
 
@@ -33,10 +35,9 @@ export function TotalSalesOverTimeTable({
   function columnTotal(
     pick: (r: SalesOverTimeBreakdownRow) => { current: number; previous: number },
   ) {
-    return {
-      current: sum(data.map((r) => pick(r).current)),
-      previous: sum(data.map((r) => pick(r).previous)),
-    };
+    const current = sum(data.map((r) => pick(r).current));
+    const previous = sum(data.map((r) => pick(r).previous));
+    return { current, previous, change: computeChange(current, previous) };
   }
 
   const orders = columnTotal((r) => r.orders);
@@ -115,6 +116,7 @@ export function TotalSalesOverTimeTable({
                 {currentLabel}
               </div>
               <div className="text-(--analytics-t2)">{previousLabel}</div>
+              <div className="mt-1 text-(--analytics-t2)">% Change</div>
             </td>
             {columns.map((col) => (
               <td
@@ -126,6 +128,12 @@ export function TotalSalesOverTimeTable({
                 </div>
                 <div className="text-(--analytics-t2)">
                   {format(col.heading, col.previous)}
+                </div>
+                <div className="mt-1">
+                  <span className={trendBadgeClass(col.change.trend)}>
+                    {trendArrow(col.change.trend)}{" "}
+                    {Math.abs(col.change.changePercentage)}%
+                  </span>
                 </div>
               </td>
             ))}
