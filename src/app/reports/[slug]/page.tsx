@@ -28,6 +28,7 @@ import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTa
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { TimeSeriesReportTable } from "@/components/analytics/TimeSeriesReportTable";
+import { TotalSalesOverTimeTable } from "@/components/analytics/TotalSalesOverTimeTable";
 
 const REPORT_CHART_HEIGHT = 420;
 const REPORT_FUNNEL_HEIGHT = 260;
@@ -154,7 +155,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: data.summaryCards.grossSales.trend,
             }}
           />
-          <TimeSeriesReportTable data={series} formatValue={formatCurrency} />
+          <TotalSalesOverTimeTable data={data.charts.salesOverTimeBreakdown} />
         </div>
       );
     }

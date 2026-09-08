@@ -314,6 +314,27 @@ describe("buildDashboardPayload", () => {
     ]);
   });
 
+  it("derives salesOverTimeBreakdown per-interval rows directly from revenue stats intervals, with duties/additionalFees always zero (WC has no such fields)", () => {
+    const payload = buildDashboardPayload(baseRaw());
+
+    expect(payload.charts.salesOverTimeBreakdown).toEqual([
+      {
+        currentDateLabel: "Aug 1",
+        previousDateLabel: "Aug 1",
+        orders: { current: 4, previous: 3 },
+        grossSales: { current: 100, previous: 80 },
+        discounts: { current: -5, previous: -5 },
+        salesReversals: { current: -2, previous: -2 },
+        netSales: { current: 90, previous: 90 },
+        shippingCharges: { current: 8, previous: 8 },
+        duties: { current: 0, previous: 0 },
+        additionalFees: { current: 0, previous: 0 },
+        taxes: { current: 3, previous: 3 },
+        totalSales: { current: 101, previous: 101 },
+      },
+    ]);
+  });
+
   it("passes through GA4-sourced charts unchanged", () => {
     const payload = buildDashboardPayload(baseRaw());
 
