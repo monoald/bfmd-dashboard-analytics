@@ -71,6 +71,24 @@ export function formatWcIntervalLabel(
   return `${datePart}, ${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 }
 
+// Same output shape as formatWcIntervalLabel ("Sep 2, 2026" / "Sep 2, 2026,
+// 11:00 PM"), but for a bucket boundary this app computed itself (as an ISO
+// instant string) rather than one WC returned — read via UTC getters since
+// the instant is unambiguous, unlike formatWcIntervalLabel's regex parse of
+// a bare, timezone-less WC date string.
+export function formatUtcIntervalLabel(
+  isoString: string,
+  includeTime: boolean,
+): string {
+  const date = new Date(isoString);
+  const datePart = `${SHORT_DATE_MONTH_NAMES[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+  if (!includeTime) return datePart;
+  const hour = date.getUTCHours();
+  const period = hour >= 12 ? "PM" : "AM";
+  const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${datePart}, ${hour12}:${String(date.getUTCMinutes()).padStart(2, "0")} ${period}`;
+}
+
 export function dateToIsoMonth(date: Date): string {
   return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }

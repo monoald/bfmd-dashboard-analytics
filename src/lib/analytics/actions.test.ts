@@ -13,6 +13,8 @@ vi.mock("./woocommerce/orders", () => ({ getOrdersFulfilled: vi.fn() }));
 vi.mock("./woocommerce/customers", () => ({
   getReturningCustomerRate: vi.fn(),
   getCurrentCustomerSplit: vi.fn(),
+  getNewAndReturningCustomerCounts: vi.fn(),
+  getReturningCustomerRateBreakdown: vi.fn(),
 }));
 vi.mock("./ga4/realtime", () => ({ getLiveVisitorCount: vi.fn() }));
 vi.mock("./woocommerce/products", () => ({ getTopProductsByRevenue: vi.fn() }));
@@ -47,6 +49,8 @@ vi.mock("./report-config", () => ({
 import {
   getReturningCustomerRate,
   getCurrentCustomerSplit,
+  getNewAndReturningCustomerCounts,
+  getReturningCustomerRateBreakdown,
 } from "./woocommerce/customers";
 import { getLiveVisitorCount } from "./ga4/realtime";
 import {
@@ -115,6 +119,14 @@ function mockHappyPath() {
   vi.mocked(getCurrentCustomerSplit).mockResolvedValue({
     new: 3,
     returning: 2,
+  });
+  vi.mocked(getNewAndReturningCustomerCounts).mockResolvedValue({
+    current: { new: 3, returning: 2 },
+    previous: { new: 4, returning: 1 },
+  });
+  vi.mocked(getReturningCustomerRateBreakdown).mockResolvedValue({
+    current: [],
+    previous: [],
   });
   vi.mocked(getTopProductsByRevenue).mockResolvedValue([]);
   vi.mocked(getSalesByChannel).mockResolvedValue([]);

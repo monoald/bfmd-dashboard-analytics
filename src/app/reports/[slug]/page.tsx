@@ -27,6 +27,7 @@ import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { GrossSalesOverTimeTable } from "@/components/analytics/GrossSalesOverTimeTable";
 import { RankedList } from "@/components/analytics/RankedList";
+import { ReturningCustomerRateOverTimeTable } from "@/components/analytics/ReturningCustomerRateOverTimeTable";
 import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTable";
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
@@ -77,19 +78,25 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
       }
       const metric = data.summaryCards.returningCustomerRate;
       return (
-        <TimeSeriesChart
-          title={config.title}
-          data={sparklineToSeries(metric.sparkline ?? [])}
-          formatValue="percent"
-          variant="hero"
-          showComparison={false}
-          height={REPORT_CHART_HEIGHT}
-          headline={{
-            value: formatPercent(metric.value),
-            changePercentage: metric.changePercentage,
-            trend: metric.trend,
-          }}
-        />
+        <div className="grid gap-3">
+          <TimeSeriesChart
+            title={config.title}
+            data={sparklineToSeries(metric.sparkline ?? [])}
+            formatValue="percent"
+            variant="hero"
+            showComparison={false}
+            height={REPORT_CHART_HEIGHT}
+            headline={{
+              value: formatPercent(metric.value),
+              changePercentage: metric.changePercentage,
+              trend: metric.trend,
+            }}
+          />
+          <ReturningCustomerRateOverTimeTable
+            data={data.charts.returningCustomerRateBreakdown}
+            summary={data.charts.returningCustomerRateSummary}
+          />
+        </div>
       );
     }
 

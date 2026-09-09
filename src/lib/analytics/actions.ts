@@ -9,6 +9,8 @@ import { getOrdersFulfilled } from "./woocommerce/orders";
 import {
   getReturningCustomerRate,
   getCurrentCustomerSplit,
+  getNewAndReturningCustomerCounts,
+  getReturningCustomerRateBreakdown,
 } from "./woocommerce/customers";
 import { getTopProductsByRevenue } from "./woocommerce/products";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
@@ -51,6 +53,14 @@ const cachedOrdersFulfilled = withRangeCache(
 const cachedReturningCustomerRate = withRangeCache(
   getReturningCustomerRate,
   "wc-returning-customers",
+);
+const cachedNewAndReturningCustomerCounts = withRangeCache(
+  getNewAndReturningCustomerCounts,
+  "wc-new-and-returning-customer-counts",
+);
+const cachedReturningCustomerRateBreakdown = withRangeCache(
+  getReturningCustomerRateBreakdown,
+  "wc-returning-customer-rate-breakdown",
 );
 const cachedTopProducts = withRangeCache(
   getTopProductsByRevenue,
@@ -189,6 +199,8 @@ export async function getDashboardData(
     revenueStats,
     ordersFulfilled,
     returningCustomerRate,
+    newAndReturningCustomerCounts,
+    returningCustomerRateBreakdown,
     salesByProduct,
     salesByChannel,
     sessionsOverTime,
@@ -205,6 +217,8 @@ export async function getDashboardData(
     settle(cachedRevenueStats(range)),
     settle(cachedOrdersFulfilled(range)),
     settle(cachedReturningCustomerRate(range)),
+    settle(cachedNewAndReturningCustomerCounts(range)),
+    settle(cachedReturningCustomerRateBreakdown(range)),
     settle(cachedTopProducts(range)),
     settle(cachedSalesByChannel(range)),
     settle(cachedSessionsOverTime(range)),
@@ -223,6 +237,8 @@ export async function getDashboardData(
     revenueStats,
     ordersFulfilled,
     returningCustomerRate,
+    newAndReturningCustomerCounts,
+    returningCustomerRateBreakdown,
     salesByProduct,
     salesByChannel,
     sessionsOverTime,

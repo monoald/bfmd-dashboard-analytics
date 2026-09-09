@@ -187,6 +187,15 @@ export function buildMockDashboardPayload(
   const returningCustomerRatePrevious =
     sum(returningCustomerRateSeries, "previousPeriod") / labels.length;
 
+  const customersCurrentTotal = Math.round(ordersCurrent * 0.82);
+  const customersPreviousTotal = Math.round(ordersPrevious * 0.82);
+  const returningCustomersCurrentTotal = Math.round(
+    customersCurrentTotal * (returningCustomerRateCurrent / 100),
+  );
+  const returningCustomersPreviousTotal = Math.round(
+    customersPreviousTotal * (returningCustomerRatePrevious / 100),
+  );
+
   const discounts = -Math.round(grossSalesCurrent * 0.259);
   const salesReversals = -Math.round(grossSalesCurrent * 0.0167);
   const netSales = Math.round(grossSalesCurrent) + discounts + salesReversals;
@@ -480,6 +489,59 @@ export function buildMockDashboardPayload(
           },
         };
       }),
+      returningCustomerRateBreakdown: labels.map((label, i) => {
+        const customers = {
+          current: Math.max(0, Math.round(ordersSeries[i].currentPeriod * 0.82)),
+          previous: Math.max(
+            0,
+            Math.round(ordersSeries[i].previousPeriod * 0.82),
+          ),
+        };
+        const returningCustomers = {
+          current: Math.round(
+            customers.current *
+              (returningCustomerRateSeries[i].currentPeriod / 100),
+          ),
+          previous: Math.round(
+            customers.previous *
+              (returningCustomerRateSeries[i].previousPeriod / 100),
+          ),
+        };
+        return {
+          currentDateLabel: label,
+          previousDateLabel: label,
+          returningCustomers,
+          customers,
+          returningCustomerRate: {
+            current:
+              customers.current > 0
+                ? Math.round(
+                    (returningCustomers.current / customers.current) * 1000,
+                  ) / 10
+                : 0,
+            previous:
+              customers.previous > 0
+                ? Math.round(
+                    (returningCustomers.previous / customers.previous) * 1000,
+                  ) / 10
+                : 0,
+          },
+        };
+      }),
+      returningCustomerRateSummary: {
+        returningCustomers: {
+          current: returningCustomersCurrentTotal,
+          previous: returningCustomersPreviousTotal,
+        },
+        customers: {
+          current: customersCurrentTotal,
+          previous: customersPreviousTotal,
+        },
+        returningCustomerRate: {
+          current: Math.round(returningCustomerRateCurrent * 10) / 10,
+          previous: Math.round(returningCustomerRatePrevious * 10) / 10,
+        },
+      },
       salesByProduct: [
         {
           name: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",

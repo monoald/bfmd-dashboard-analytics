@@ -120,6 +120,23 @@ export interface SalesOverTimeBreakdownRow {
   totalSales: { current: number; previous: number };
 }
 
+// One row of the "Returning Customer Rate" report's detail table. Unlike
+// every other breakdown row above, `customers`/`returningCustomers` are not
+// additive across rows — the same customer can be attributed to more than
+// one bucket (see getReturningCustomerRateBreakdown in customers.ts) — so
+// summing this table's rows does not reproduce the returningCustomerRate
+// summary card; that card's own numbers come from a separate whole-period
+// fetch. `returningCustomerRate` is computed per-bucket directly from that
+// bucket's own counts (weighted-rate style, never averaged — same rule as
+// ConversionRateOverTimeBreakdownRow.conversionRate).
+export interface ReturningCustomerRateBreakdownRow {
+  currentDateLabel: string;
+  previousDateLabel: string;
+  returningCustomers: { current: number; previous: number };
+  customers: { current: number; previous: number };
+  returningCustomerRate: { current: number; previous: number };
+}
+
 // One row of the "Customer cohort analysis" report: customers grouped by
 // the calendar month of their first-ever order (cohort membership never
 // changes after that). retentionByMonth[0] is "Month 0" — customers who
@@ -181,6 +198,16 @@ export interface DashboardPayload {
     aovOverTime: TimeSeriesData[];
     revenueBreakdownOverTime: RevenueBreakdownRow[];
     salesOverTimeBreakdown: SalesOverTimeBreakdownRow[];
+    returningCustomerRateBreakdown: ReturningCustomerRateBreakdownRow[];
+    // Separate whole-period totals for the "Returning Customer Rate" report
+    // table's summary row — NOT derived by summing
+    // returningCustomerRateBreakdown (see that type's comment for why
+    // customer counts can't be summed across buckets).
+    returningCustomerRateSummary: {
+      returningCustomers: { current: number; previous: number };
+      customers: { current: number; previous: number };
+      returningCustomerRate: { current: number; previous: number };
+    };
     salesByProduct: NamedValue[];
     customerCohortAnalysis: CohortRow[];
   };
