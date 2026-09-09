@@ -171,6 +171,18 @@ function baseRaw(): RawPipelineResults {
     },
     ordersFulfilled: { current: 12, previous: 9 },
     returningCustomerRate: { current: 50, previous: 40 },
+    newAndReturningCustomerCounts: {
+      current: { new: 6, returning: 6 },
+      previous: { new: 7, returning: 4 },
+    },
+    returningCustomerRateBreakdown: {
+      current: [
+        { date: "2026-08-01T00:00:00.000Z", customers: 12, returningCustomers: 6 },
+      ],
+      previous: [
+        { date: "2026-07-25T00:00:00.000Z", customers: 11, returningCustomers: 4 },
+      ],
+    },
     salesByProduct: [{ name: "Widget", value: 100 }],
     salesByChannel: [{ name: "Online Store", value: 100 }],
     sessionsOverTime: [{ date: "Aug 1", currentPeriod: 10, previousPeriod: 8 }],
@@ -351,6 +363,41 @@ describe("buildDashboardPayload", () => {
         totalSales: { current: 101, previous: 101 },
       },
     ]);
+  });
+
+  it("derives returningCustomerRateBreakdown rows from the raw per-bucket customer activity, formatting date labels as UTC", () => {
+    const payload = buildDashboardPayload(baseRaw(), "day");
+
+    expect(payload.charts.returningCustomerRateBreakdown).toEqual([
+      {
+        currentDateLabel: "Aug 1, 2026",
+        previousDateLabel: "Jul 25, 2026",
+        returningCustomers: { current: 6, previous: 4 },
+        customers: { current: 12, previous: 11 },
+        returningCustomerRate: { current: 50, previous: 36.4 },
+      },
+    ]);
+  });
+
+  it("computes returningCustomerRateSummary from the whole-period new/returning counts, not by summing the breakdown rows", () => {
+    const payload = buildDashboardPayload(baseRaw());
+
+    expect(payload.charts.returningCustomerRateSummary).toEqual({
+      returningCustomers: { current: 6, previous: 4 },
+      customers: { current: 12, previous: 11 },
+      returningCustomerRate: { current: 50, previous: 40 },
+    });
+  });
+
+  it("isolates a returningCustomerRateBreakdown failure to its own card, defaulting to an empty array, without affecting the returningCustomerRate summary card", () => {
+    const raw = baseRaw();
+    raw.returningCustomerRateBreakdown = new Error("WC API error");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.returningCustomerRate).toBe("WC API error");
+    expect(payload.charts.returningCustomerRateBreakdown).toEqual([]);
+    expect(payload.summaryCards.returningCustomerRate.value).toBe(50);
   });
 
   it("passes through GA4-sourced charts unchanged", () => {

@@ -6,6 +6,7 @@ import {
   formatIsoMonthLabel,
   formatPercent,
   formatShortDate,
+  formatUtcIntervalLabel,
   formatWcIntervalLabel,
   isoMonthsBetween,
   wcDateToIsoMonth,
@@ -34,6 +35,38 @@ describe("formatPercent", () => {
 describe("formatShortDate", () => {
   it("formats a date as 'Mon D, YYYY'", () => {
     expect(formatShortDate(new Date(2026, 7, 9))).toBe("Aug 9, 2026");
+  });
+});
+
+describe("formatUtcIntervalLabel", () => {
+  it("formats an ISO instant without time when includeTime is false", () => {
+    expect(
+      formatUtcIntervalLabel("2026-09-02T23:00:00.000Z", false),
+    ).toBe("Sep 2, 2026");
+  });
+
+  it("formats an ISO instant with time when includeTime is true", () => {
+    expect(formatUtcIntervalLabel("2026-09-02T23:00:00.000Z", true)).toBe(
+      "Sep 2, 2026, 11:00 PM",
+    );
+  });
+
+  it("handles midnight UTC as 12:00 AM, not 0:00 AM", () => {
+    expect(formatUtcIntervalLabel("2026-09-02T00:00:00.000Z", true)).toBe(
+      "Sep 2, 2026, 12:00 AM",
+    );
+  });
+
+  it("handles noon UTC as 12:00 PM, not 0:00 PM", () => {
+    expect(formatUtcIntervalLabel("2026-09-02T12:00:00.000Z", true)).toBe(
+      "Sep 2, 2026, 12:00 PM",
+    );
+  });
+
+  it("reads the date in UTC regardless of the process's local timezone", () => {
+    expect(formatUtcIntervalLabel("2026-01-01T00:30:00.000Z", true)).toBe(
+      "Jan 1, 2026, 12:30 AM",
+    );
   });
 });
 

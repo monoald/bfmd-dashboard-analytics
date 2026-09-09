@@ -1,4 +1,4 @@
-import { formatWcIntervalLabel } from "./format";
+import { formatUtcIntervalLabel, formatWcIntervalLabel } from "./format";
 import type {
   CardKey,
   ChangeMetric,
@@ -7,12 +7,14 @@ import type {
   DashboardPayload,
   FunnelStep,
   NamedValue,
+  ReturningCustomerRateBreakdownRow,
   RevenueBreakdownRow,
   SalesBreakdownLine,
   SalesOverTimeBreakdownRow,
   SessionsOverTimeBreakdownRow,
   TimeSeriesData,
 } from "./types";
+import type { CustomerActivityInterval } from "./woocommerce/customers";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
 
 export function computeChange(current: number, previous: number): ChangeMetric {
@@ -87,6 +89,15 @@ export interface RawPipelineResults {
     { current: RevenueStatsResult; previous: RevenueStatsResult } | Error;
   ordersFulfilled: { current: number; previous: number } | Error;
   returningCustomerRate: { current: number; previous: number } | Error;
+  newAndReturningCustomerCounts:
+    | {
+        current: { new: number; returning: number };
+        previous: { new: number; returning: number };
+      }
+    | Error;
+  returningCustomerRateBreakdown:
+    | { current: CustomerActivityInterval[]; previous: CustomerActivityInterval[] }
+    | Error;
   salesByProduct: NamedValue[] | Error;
   salesByChannel: NamedValue[] | Error;
   sessionsOverTime: TimeSeriesData[] | Error;
@@ -268,6 +279,48 @@ function salesOverTimeBreakdownFrom(
   return rows;
 }
 
+function returningCustomerRateBreakdownFrom(
+  breakdown: {
+    current: CustomerActivityInterval[];
+    previous: CustomerActivityInterval[];
+  },
+  interval: "hour" | "day" | "week",
+): ReturningCustomerRateBreakdownRow[] {
+  const count = Math.max(
+    breakdown.current.length,
+    breakdown.previous.length,
+  );
+  const includeTime = interval === "hour";
+  const rate = (bucket?: CustomerActivityInterval) =>
+    bucket && bucket.customers > 0
+      ? Math.round((bucket.returningCustomers / bucket.customers) * 1000) / 10
+      : 0;
+  const rows: ReturningCustomerRateBreakdownRow[] = [];
+  for (let i = 0; i < count; i++) {
+    const cur = breakdown.current[i];
+    const prev = breakdown.previous[i];
+    rows.push({
+      currentDateLabel: cur ? formatUtcIntervalLabel(cur.date, includeTime) : "",
+      previousDateLabel: prev
+        ? formatUtcIntervalLabel(prev.date, includeTime)
+        : "",
+      returningCustomers: {
+        current: cur?.returningCustomers ?? 0,
+        previous: prev?.returningCustomers ?? 0,
+      },
+      customers: {
+        current: cur?.customers ?? 0,
+        previous: prev?.customers ?? 0,
+      },
+      returningCustomerRate: {
+        current: rate(cur),
+        previous: rate(prev),
+      },
+    });
+  }
+  return rows;
+}
+
 function salesBreakdownFrom(stats: RevenueStatsResult): SalesBreakdownLine[] {
   const t = stats.totals;
   return [
@@ -322,6 +375,19 @@ export function buildDashboardPayload(
     "returningCustomerRate",
     raw.returningCustomerRate,
     { current: 0, previous: 0 },
+  );
+  const newAndReturningCustomerCounts = unwrap(
+    "returningCustomerRate",
+    raw.newAndReturningCustomerCounts,
+    {
+      current: { new: 0, returning: 0 },
+      previous: { new: 0, returning: 0 },
+    },
+  );
+  const returningCustomerRateBreakdownRaw = unwrap(
+    "returningCustomerRate",
+    raw.returningCustomerRateBreakdown,
+    { current: [], previous: [] },
   );
   const conversionRateOverTimeSeries = unwrap(
     "conversionRateOverTime",
@@ -410,6 +476,28 @@ export function buildDashboardPayload(
         revenueStats,
         interval,
       ),
+      returningCustomerRateBreakdown: returningCustomerRateBreakdownFrom(
+        returningCustomerRateBreakdownRaw,
+        interval,
+      ),
+      returningCustomerRateSummary: {
+        returningCustomers: {
+          current: newAndReturningCustomerCounts.current.returning,
+          previous: newAndReturningCustomerCounts.previous.returning,
+        },
+        customers: {
+          current:
+            newAndReturningCustomerCounts.current.new +
+            newAndReturningCustomerCounts.current.returning,
+          previous:
+            newAndReturningCustomerCounts.previous.new +
+            newAndReturningCustomerCounts.previous.returning,
+        },
+        returningCustomerRate: {
+          current: returningCustomerRate.current,
+          previous: returningCustomerRate.previous,
+        },
+      },
       salesByProduct: unwrap("salesByProduct", raw.salesByProduct, []),
       customerCohortAnalysis: unwrap(
         "customerCohortAnalysis",
