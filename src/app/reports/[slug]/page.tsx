@@ -25,6 +25,7 @@ import { CustomerCohortTable } from "@/components/analytics/CustomerCohortTable"
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
+import { GrossSalesOverTimeTable } from "@/components/analytics/GrossSalesOverTimeTable";
 import { RankedList } from "@/components/analytics/RankedList";
 import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTable";
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
@@ -46,19 +47,22 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
       }
       const metric = data.summaryCards.grossSales;
       return (
-        <TimeSeriesChart
-          title={config.title}
-          data={sparklineToSeries(metric.sparkline ?? [])}
-          formatValue="currency"
-          variant="hero"
-          showComparison={false}
-          height={REPORT_CHART_HEIGHT}
-          headline={{
-            value: formatCurrency(metric.value),
-            changePercentage: metric.changePercentage,
-            trend: metric.trend,
-          }}
-        />
+        <div className="grid gap-3">
+          <TimeSeriesChart
+            title={config.title}
+            data={sparklineToSeries(metric.sparkline ?? [])}
+            formatValue="currency"
+            variant="hero"
+            showComparison={false}
+            height={REPORT_CHART_HEIGHT}
+            headline={{
+              value: formatCurrency(metric.value),
+              changePercentage: metric.changePercentage,
+              trend: metric.trend,
+            }}
+          />
+          <GrossSalesOverTimeTable data={data.charts.salesOverTimeBreakdown} />
+        </div>
       );
     }
 
