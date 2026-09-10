@@ -243,12 +243,29 @@ export function buildMockDashboardPayload(
         Math.round(sum(aovOverTime, "currentPeriod") / labels.length),
         Math.round(sum(aovOverTime, "previousPeriod") / labels.length),
       ),
+      sessionsOverTime: {
+        ...computeChange(
+          Math.round(sessionsCurrent),
+          Math.round(sessionsPrevious),
+        ),
+        sparkline: sessionsOverTime.map((point) => point.currentPeriod),
+      },
     },
     charts: {
       sessionsOverTime,
       // "Online store visitors" (GA4's totalUsers) always trails "Sessions"
       // (GA4's sessions) somewhat, since one visitor can open several
       // sessions — 0.85 is an arbitrary but plausible mock ratio.
+      sessionsOverTimeSummary: {
+        sessions: {
+          current: Math.round(sessionsCurrent),
+          previous: Math.round(sessionsPrevious),
+        },
+        onlineStoreVisitors: {
+          current: Math.round(sessionsCurrent * 0.85),
+          previous: Math.round(sessionsPrevious * 0.85),
+        },
+      },
       sessionsOverTimeBreakdown: labels.map((label, i) => ({
         date: label,
         sessions: {

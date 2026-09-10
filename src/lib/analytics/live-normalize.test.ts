@@ -52,6 +52,10 @@ function happyPathRaw(): RawLiveViewResults {
     sessionsOverTime: [
       { date: "12 AM", currentPeriod: 10, previousPeriod: 20 },
     ],
+    sessionsSummary: {
+      sessions: { current: 10, previous: 20 },
+      onlineStoreVisitors: { current: 8, previous: 15 },
+    },
     conversionFunnel: [
       { step: "Sessions", sessions: 10, percentage: 100, previousSessions: 20 },
       {

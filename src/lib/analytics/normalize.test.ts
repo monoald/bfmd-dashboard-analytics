@@ -190,6 +190,10 @@ function baseRaw(): RawPipelineResults {
     salesByProduct: [{ name: "Widget", value: 100 }],
     salesByChannel: [{ name: "Online Store", value: 100 }],
     sessionsOverTime: [{ date: "Aug 1", currentPeriod: 10, previousPeriod: 8 }],
+    sessionsSummary: {
+      sessions: { current: 10, previous: 8 },
+      onlineStoreVisitors: { current: 7, previous: 6 },
+    },
     sessionsOverTimeBreakdown: [
       {
         date: "Aug 1",

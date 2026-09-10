@@ -29,6 +29,18 @@ export interface ChangeMetric {
   sparkline?: number[];
 }
 
+// Whole-period session/visitor totals, fetched from GA4 with no time
+// dimension at all — NOT derived by summing a dateHour/date-bucketed series.
+// GA4's "sessions" and "totalUsers" metrics attribute a session/user to every
+// time bucket it was active in, so a session spanning an hour boundary gets
+// counted in both hours; summing sessionsOverTime's buckets therefore
+// overcounts the real total (confirmed against a live property: dateHour-
+// summed 158 vs. the true 155 for the same day).
+export interface SessionsSummary {
+  sessions: { current: number; previous: number };
+  onlineStoreVisitors: { current: number; previous: number };
+}
+
 export interface TimeSeriesData {
   date: string;
   currentPeriod: number;
@@ -201,10 +213,16 @@ export interface DashboardPayload {
     orders: ChangeMetric;
     returningCustomerRate: ChangeMetric;
     averageOrderValue: ChangeMetric;
+    sessionsOverTime: ChangeMetric;
   };
   charts: {
     sessionsOverTime: TimeSeriesData[];
     sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[];
+    // Whole-period totals for sessionsOverTimeBreakdown's summary row — NOT
+    // summed from that breakdown, for the same reason summaryCards.
+    // sessionsOverTime isn't summed from `sessionsOverTime` above (see
+    // SessionsSummary's comment).
+    sessionsOverTimeSummary: SessionsSummary;
     conversionRateOverTime: TimeSeriesData[];
     conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[];
     conversionFunnel: FunnelStep[];

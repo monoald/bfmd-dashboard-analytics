@@ -21,6 +21,7 @@ import {
   getSessionsByLocation,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
+  getSessionsSummary,
 } from "./ga4/sessions";
 import {
   getConversionFunnel,
@@ -39,10 +40,18 @@ import {
   buildMockLiveViewPayload,
 } from "./mock-data";
 import type {
+  ChangeMetric,
   CohortRow,
+  ConversionRateOverTimeBreakdownRow,
   DashboardPayload,
   DateRangeKey,
+  FunnelStep,
   LiveViewPayload,
+  NamedValue,
+  ResolvedDateRange,
+  SessionsOverTimeBreakdownRow,
+  SessionsSummary,
+  TimeSeriesData,
 } from "./types";
 
 const cachedRevenueStats = withRangeCache(getRevenueStats, "wc-revenue-stats");
@@ -75,42 +84,125 @@ const cachedSalesByChannel = withFixedCache(
   "wc-sales-by-channel",
   14400,
 );
-const cachedSessionsOverTime = withRangeCache(
-  getSessionsOverTime,
-  "ga4-sessions-over-time",
+// These 10 cards all read GA4's live, still-accumulating "sessions" data for
+// "today" ranges. Caching each one individually (as separate withRangeCache
+// entries) let them drift apart: each entry repopulates on its own 5-minute
+// clock, so at any moment some cards could be serving a slightly staler
+// snapshot than others, showing different totals for what should be the same
+// underlying session count (see pending-credentials-verification memory,
+// 2026-09-10 entry). Bundling them behind one cache entry means they always
+// repopulate together, from one GA4 fetch wave, so they can't disagree.
+interface Ga4TodayBundle {
+  sessionsOverTime: TimeSeriesData[] | Error;
+  sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[] | Error;
+  sessionsSummary: SessionsSummary | Error;
+  sessionsByDevice: NamedValue[] | Error;
+  sessionsByLocation: NamedValue[] | Error;
+  conversionFunnel: FunnelStep[] | Error;
+  conversionRateOverTime: TimeSeriesData[] | Error;
+  conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[] | Error;
+  conversionRateSummary: ChangeMetric | Error;
+  totalSalesBySocialReferrer: NamedValue[] | Error;
+}
+
+// unstable_cache persists its return value across requests (and, in
+// production, across server instances), so it must stay JSON-serializable —
+// an Error instance wouldn't survive that round trip. Settle each field to a
+// plain ok/error marker here, then convert markers back to real Error
+// objects in getDashboardData, after the cache boundary.
+type Settled<T> = { ok: true; value: T } | { ok: false };
+
+async function toSettled<T>(promise: Promise<T>): Promise<Settled<T>> {
+  try {
+    return { ok: true, value: await promise };
+  } catch (error) {
+    console.error("Analytics fetcher failed:", error);
+    return { ok: false };
+  }
+}
+
+async function fetchGa4TodayBundle(
+  range: ResolvedDateRange,
+): Promise<{
+  sessionsOverTime: Settled<TimeSeriesData[]>;
+  sessionsOverTimeBreakdown: Settled<SessionsOverTimeBreakdownRow[]>;
+  sessionsSummary: Settled<SessionsSummary>;
+  sessionsByDevice: Settled<NamedValue[]>;
+  sessionsByLocation: Settled<NamedValue[]>;
+  conversionFunnel: Settled<FunnelStep[]>;
+  conversionRateOverTime: Settled<TimeSeriesData[]>;
+  conversionRateOverTimeBreakdown: Settled<ConversionRateOverTimeBreakdownRow[]>;
+  conversionRateSummary: Settled<ChangeMetric>;
+  totalSalesBySocialReferrer: Settled<NamedValue[]>;
+}> {
+  const [
+    sessionsOverTime,
+    sessionsOverTimeBreakdown,
+    sessionsSummary,
+    sessionsByDevice,
+    sessionsByLocation,
+    conversionFunnel,
+    conversionRateOverTime,
+    conversionRateOverTimeBreakdown,
+    conversionRateSummary,
+    totalSalesBySocialReferrer,
+  ] = await Promise.all([
+    toSettled(getSessionsOverTime(range)),
+    toSettled(getSessionsOverTimeBreakdown(range)),
+    toSettled(getSessionsSummary(range)),
+    toSettled(getSessionsByDevice(range)),
+    toSettled(getSessionsByLocation(range)),
+    toSettled(getConversionFunnel(range)),
+    toSettled(getConversionRateOverTime(range)),
+    toSettled(getConversionRateOverTimeBreakdown(range)),
+    toSettled(getConversionRateSummary(range)),
+    toSettled(getSocialReferrerRevenue(range)),
+  ]);
+
+  return {
+    sessionsOverTime,
+    sessionsOverTimeBreakdown,
+    sessionsSummary,
+    sessionsByDevice,
+    sessionsByLocation,
+    conversionFunnel,
+    conversionRateOverTime,
+    conversionRateOverTimeBreakdown,
+    conversionRateSummary,
+    totalSalesBySocialReferrer,
+  };
+}
+
+const cachedGa4TodayBundle = withRangeCache(
+  fetchGa4TodayBundle,
+  "ga4-today-bundle",
 );
-const cachedSessionsOverTimeBreakdown = withRangeCache(
-  getSessionsOverTimeBreakdown,
-  "ga4-sessions-over-time-breakdown",
-);
-const cachedSessionsByDevice = withRangeCache(
-  getSessionsByDevice,
-  "ga4-sessions-by-device",
-);
-const cachedSessionsByLocation = withRangeCache(
-  getSessionsByLocation,
-  "ga4-sessions-by-location",
-);
-const cachedConversionFunnel = withRangeCache(
-  getConversionFunnel,
-  "ga4-conversion-funnel",
-);
-const cachedConversionRateOverTime = withRangeCache(
-  getConversionRateOverTime,
-  "ga4-conversion-rate-over-time",
-);
-const cachedConversionRateOverTimeBreakdown = withRangeCache(
-  getConversionRateOverTimeBreakdown,
-  "ga4-conversion-rate-over-time-breakdown",
-);
-const cachedConversionRateSummary = withRangeCache(
-  getConversionRateSummary,
-  "ga4-conversion-rate-summary",
-);
-const cachedSocialReferrerRevenue = withRangeCache(
-  getSocialReferrerRevenue,
-  "ga4-social-referrer-revenue",
-);
+
+const CARD_ERROR_MESSAGE = "Unable to load data for this card. Please try again later.";
+
+function fromSettled<T>(settled: Settled<T>): T | Error {
+  return settled.ok ? settled.value : new Error(CARD_ERROR_MESSAGE);
+}
+
+async function getGa4TodayBundle(
+  range: ResolvedDateRange,
+): Promise<Ga4TodayBundle> {
+  const bundle = await cachedGa4TodayBundle(range);
+  return {
+    sessionsOverTime: fromSettled(bundle.sessionsOverTime),
+    sessionsOverTimeBreakdown: fromSettled(bundle.sessionsOverTimeBreakdown),
+    sessionsSummary: fromSettled(bundle.sessionsSummary),
+    sessionsByDevice: fromSettled(bundle.sessionsByDevice),
+    sessionsByLocation: fromSettled(bundle.sessionsByLocation),
+    conversionFunnel: fromSettled(bundle.conversionFunnel),
+    conversionRateOverTime: fromSettled(bundle.conversionRateOverTime),
+    conversionRateOverTimeBreakdown: fromSettled(
+      bundle.conversionRateOverTimeBreakdown,
+    ),
+    conversionRateSummary: fromSettled(bundle.conversionRateSummary),
+    totalSalesBySocialReferrer: fromSettled(bundle.totalSalesBySocialReferrer),
+  };
+}
 const cachedCustomerCohortAnalysis = withCache(
   getCustomerCohortAnalysis,
   ["wc-customer-cohort-analysis"],
@@ -127,6 +219,11 @@ const liveCachedRevenueStats = withCache(
 const liveCachedSessionsOverTime = withCache(
   getSessionsOverTime,
   ["live-sessions-over-time"],
+  LIVE_VIEW_REVALIDATE_SECONDS,
+);
+const liveCachedSessionsSummary = withCache(
+  getSessionsSummary,
+  ["live-sessions-summary"],
   LIVE_VIEW_REVALIDATE_SECONDS,
 );
 const liveCachedConversionFunnel = withCache(
@@ -203,15 +300,7 @@ export async function getDashboardData(
     returningCustomerRateBreakdown,
     salesByProduct,
     salesByChannel,
-    sessionsOverTime,
-    sessionsOverTimeBreakdown,
-    sessionsByDevice,
-    sessionsByLocation,
-    conversionFunnel,
-    conversionRateOverTime,
-    conversionRateOverTimeBreakdown,
-    conversionRateSummary,
-    totalSalesBySocialReferrer,
+    ga4Bundle,
     customerCohortAnalysis,
   ] = await Promise.all([
     settle(cachedRevenueStats(range)),
@@ -222,15 +311,7 @@ export async function getDashboardData(
     settle(cachedReturningCustomerRateBreakdown(range)),
     settle(cachedTopProducts(range)),
     settle(cachedSalesByChannel(range)),
-    settle(cachedSessionsOverTime(range)),
-    settle(cachedSessionsOverTimeBreakdown(range)),
-    settle(cachedSessionsByDevice(range)),
-    settle(cachedSessionsByLocation(range)),
-    settle(cachedConversionFunnel(range)),
-    settle(cachedConversionRateOverTime(range)),
-    settle(cachedConversionRateOverTimeBreakdown(range)),
-    settle(cachedConversionRateSummary(range)),
-    settle(cachedSocialReferrerRevenue(range)),
+    getGa4TodayBundle(range),
     customerCohortAnalysisPromise,
   ]);
 
@@ -243,15 +324,7 @@ export async function getDashboardData(
     returningCustomerRateBreakdown,
     salesByProduct,
     salesByChannel,
-    sessionsOverTime,
-    sessionsOverTimeBreakdown,
-    sessionsByDevice,
-    sessionsByLocation,
-    conversionFunnel,
-    conversionRateOverTime,
-    conversionRateOverTimeBreakdown,
-    conversionRateSummary,
-    totalSalesBySocialReferrer,
+    ...ga4Bundle,
     customerCohortAnalysis,
   };
 
@@ -271,6 +344,7 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
     visitorsRightNow,
     revenueStats,
     sessionsOverTime,
+    sessionsSummary,
     conversionFunnel,
     sessionsByLocation,
     newAndReturningCustomers,
@@ -282,6 +356,7 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
     }),
     settle(liveCachedRevenueStats(range)),
     settle(liveCachedSessionsOverTime(range)),
+    settle(liveCachedSessionsSummary(range)),
     settle(liveCachedConversionFunnel(range)),
     settle(liveCachedSessionsByLocation(range)),
     settle(liveCachedCustomerSplit(range.current)),
@@ -291,6 +366,7 @@ export async function getLiveViewData(): Promise<LiveViewPayload> {
   const raw: RawLiveViewResults = {
     revenueStats,
     sessionsOverTime,
+    sessionsSummary,
     conversionFunnel,
     sessionsByLocation,
     newAndReturningCustomers,

@@ -5,8 +5,44 @@ import type {
   PeriodBounds,
   ResolvedDateRange,
   SessionsOverTimeBreakdownRow,
+  SessionsSummary,
   TimeSeriesData,
 } from "../types";
+
+async function fetchSessionsAndVisitorsTotal(
+  period: PeriodBounds,
+): Promise<{ sessions: number; visitors: number }> {
+  const rows = await runGa4Report({
+    dimensions: [],
+    metrics: ["sessions", "totalUsers"],
+    startDate: toIsoDate(period.start),
+    endDate: toIsoDate(period.end),
+  });
+
+  return {
+    sessions: rows[0]?.metricValues[0] ?? 0,
+    visitors: rows[0]?.metricValues[1] ?? 0,
+  };
+}
+
+// See SessionsSummary's comment (types.ts) for why this queries GA4 with no
+// time dimension instead of summing getSessionsOverTime's buckets.
+export async function getSessionsSummary(
+  range: ResolvedDateRange,
+): Promise<SessionsSummary> {
+  const [current, previous] = await Promise.all([
+    fetchSessionsAndVisitorsTotal(range.current),
+    fetchSessionsAndVisitorsTotal(range.previous),
+  ]);
+
+  return {
+    sessions: { current: current.sessions, previous: previous.sessions },
+    onlineStoreVisitors: {
+      current: current.visitors,
+      previous: previous.visitors,
+    },
+  };
+}
 
 async function fetchSessionsByBucket(
   period: PeriodBounds,

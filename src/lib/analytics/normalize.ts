@@ -13,6 +13,7 @@ import type {
   SalesBreakdownLine,
   SalesOverTimeBreakdownRow,
   SessionsOverTimeBreakdownRow,
+  SessionsSummary,
   TimeSeriesData,
 } from "./types";
 import type { CustomerActivityInterval } from "./woocommerce/customers";
@@ -107,6 +108,7 @@ export interface RawPipelineResults {
   salesByChannel: NamedValue[] | Error;
   sessionsOverTime: TimeSeriesData[] | Error;
   sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[] | Error;
+  sessionsSummary: SessionsSummary | Error;
   sessionsByDevice: NamedValue[] | Error;
   sessionsByLocation: NamedValue[] | Error;
   conversionFunnel: FunnelStep[] | Error;
@@ -475,6 +477,14 @@ export function buildDashboardPayload(
       trend: "up" as const,
     },
   );
+  const sessionsOverTimeSeries = unwrap("sessionsOverTime", raw.sessionsOverTime, []);
+  // Shares the "sessionsOverTime" card key with the series above: a failure
+  // in either the summary total or the bucketed chart data means the whole
+  // card can't render, so either can set the same error.
+  const sessionsSummary = unwrap("sessionsOverTime", raw.sessionsSummary, {
+    sessions: { current: 0, previous: 0 },
+    onlineStoreVisitors: { current: 0, previous: 0 },
+  });
 
   return {
     summaryCards: {
@@ -515,14 +525,22 @@ export function buildDashboardPayload(
         revenueStats.current.totals.averageOrderValue,
         revenueStats.previous.totals.averageOrderValue,
       ),
+      sessionsOverTime: {
+        ...computeChange(
+          sessionsSummary.sessions.current,
+          sessionsSummary.sessions.previous,
+        ),
+        sparkline: sessionsOverTimeSeries.map((point) => point.currentPeriod),
+      },
     },
     charts: {
-      sessionsOverTime: unwrap("sessionsOverTime", raw.sessionsOverTime, []),
+      sessionsOverTime: sessionsOverTimeSeries,
       sessionsOverTimeBreakdown: unwrap(
         "sessionsOverTimeBreakdown",
         raw.sessionsOverTimeBreakdown,
         [],
       ),
+      sessionsOverTimeSummary: sessionsSummary,
       conversionRateOverTime: conversionRateOverTimeSeries,
       conversionRateOverTimeBreakdown: unwrap(
         "conversionRateOverTimeBreakdown",

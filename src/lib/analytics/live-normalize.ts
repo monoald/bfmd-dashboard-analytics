@@ -4,6 +4,7 @@ import type {
   LiveCardKey,
   LiveViewPayload,
   NamedValue,
+  SessionsSummary,
   TimeSeriesData,
 } from "./types";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
@@ -12,6 +13,7 @@ export interface RawLiveViewResults {
   revenueStats:
     { current: RevenueStatsResult; previous: RevenueStatsResult } | Error;
   sessionsOverTime: TimeSeriesData[] | Error;
+  sessionsSummary: SessionsSummary | Error;
   conversionFunnel: FunnelStep[] | Error;
   sessionsByLocation: NamedValue[] | Error;
   newAndReturningCustomers: { new: number; returning: number } | Error;
@@ -83,15 +85,15 @@ export function buildLiveViewPayload(
     raw.newAndReturningCustomers,
     { new: 0, returning: 0 },
   );
-
-  const sessionsCurrentTotal = sessionsOverTime.reduce(
-    (sum, point) => sum + point.currentPeriod,
-    0,
-  );
-  const sessionsPreviousTotal = sessionsOverTime.reduce(
-    (sum, point) => sum + point.previousPeriod,
-    0,
-  );
+  // See SessionsSummary's comment (types.ts): GA4's "sessions" metric
+  // double-counts a session that spans an hour boundary across both hourly
+  // buckets, so the KPI total is fetched directly rather than summed from
+  // sessionsOverTime's dateHour-bucketed series (still used for the
+  // sparkline shape only).
+  const sessionsSummary = unwrap("sessions", raw.sessionsSummary, {
+    sessions: { current: 0, previous: 0 },
+    onlineStoreVisitors: { current: 0, previous: 0 },
+  });
 
   return {
     visitorsRightNow,
@@ -104,7 +106,10 @@ export function buildLiveViewPayload(
         sparkline: revenueStats.current.intervals.map((i) => i.totalSales),
       },
       sessions: {
-        ...computeChange(sessionsCurrentTotal, sessionsPreviousTotal),
+        ...computeChange(
+          sessionsSummary.sessions.current,
+          sessionsSummary.sessions.previous,
+        ),
         sparkline: sessionsOverTime.map((point) => point.currentPeriod),
       },
       orders: {

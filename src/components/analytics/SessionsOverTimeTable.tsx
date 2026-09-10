@@ -1,16 +1,19 @@
 import type {
-  ChangeMetric,
   SessionsOverTimeBreakdownRow,
+  SessionsSummary,
 } from "@/lib/analytics/types";
 import { computeChange } from "@/lib/analytics/normalize";
 import { CARD_CLASS, trendArrow, trendBadgeClass } from "./theme";
 
 export interface SessionsOverTimeTableProps {
   data: SessionsOverTimeBreakdownRow[];
-}
-
-function sum(values: number[]): number {
-  return values.reduce((total, v) => total + v, 0);
+  // Whole-period totals for the summary row — NOT summed from `data`. GA4's
+  // "sessions"/"totalUsers" metrics attribute activity to every dateHour
+  // bucket it touched, so a session/user spanning an hour boundary would be
+  // double-counted by summing the per-bucket rows (see SessionsSummary's
+  // comment in types.ts). The summary row uses the real headline totals
+  // instead, same as ReturningCustomerRateOverTimeTable.
+  summary: SessionsSummary;
 }
 
 interface ColumnSummary {
@@ -18,37 +21,30 @@ interface ColumnSummary {
   bold?: boolean;
   current: number;
   previous: number;
-  change: ChangeMetric;
   row: (r: SessionsOverTimeBreakdownRow) => {
     current: number;
     previous: number;
   };
 }
 
-export function SessionsOverTimeTable({ data }: SessionsOverTimeTableProps) {
+export function SessionsOverTimeTable({
+  data,
+  summary,
+}: SessionsOverTimeTableProps) {
   if (data.length === 0) return null;
-
-  function columnTotal(
-    pick: (r: SessionsOverTimeBreakdownRow) => {
-      current: number;
-      previous: number;
-    },
-  ) {
-    const current = sum(data.map((r) => pick(r).current));
-    const previous = sum(data.map((r) => pick(r).previous));
-    return { current, previous, change: computeChange(current, previous) };
-  }
-
-  const onlineStoreVisitors = columnTotal((r) => r.onlineStoreVisitors);
-  const sessions = columnTotal((r) => r.sessions);
 
   const columns: ColumnSummary[] = [
     {
       heading: "Online store visitors",
-      ...onlineStoreVisitors,
+      ...summary.onlineStoreVisitors,
       row: (r) => r.onlineStoreVisitors,
     },
-    { heading: "Sessions", bold: true, ...sessions, row: (r) => r.sessions },
+    {
+      heading: "Sessions",
+      bold: true,
+      ...summary.sessions,
+      row: (r) => r.sessions,
+    },
   ];
 
   return (
@@ -75,25 +71,28 @@ export function SessionsOverTimeTable({ data }: SessionsOverTimeTableProps) {
               </div>
               <div className="mt-1 text-(--analytics-t2)">% Change</div>
             </td>
-            {columns.map((col) => (
-              <td
-                key={col.heading}
-                className="py-2 pr-4 align-top tabular-nums"
-              >
-                <div className="font-extrabold text-(--analytics-t1)">
-                  {col.current.toLocaleString()}
-                </div>
-                <div className="text-(--analytics-t2)">
-                  {col.previous.toLocaleString()}
-                </div>
-                <div className="mt-1">
-                  <span className={trendBadgeClass(col.change.trend)}>
-                    {trendArrow(col.change.trend)}{" "}
-                    {Math.abs(col.change.changePercentage)}%
-                  </span>
-                </div>
-              </td>
-            ))}
+            {columns.map((col) => {
+              const change = computeChange(col.current, col.previous);
+              return (
+                <td
+                  key={col.heading}
+                  className="py-2 pr-4 align-top tabular-nums"
+                >
+                  <div className="font-extrabold text-(--analytics-t1)">
+                    {col.current.toLocaleString()}
+                  </div>
+                  <div className="text-(--analytics-t2)">
+                    {col.previous.toLocaleString()}
+                  </div>
+                  <div className="mt-1">
+                    <span className={trendBadgeClass(change.trend)}>
+                      {trendArrow(change.trend)}{" "}
+                      {Math.abs(change.changePercentage)}%
+                    </span>
+                  </div>
+                </td>
+              );
+            })}
           </tr>
           {data.map((r, i) => (
             <tr key={i} className="border-b border-(--analytics-border)">

@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { getDashboardData } from "@/lib/analytics/actions";
-import { computeChange, sumSeries } from "@/lib/analytics/normalize";
 import { formatCurrency, formatPercent } from "@/lib/analytics/format";
 import {
   buildRangeQueryParams,
@@ -31,10 +30,7 @@ export default async function AnalyticsPage({
   const data = await getDashboardData(rangeKey, customRange ?? undefined);
   const rangeQuery = buildRangeQueryParams(rangeKey, customRange);
 
-  const sessionsHeadline = computeChange(
-    sumSeries(data.charts.sessionsOverTime, "currentPeriod"),
-    sumSeries(data.charts.sessionsOverTime, "previousPeriod"),
-  );
+  const sessionsHeadline = data.summaryCards.sessionsOverTime;
 
   return (
     <div className="p-6">

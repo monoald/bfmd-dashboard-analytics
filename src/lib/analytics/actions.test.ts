@@ -25,6 +25,7 @@ vi.mock("./woocommerce/sales-channel", () => ({ getSalesByChannel: vi.fn() }));
 vi.mock("./ga4/sessions", () => ({
   getSessionsOverTime: vi.fn(),
   getSessionsOverTimeBreakdown: vi.fn(),
+  getSessionsSummary: vi.fn(),
   getSessionsByDevice: vi.fn(),
   getSessionsByLocation: vi.fn(),
 }));
@@ -71,6 +72,7 @@ import {
   getSessionsByLocation,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
+  getSessionsSummary,
 } from "./ga4/sessions";
 import { getRevenueStats } from "./woocommerce/revenue";
 import { getCustomerCohortAnalysis } from "./woocommerce/cohort";
@@ -139,6 +141,10 @@ function mockHappyPath() {
   vi.mocked(getSalesByChannel).mockResolvedValue([]);
   vi.mocked(getSessionsOverTime).mockResolvedValue([]);
   vi.mocked(getSessionsOverTimeBreakdown).mockResolvedValue([]);
+  vi.mocked(getSessionsSummary).mockResolvedValue({
+    sessions: { current: 0, previous: 0 },
+    onlineStoreVisitors: { current: 0, previous: 0 },
+  });
   vi.mocked(getSessionsByDevice).mockResolvedValue([]);
   vi.mocked(getSessionsByLocation).mockResolvedValue([]);
   vi.mocked(getConversionFunnel).mockResolvedValue([]);

@@ -7,11 +7,7 @@ import {
   resolveRangeSelection,
 } from "@/lib/analytics/date-range";
 import { formatCurrency, formatPercent } from "@/lib/analytics/format";
-import {
-  computeChange,
-  sparklineToSeries,
-  sumSeries,
-} from "@/lib/analytics/normalize";
+import { sparklineToSeries } from "@/lib/analytics/normalize";
 import {
   getReportConfig,
   SHOW_CUSTOMER_COHORT_ANALYSIS,
@@ -218,10 +214,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         );
       }
       const series = data.charts.sessionsOverTime;
-      const headline = computeChange(
-        sumSeries(series, "currentPeriod"),
-        sumSeries(series, "previousPeriod"),
-      );
+      const headline = data.summaryCards.sessionsOverTime;
       return (
         <div className="grid gap-3">
           <TimeSeriesChart
@@ -235,7 +228,10 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
               trend: headline.trend,
             }}
           />
-          <SessionsOverTimeTable data={data.charts.sessionsOverTimeBreakdown} />
+          <SessionsOverTimeTable
+            data={data.charts.sessionsOverTimeBreakdown}
+            summary={data.charts.sessionsOverTimeSummary}
+          />
         </div>
       );
     }
