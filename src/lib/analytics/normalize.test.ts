@@ -229,7 +229,12 @@ describe("buildDashboardPayload", () => {
       changePercentage: 33.3,
       trend: "up",
     });
-    expect(payload.summaryCards.returningCustomerRate.value).toBe(50);
+    expect(payload.summaryCards.returningCustomerRate).toEqual({
+      value: 50,
+      changePercentage: 25,
+      trend: "up",
+      sparkline: [50],
+    });
     expect(payload.summaryCards.conversionRate).toEqual({
       value: 10,
       changePercentage: 100,

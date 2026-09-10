@@ -60,7 +60,7 @@ const cachedNewAndReturningCustomerCounts = withRangeCache(
 );
 const cachedReturningCustomerRateBreakdown = withRangeCache(
   getReturningCustomerRateBreakdown,
-  "wc-returning-customer-rate-breakdown",
+  "wc-returning-customer-rate-breakdown"
 );
 const cachedTopProducts = withRangeCache(
   getTopProductsByRevenue,
@@ -185,11 +185,6 @@ export async function getDashboardData(
     return buildMockDashboardPayload(range);
   }
 
-  // Unlike every other card, this fetch must be skipped entirely while its
-  // display flag is off — full order-history aggregation is far more
-  // expensive than a bounded-range request. Built as a conditional promise
-  // (rather than an unconditional settle(cachedX(range)) call like the rest)
-  // so the cached fetcher is never invoked while the flag is disabled.
   const customerCohortAnalysisPromise: Promise<CohortRow[] | Error> =
     SHOW_CUSTOMER_COHORT_ANALYSIS
       ? settle(cachedCustomerCohortAnalysis())
