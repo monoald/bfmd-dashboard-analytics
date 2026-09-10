@@ -33,6 +33,7 @@ import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTa
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
+import { TotalSalesBreakdownTable } from "@/components/analytics/TotalSalesBreakdownTable";
 import { TotalSalesOverTimeTable } from "@/components/analytics/TotalSalesOverTimeTable";
 
 const REPORT_CHART_HEIGHT = 420;
@@ -289,23 +290,22 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         );
       }
       return (
-        <RankedList
-          title={config.title}
-          variant="breakdown"
-          items={data.charts.salesBreakdown.map((line) => ({
-            name: line.label,
-            value: line.value,
-          }))}
-          formatValue={formatCurrency}
-        />
+        <div className="grid gap-3">
+          <RankedList
+            title={config.title}
+            variant="breakdown"
+            items={data.charts.salesBreakdown.map((line) => ({
+              name: line.label,
+              value: line.value,
+            }))}
+            formatValue={formatCurrency}
+          />
+          <TotalSalesBreakdownTable data={data.charts.salesOverTimeBreakdown} />
+        </div>
       );
     }
 
     case "total-sales-by-sales-channel": {
-      // See SHOW_SALES_BY_CHANNEL's comment in report-config.ts: this
-      // metric currently counts cancelled/failed/pending orders as sales,
-      // unlike every other revenue card. Gated here too so navigating
-      // directly to this URL can't surface the known-wrong numbers.
       if (!SHOW_SALES_BY_CHANNEL) {
         return (
           <CardError
@@ -333,10 +333,6 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     }
 
     case "customer-cohort-analysis": {
-      // See SHOW_CUSTOMER_COHORT_ANALYSIS's comment in report-config.ts:
-      // this metric has never been verified against live order data.
-      // Gated here too so navigating directly to this URL can't surface
-      // unverified numbers.
       if (!SHOW_CUSTOMER_COHORT_ANALYSIS) {
         return (
           <CardError
