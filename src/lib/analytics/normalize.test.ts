@@ -170,6 +170,10 @@ function baseRaw(): RawPipelineResults {
       previous: revenueStats({ grossSales: 80, ordersCount: 3 }),
     },
     ordersFulfilled: { current: 12, previous: 9 },
+    itemsSoldOverTime: {
+      current: [{ date: "Aug 1", itemsSold: 10 }],
+      previous: [{ date: "Aug 1", itemsSold: 6 }],
+    },
     returningCustomerRate: { current: 50, previous: 40 },
     newAndReturningCustomerCounts: {
       current: { new: 6, returning: 6 },
@@ -403,6 +407,41 @@ describe("buildDashboardPayload", () => {
     expect(payload.errors.returningCustomerRate).toBe("WC API error");
     expect(payload.charts.returningCustomerRateBreakdown).toEqual([]);
     expect(payload.summaryCards.returningCustomerRate.value).toBe(50);
+  });
+
+  it("derives ordersOverTimeBreakdown rows from revenueStats (orders, AOV) plus itemsSoldOverTime (items per order), with reversedQuantity always zero (WC has no item-refund-quantity field)", () => {
+    const payload = buildDashboardPayload(baseRaw());
+
+    expect(payload.charts.ordersOverTimeBreakdown).toEqual([
+      {
+        currentDateLabel: "Aug 1",
+        previousDateLabel: "Aug 1",
+        orders: { current: 4, previous: 3 },
+        itemsPerOrder: { current: 2.5, previous: 2 },
+        averageOrderValue: { current: 22.5, previous: 30 },
+        reversedQuantity: { current: 0, previous: 0 },
+      },
+    ]);
+  });
+
+  it("isolates an itemsSoldOverTime failure to the ordersOverTimeBreakdown chart, defaulting items per order to zero, without affecting the orders summary card", () => {
+    const raw = baseRaw();
+    raw.itemsSoldOverTime = new Error("WC API error");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.orders).toBe("WC API error");
+    expect(payload.charts.ordersOverTimeBreakdown).toEqual([
+      {
+        currentDateLabel: "Aug 1",
+        previousDateLabel: "Aug 1",
+        orders: { current: 4, previous: 3 },
+        itemsPerOrder: { current: 0, previous: 0 },
+        averageOrderValue: { current: 22.5, previous: 30 },
+        reversedQuantity: { current: 0, previous: 0 },
+      },
+    ]);
+    expect(payload.summaryCards.orders.value).toBe(4);
   });
 
   it("passes through GA4-sourced charts unchanged", () => {

@@ -7,6 +7,7 @@ import type {
   DashboardPayload,
   FunnelStep,
   NamedValue,
+  OrdersOverTimeBreakdownRow,
   ReturningCustomerRateBreakdownRow,
   RevenueBreakdownRow,
   SalesBreakdownLine,
@@ -15,6 +16,7 @@ import type {
   TimeSeriesData,
 } from "./types";
 import type { CustomerActivityInterval } from "./woocommerce/customers";
+import type { ItemsSoldInterval } from "./woocommerce/orders";
 import type { RevenueStatsResult } from "./woocommerce/revenue";
 
 export function computeChange(current: number, previous: number): ChangeMetric {
@@ -88,6 +90,9 @@ export interface RawPipelineResults {
   revenueStats:
     { current: RevenueStatsResult; previous: RevenueStatsResult } | Error;
   ordersFulfilled: { current: number; previous: number } | Error;
+  itemsSoldOverTime:
+    | { current: ItemsSoldInterval[]; previous: ItemsSoldInterval[] }
+    | Error;
   returningCustomerRate: { current: number; previous: number } | Error;
   newAndReturningCustomerCounts:
     | {
@@ -335,6 +340,55 @@ function returningCustomerRateBreakdownFrom(
   return rows;
 }
 
+function ordersOverTimeBreakdownFrom(
+  stats: {
+    current: RevenueStatsResult;
+    previous: RevenueStatsResult;
+  },
+  itemsSold: {
+    current: ItemsSoldInterval[];
+    previous: ItemsSoldInterval[];
+  },
+  interval: "hour" | "day" | "week",
+): OrdersOverTimeBreakdownRow[] {
+  const count = Math.max(
+    stats.current.intervals.length,
+    stats.previous.intervals.length,
+  );
+  const includeTime = interval === "hour";
+  const rows: OrdersOverTimeBreakdownRow[] = [];
+  for (let i = 0; i < count; i++) {
+    const cur = stats.current.intervals[i];
+    const prev = stats.previous.intervals[i];
+    const curItems = itemsSold.current[i]?.itemsSold ?? 0;
+    const prevItems = itemsSold.previous[i]?.itemsSold ?? 0;
+    rows.push({
+      currentDateLabel: cur
+        ? formatWcIntervalLabel(cur.date, includeTime)
+        : "",
+      previousDateLabel: prev
+        ? formatWcIntervalLabel(prev.date, includeTime)
+        : "",
+      orders: {
+        current: cur?.ordersCount ?? 0,
+        previous: prev?.ordersCount ?? 0,
+      },
+      itemsPerOrder: {
+        current: cur && cur.ordersCount > 0 ? curItems / cur.ordersCount : 0,
+        previous:
+          prev && prev.ordersCount > 0 ? prevItems / prev.ordersCount : 0,
+      },
+      averageOrderValue: {
+        current: cur && cur.ordersCount > 0 ? cur.netRevenue / cur.ordersCount : 0,
+        previous:
+          prev && prev.ordersCount > 0 ? prev.netRevenue / prev.ordersCount : 0,
+      },
+      reversedQuantity: { current: 0, previous: 0 },
+    });
+  }
+  return rows;
+}
+
 function salesBreakdownFrom(stats: RevenueStatsResult): SalesBreakdownLine[] {
   const t = stats.totals;
   return [
@@ -384,6 +438,10 @@ export function buildDashboardPayload(
   const ordersFulfilled = unwrap("ordersFulfilled", raw.ordersFulfilled, {
     current: 0,
     previous: 0,
+  });
+  const itemsSoldOverTime = unwrap("orders", raw.itemsSoldOverTime, {
+    current: [],
+    previous: [],
   });
   const returningCustomerRate = unwrap(
     "returningCustomerRate",
@@ -493,6 +551,11 @@ export function buildDashboardPayload(
       ),
       salesOverTimeBreakdown: salesOverTimeBreakdownFrom(
         revenueStats,
+        interval,
+      ),
+      ordersOverTimeBreakdown: ordersOverTimeBreakdownFrom(
+        revenueStats,
+        itemsSoldOverTime,
         interval,
       ),
       returningCustomerRateBreakdown: returningCustomerRateBreakdownFrom(

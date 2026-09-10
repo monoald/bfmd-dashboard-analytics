@@ -1,5 +1,5 @@
-import { fetchWcCount } from "./client";
-import type { ResolvedDateRange } from "../types";
+import { fetchWc, fetchWcCount } from "./client";
+import type { PeriodBounds, ResolvedDateRange } from "../types";
 
 // Uses the WC Analytics API's array-style status_is[] filter (distinct from the
 // core REST API's plain `status` param) — verify against a live store once
@@ -18,6 +18,47 @@ export async function getOrdersFulfilled(
       after: range.previous.start.toISOString(),
       before: range.previous.end.toISOString(),
     }),
+  ]);
+  return { current, previous };
+}
+
+interface WcOrdersStatsResponse {
+  intervals: Array<{
+    date_start: string;
+    subtotals: { num_items_sold: number };
+  }>;
+}
+
+export interface ItemsSoldInterval {
+  date: string;
+  itemsSold: number;
+}
+
+async function fetchItemsSoldForPeriod(
+  period: PeriodBounds,
+  interval: "hour" | "day" | "week",
+): Promise<ItemsSoldInterval[]> {
+  const raw = await fetchWc<WcOrdersStatsResponse>(
+    "/wc-analytics/reports/orders/stats",
+    {
+      after: period.start.toISOString(),
+      before: period.end.toISOString(),
+      interval,
+      per_page: "100",
+    },
+  );
+  return raw.intervals.map((i) => ({
+    date: i.date_start,
+    itemsSold: i.subtotals.num_items_sold,
+  }));
+}
+
+export async function getItemsSoldOverTime(
+  range: ResolvedDateRange,
+): Promise<{ current: ItemsSoldInterval[]; previous: ItemsSoldInterval[] }> {
+  const [current, previous] = await Promise.all([
+    fetchItemsSoldForPeriod(range.current, range.interval),
+    fetchItemsSoldForPeriod(range.previous, range.interval),
   ]);
   return { current, previous };
 }
