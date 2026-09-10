@@ -279,6 +279,23 @@ function salesOverTimeBreakdownFrom(
   return rows;
 }
 
+function bucketReturningRate(bucket?: CustomerActivityInterval): number {
+  return bucket && bucket.customers > 0
+    ? Math.round((bucket.returningCustomers / bucket.customers) * 1000) / 10
+    : 0;
+}
+
+// computeCustomerActivityByBucket (customers.ts) already returns buckets
+// most-recent-first, the same order WooCommerce's revenue/stats intervals
+// use (see SessionsOverTimeBreakdownRow's comment in types.ts) — matching
+// how grossSales/orders sparklines above consume revenueStats.intervals
+// directly with no reversal.
+function returningCustomerRateSparklineFrom(
+  breakdown: CustomerActivityInterval[],
+): number[] {
+  return breakdown.map(bucketReturningRate);
+}
+
 function returningCustomerRateBreakdownFrom(
   breakdown: {
     current: CustomerActivityInterval[];
@@ -291,10 +308,7 @@ function returningCustomerRateBreakdownFrom(
     breakdown.previous.length,
   );
   const includeTime = interval === "hour";
-  const rate = (bucket?: CustomerActivityInterval) =>
-    bucket && bucket.customers > 0
-      ? Math.round((bucket.returningCustomers / bucket.customers) * 1000) / 10
-      : 0;
+  const rate = bucketReturningRate;
   const rows: ReturningCustomerRateBreakdownRow[] = [];
   for (let i = 0; i < count; i++) {
     const cur = breakdown.current[i];
@@ -430,10 +444,15 @@ export function buildDashboardPayload(
         ),
         sparkline: revenueStats.current.intervals.map((i) => i.ordersCount),
       },
-      returningCustomerRate: computeChange(
-        returningCustomerRate.current,
-        returningCustomerRate.previous,
-      ),
+      returningCustomerRate: {
+        ...computeChange(
+          returningCustomerRate.current,
+          returningCustomerRate.previous,
+        ),
+        sparkline: returningCustomerRateSparklineFrom(
+          returningCustomerRateBreakdownRaw.current,
+        ),
+      },
       averageOrderValue: computeChange(
         revenueStats.current.totals.averageOrderValue,
         revenueStats.previous.totals.averageOrderValue,
