@@ -167,6 +167,7 @@ export function buildMockDashboardPayload(
     0.85,
   );
   const aovOverTime = buildSeries(labels, 58, 14, 0.94);
+  const itemsPerOrderSeries = buildSeries(labels, 2.3, 0.6, 0.95);
   const conversionRateOverTime = buildSeries(labels, 10.2, 3.4, 1.08);
   const returningCustomerRateSeries = buildSeries(labels, 52, 8, 0.9);
 
@@ -489,6 +490,25 @@ export function buildMockDashboardPayload(
           },
         };
       }),
+      ordersOverTimeBreakdown: labels.map((label, i) => ({
+        currentDateLabel: label,
+        previousDateLabel: label,
+        orders: {
+          current: Math.round(ordersSeries[i].currentPeriod),
+          previous: Math.round(ordersSeries[i].previousPeriod),
+        },
+        itemsPerOrder: {
+          current: Math.round(itemsPerOrderSeries[i].currentPeriod * 10) / 10,
+          previous: Math.round(itemsPerOrderSeries[i].previousPeriod * 10) / 10,
+        },
+        averageOrderValue: {
+          current: Math.round(aovOverTime[i].currentPeriod),
+          previous: Math.round(aovOverTime[i].previousPeriod),
+        },
+        // WooCommerce's Analytics API has no item-quantity-refunded field —
+        // see OrdersOverTimeBreakdownRow's comment.
+        reversedQuantity: { current: 0, previous: 0 },
+      })),
       returningCustomerRateBreakdown: labels.map((label, i) => {
         const customers = {
           current: Math.max(0, Math.round(ordersSeries[i].currentPeriod * 0.82)),

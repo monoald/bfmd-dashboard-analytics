@@ -120,6 +120,25 @@ export interface SalesOverTimeBreakdownRow {
   totalSales: { current: number; previous: number };
 }
 
+// One row of the "Orders" report's detail table. `orders` and
+// `averageOrderValue` are derived from the same revenueStats source already
+// used elsewhere (TotalSalesOverTimeTable, RevenueBreakdownTable), not a
+// second endpoint, so they can't disagree with those. `itemsPerOrder` is the
+// one new number (from getItemsSoldOverTime's orders/stats fetch).
+// `reversedQuantity` is always {current: 0, previous: 0} — WooCommerce's
+// Analytics API has no item-quantity-refunded field (only a dollar refund
+// total, already used for salesReversals above); kept as a column for
+// layout parity with Shopify's report, same treatment as
+// SalesOverTimeBreakdownRow's duties/additionalFees.
+export interface OrdersOverTimeBreakdownRow {
+  currentDateLabel: string;
+  previousDateLabel: string;
+  orders: { current: number; previous: number };
+  itemsPerOrder: { current: number; previous: number };
+  averageOrderValue: { current: number; previous: number };
+  reversedQuantity: { current: number; previous: number };
+}
+
 // One row of the "Returning Customer Rate" report's detail table. Unlike
 // every other breakdown row above, `customers`/`returningCustomers` are not
 // additive across rows — the same customer can be attributed to more than
@@ -198,6 +217,7 @@ export interface DashboardPayload {
     aovOverTime: TimeSeriesData[];
     revenueBreakdownOverTime: RevenueBreakdownRow[];
     salesOverTimeBreakdown: SalesOverTimeBreakdownRow[];
+    ordersOverTimeBreakdown: OrdersOverTimeBreakdownRow[];
     returningCustomerRateBreakdown: ReturningCustomerRateBreakdownRow[];
     // Separate whole-period totals for the "Returning Customer Rate" report
     // table's summary row — NOT derived by summing

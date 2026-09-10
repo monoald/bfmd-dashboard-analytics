@@ -5,7 +5,7 @@ import { withCache, withFixedCache, withRangeCache } from "./cache";
 import { resolveCustomRange, resolveDateRange } from "./date-range";
 import { buildDashboardPayload, type RawPipelineResults } from "./normalize";
 import { getRevenueStats } from "./woocommerce/revenue";
-import { getOrdersFulfilled } from "./woocommerce/orders";
+import { getItemsSoldOverTime, getOrdersFulfilled } from "./woocommerce/orders";
 import {
   getReturningCustomerRate,
   getCurrentCustomerSplit,
@@ -49,6 +49,10 @@ const cachedRevenueStats = withRangeCache(getRevenueStats, "wc-revenue-stats");
 const cachedOrdersFulfilled = withRangeCache(
   getOrdersFulfilled,
   "wc-orders-fulfilled",
+);
+const cachedItemsSoldOverTime = withRangeCache(
+  getItemsSoldOverTime,
+  "wc-items-sold-over-time",
 );
 const cachedReturningCustomerRate = withRangeCache(
   getReturningCustomerRate,
@@ -193,6 +197,7 @@ export async function getDashboardData(
   const [
     revenueStats,
     ordersFulfilled,
+    itemsSoldOverTime,
     returningCustomerRate,
     newAndReturningCustomerCounts,
     returningCustomerRateBreakdown,
@@ -211,6 +216,7 @@ export async function getDashboardData(
   ] = await Promise.all([
     settle(cachedRevenueStats(range)),
     settle(cachedOrdersFulfilled(range)),
+    settle(cachedItemsSoldOverTime(range)),
     settle(cachedReturningCustomerRate(range)),
     settle(cachedNewAndReturningCustomerCounts(range)),
     settle(cachedReturningCustomerRateBreakdown(range)),
@@ -231,6 +237,7 @@ export async function getDashboardData(
   const raw: RawPipelineResults = {
     revenueStats,
     ordersFulfilled,
+    itemsSoldOverTime,
     returningCustomerRate,
     newAndReturningCustomerCounts,
     returningCustomerRateBreakdown,

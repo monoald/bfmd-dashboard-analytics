@@ -9,7 +9,10 @@ vi.mock("./cache", () => ({
   withCache: (fn: unknown) => fn,
 }));
 vi.mock("./woocommerce/revenue", () => ({ getRevenueStats: vi.fn() }));
-vi.mock("./woocommerce/orders", () => ({ getOrdersFulfilled: vi.fn() }));
+vi.mock("./woocommerce/orders", () => ({
+  getOrdersFulfilled: vi.fn(),
+  getItemsSoldOverTime: vi.fn(),
+}));
 vi.mock("./woocommerce/customers", () => ({
   getReturningCustomerRate: vi.fn(),
   getCurrentCustomerSplit: vi.fn(),
@@ -59,7 +62,7 @@ import {
   getConversionRateOverTimeBreakdown,
   getConversionRateSummary,
 } from "./ga4/funnel";
-import { getOrdersFulfilled } from "./woocommerce/orders";
+import { getItemsSoldOverTime, getOrdersFulfilled } from "./woocommerce/orders";
 import { getTopProductsByRevenue } from "./woocommerce/products";
 import { getSocialReferrerRevenue } from "./ga4/referrers";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
@@ -112,6 +115,10 @@ const revenueStatsResult = {
 function mockHappyPath() {
   vi.mocked(getRevenueStats).mockResolvedValue(revenueStatsResult);
   vi.mocked(getOrdersFulfilled).mockResolvedValue({ current: 5, previous: 4 });
+  vi.mocked(getItemsSoldOverTime).mockResolvedValue({
+    current: [],
+    previous: [],
+  });
   vi.mocked(getReturningCustomerRate).mockResolvedValue({
     current: 50,
     previous: 40,
