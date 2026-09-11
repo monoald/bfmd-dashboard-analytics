@@ -68,16 +68,36 @@ export interface SessionsOverTimeBreakdownRow {
   sessions: { current: number; previous: number };
 }
 
-// One row of the "Sessions by device" report's detail table. Unlike
-// ReturningCustomerRateBreakdownRow, sessions/visitors here ARE additive
-// across rows — GA4 attributes each session to exactly one deviceCategory —
-// so a table's summary row can safely sum these rows client-side rather
-// than needing a separate whole-period fetch. `deviceCategory` is GA4's raw
-// dimension value (e.g. "mobile"), left untransformed to match
-// getSessionsByDevice/DonutBreakdown on the same report page, which already
-// display it as-is.
+// One row of the "Sessions by device" report's detail table. `sessions` IS
+// additive across rows — GA4 attributes each session to exactly one
+// deviceCategory — but `onlineStoreVisitors` is NOT: a person who visits via
+// more than one device in the period is counted once per device, so summing
+// it overcounts the true whole-period total (confirmed live against this
+// store: breakdown-summed visitors read 67, the real total was 66 — same
+// overcounting class as SessionsSummary's documented dateHour case). That's
+// why SessionsByDeviceTable takes a separate `summary` prop instead of
+// summing `data` client-side. `deviceCategory` is GA4's raw dimension value
+// (e.g. "mobile"), left untransformed to match getSessionsByDevice/
+// DonutBreakdown on the same report page, which already display it as-is.
 export interface SessionsByDeviceBreakdownRow {
   deviceCategory: string;
+  onlineStoreVisitors: { current: number; previous: number };
+  sessions: { current: number; previous: number };
+}
+
+// One row of the "Sessions by location" report's detail table. Same
+// additivity caveat as SessionsByDeviceBreakdownRow: `sessions` sums safely
+// across rows, `onlineStoreVisitors` does not (a visitor active from more
+// than one city in the period is counted once per city) — the table's
+// summary row must come from a separate whole-period fetch, not a sum of
+// these rows. `country`/`region`/`city` are GA4's raw dimension values,
+// kept separate (unlike NamedValue-based getSessionsByLocation's single
+// joined "country · region · city" string) so the table can render them as
+// distinct columns.
+export interface SessionsByLocationBreakdownRow {
+  country: string;
+  region: string;
+  city: string;
   onlineStoreVisitors: { current: number; previous: number };
   sessions: { current: number; previous: number };
 }
@@ -270,6 +290,7 @@ export interface DashboardPayload {
     sessionsByDevice: NamedValue[];
     sessionsByDeviceBreakdown: SessionsByDeviceBreakdownRow[];
     sessionsByLocation: NamedValue[];
+    sessionsByLocationBreakdown: SessionsByLocationBreakdownRow[];
     totalSalesBySocialReferrer: NamedValue[];
     salesOverTime: TimeSeriesData[];
     salesBreakdown: SalesBreakdownLine[];

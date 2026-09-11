@@ -5,6 +5,7 @@ import type {
   PeriodBounds,
   ResolvedDateRange,
   SessionsByDeviceBreakdownRow,
+  SessionsByLocationBreakdownRow,
   SessionsOverTimeBreakdownRow,
   SessionsSummary,
   TimeSeriesData,
@@ -246,5 +247,66 @@ export async function getSessionsByLocation(
       previousValue: previousMap.get(name) ?? 0,
     }))
     .sort((a, b) => b.value - a.value)
+    .slice(0, 10);
+}
+
+interface LocationCounts {
+  country: string;
+  region: string;
+  city: string;
+  sessions: number;
+  visitors: number;
+}
+
+async function fetchSessionsAndVisitorsByLocationMap(
+  period: PeriodBounds,
+): Promise<Map<string, LocationCounts>> {
+  const rows = await runGa4Report({
+    dimensions: ["country", "region", "city"],
+    metrics: ["sessions", "totalUsers"],
+    startDate: toIsoDate(period.start),
+    endDate: toIsoDate(period.end),
+  });
+
+  const map = new Map<string, LocationCounts>();
+  for (const row of rows) {
+    const [country, region, city] = row.dimensionValues;
+    map.set(`${country} · ${region} · ${city}`, {
+      country,
+      region,
+      city,
+      sessions: row.metricValues[0],
+      visitors: row.metricValues[1],
+    });
+  }
+  return map;
+}
+
+export async function getSessionsByLocationBreakdown(
+  range: ResolvedDateRange,
+): Promise<SessionsByLocationBreakdownRow[]> {
+  const [currentMap, previousMap] = await Promise.all([
+    fetchSessionsAndVisitorsByLocationMap(range.current),
+    fetchSessionsAndVisitorsByLocationMap(range.previous),
+  ]);
+
+  return [...currentMap.entries()]
+    .map(([key, current]) => {
+      const previous = previousMap.get(key);
+      return {
+        country: current.country,
+        region: current.region,
+        city: current.city,
+        sessions: {
+          current: current.sessions,
+          previous: previous?.sessions ?? 0,
+        },
+        onlineStoreVisitors: {
+          current: current.visitors,
+          previous: previous?.visitors ?? 0,
+        },
+      };
+    })
+    .sort((a, b) => b.sessions.current - a.sessions.current)
     .slice(0, 10);
 }

@@ -225,6 +225,15 @@ function baseRaw(): RawPipelineResults {
       },
     ],
     sessionsByLocation: [{ name: "US · NY", value: 10 }],
+    sessionsByLocationBreakdown: [
+      {
+        country: "US",
+        region: "NY",
+        city: "New York",
+        sessions: { current: 10, previous: 8 },
+        onlineStoreVisitors: { current: 7, previous: 6 },
+      },
+    ],
     conversionFunnel: [{ step: "Sessions", sessions: 10, percentage: 100 }],
     conversionRateOverTime: [
       { date: "Aug 1", currentPeriod: 10, previousPeriod: 5 },
@@ -491,6 +500,33 @@ describe("buildDashboardPayload", () => {
     expect(payload.charts.sessionsByDeviceBreakdown).toEqual([]);
     expect(payload.charts.sessionsByDevice).toEqual([
       { name: "mobile", value: 10 },
+    ]);
+  });
+
+  it("passes sessionsByLocationBreakdown rows through unchanged", () => {
+    const payload = buildDashboardPayload(baseRaw());
+
+    expect(payload.charts.sessionsByLocationBreakdown).toEqual([
+      {
+        country: "US",
+        region: "NY",
+        city: "New York",
+        sessions: { current: 10, previous: 8 },
+        onlineStoreVisitors: { current: 7, previous: 6 },
+      },
+    ]);
+  });
+
+  it("isolates a sessionsByLocationBreakdown failure to its own card, defaulting to an empty array, without affecting the sessionsByLocation ranked list", () => {
+    const raw = baseRaw();
+    raw.sessionsByLocationBreakdown = new Error("GA4 quota exceeded");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.sessionsByLocation).toBe("GA4 quota exceeded");
+    expect(payload.charts.sessionsByLocationBreakdown).toEqual([]);
+    expect(payload.charts.sessionsByLocation).toEqual([
+      { name: "US · NY", value: 10 },
     ]);
   });
 

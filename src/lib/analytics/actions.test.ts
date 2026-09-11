@@ -32,6 +32,7 @@ vi.mock("./ga4/sessions", () => ({
   getSessionsByDevice: vi.fn(),
   getSessionsByDeviceBreakdown: vi.fn(),
   getSessionsByLocation: vi.fn(),
+  getSessionsByLocationBreakdown: vi.fn(),
 }));
 vi.mock("./ga4/funnel", () => ({
   getConversionFunnel: vi.fn(),
@@ -78,6 +79,7 @@ import {
   getSessionsByDevice,
   getSessionsByDeviceBreakdown,
   getSessionsByLocation,
+  getSessionsByLocationBreakdown,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
   getSessionsSummary,
@@ -157,6 +159,7 @@ function mockHappyPath() {
   vi.mocked(getSessionsByDevice).mockResolvedValue([]);
   vi.mocked(getSessionsByDeviceBreakdown).mockResolvedValue([]);
   vi.mocked(getSessionsByLocation).mockResolvedValue([]);
+  vi.mocked(getSessionsByLocationBreakdown).mockResolvedValue([]);
   vi.mocked(getConversionFunnel).mockResolvedValue([]);
   vi.mocked(getConversionRateOverTime).mockResolvedValue([]);
   vi.mocked(getConversionRateOverTimeBreakdown).mockResolvedValue([]);
@@ -271,6 +274,27 @@ describe("getDashboardData", () => {
     expect(payload.charts.sessionsByDeviceBreakdown).toEqual([]);
     expect(payload.charts.sessionsByDevice).toEqual([
       { name: "mobile", value: 10 },
+    ]);
+  });
+
+  it("isolates a sessionsByLocationBreakdown fetcher rejection to its own card, without affecting the sessionsByLocation ranked list", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getSessionsByLocation).mockResolvedValue([
+      { name: "US · NY", value: 10 },
+    ]);
+    vi.mocked(getSessionsByLocationBreakdown).mockRejectedValue(
+      new Error("GA4 quota exceeded"),
+    );
+
+    const payload = await getDashboardData("7d");
+
+    expect(payload.errors.sessionsByLocation).toBe(
+      "Unable to load data for this card. Please try again later.",
+    );
+    expect(payload.charts.sessionsByLocationBreakdown).toEqual([]);
+    expect(payload.charts.sessionsByLocation).toEqual([
+      { name: "US · NY", value: 10 },
     ]);
   });
 

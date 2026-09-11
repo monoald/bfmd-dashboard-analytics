@@ -8,6 +8,7 @@ import {
   getSessionsByDevice,
   getSessionsByDeviceBreakdown,
   getSessionsByLocation,
+  getSessionsByLocationBreakdown,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
 } from "./sessions";
@@ -254,5 +255,128 @@ describe("getSessionsByLocation", () => {
         previousValue: 0,
       },
     ]);
+  });
+});
+
+describe("getSessionsByLocationBreakdown", () => {
+  it("fetches sessions and totalUsers together per location, sorted by current sessions descending, joined by country/region/city, capped at 10 rows", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        {
+          dimensionValues: ["United States", "Illinois", "Chicago"],
+          metricValues: [98, 74],
+        },
+        {
+          dimensionValues: ["United States", "California", "Los Angeles"],
+          metricValues: [112, 83],
+        },
+      ])
+      .mockResolvedValueOnce([
+        {
+          dimensionValues: ["United States", "Illinois", "Chicago"],
+          metricValues: [90, 70],
+        },
+        {
+          dimensionValues: ["United States", "California", "Los Angeles"],
+          metricValues: [100, 80],
+        },
+      ]);
+
+    const result = await getSessionsByLocationBreakdown(range);
+
+    expect(runGa4Report).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dimensions: ["country", "region", "city"],
+        metrics: ["sessions", "totalUsers"],
+      }),
+    );
+    expect(result).toEqual([
+      {
+        country: "United States",
+        region: "California",
+        city: "Los Angeles",
+        sessions: { current: 112, previous: 100 },
+        onlineStoreVisitors: { current: 83, previous: 80 },
+      },
+      {
+        country: "United States",
+        region: "Illinois",
+        city: "Chicago",
+        sessions: { current: 98, previous: 90 },
+        onlineStoreVisitors: { current: 74, previous: 70 },
+      },
+    ]);
+  });
+
+  it("defaults previous-period values to 0 when a location is absent from the previous period", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        {
+          dimensionValues: ["United States", "Florida", "Miami"],
+          metricValues: [5, 4],
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const result = await getSessionsByLocationBreakdown(range);
+
+    expect(result).toEqual([
+      {
+        country: "United States",
+        region: "Florida",
+        city: "Miami",
+        sessions: { current: 5, previous: 0 },
+        onlineStoreVisitors: { current: 4, previous: 0 },
+      },
+    ]);
+  });
+
+  it("distinguishes same-named cities in different countries", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        {
+          dimensionValues: ["United States", "Georgia", "Springfield"],
+          metricValues: [50, 40],
+        },
+        {
+          dimensionValues: ["Australia", "Victoria", "Springfield"],
+          metricValues: [30, 25],
+        },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const result = await getSessionsByLocationBreakdown(range);
+
+    expect(result).toEqual([
+      {
+        country: "United States",
+        region: "Georgia",
+        city: "Springfield",
+        sessions: { current: 50, previous: 0 },
+        onlineStoreVisitors: { current: 40, previous: 0 },
+      },
+      {
+        country: "Australia",
+        region: "Victoria",
+        city: "Springfield",
+        sessions: { current: 30, previous: 0 },
+        onlineStoreVisitors: { current: 25, previous: 0 },
+      },
+    ]);
+  });
+
+  it("caps the result at 10 rows", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce(
+        Array.from({ length: 12 }, (_, i) => ({
+          dimensionValues: ["United States", `Region${i}`, `City${i}`],
+          metricValues: [12 - i, 12 - i],
+        })),
+      )
+      .mockResolvedValueOnce([]);
+
+    const result = await getSessionsByLocationBreakdown(range);
+
+    expect(result).toHaveLength(10);
   });
 });

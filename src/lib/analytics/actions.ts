@@ -23,6 +23,7 @@ import {
   getSessionsByDevice,
   getSessionsByDeviceBreakdown,
   getSessionsByLocation,
+  getSessionsByLocationBreakdown,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
   getSessionsSummary,
@@ -54,6 +55,7 @@ import type {
   NamedValue,
   ResolvedDateRange,
   SessionsByDeviceBreakdownRow,
+  SessionsByLocationBreakdownRow,
   SessionsOverTimeBreakdownRow,
   SessionsSummary,
   TimeSeriesData,
@@ -108,6 +110,7 @@ interface Ga4TodayBundle {
   sessionsByDevice: NamedValue[] | Error;
   sessionsByDeviceBreakdown: SessionsByDeviceBreakdownRow[] | Error;
   sessionsByLocation: NamedValue[] | Error;
+  sessionsByLocationBreakdown: SessionsByLocationBreakdownRow[] | Error;
   conversionFunnel: FunnelStep[] | Error;
   conversionRateOverTime: TimeSeriesData[] | Error;
   conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[] | Error;
@@ -140,6 +143,7 @@ async function fetchGa4TodayBundle(
   sessionsByDevice: Settled<NamedValue[]>;
   sessionsByDeviceBreakdown: Settled<SessionsByDeviceBreakdownRow[]>;
   sessionsByLocation: Settled<NamedValue[]>;
+  sessionsByLocationBreakdown: Settled<SessionsByLocationBreakdownRow[]>;
   conversionFunnel: Settled<FunnelStep[]>;
   conversionRateOverTime: Settled<TimeSeriesData[]>;
   conversionRateOverTimeBreakdown: Settled<ConversionRateOverTimeBreakdownRow[]>;
@@ -153,6 +157,7 @@ async function fetchGa4TodayBundle(
     sessionsByDevice,
     sessionsByDeviceBreakdown,
     sessionsByLocation,
+    sessionsByLocationBreakdown,
     conversionFunnel,
     conversionRateOverTime,
     conversionRateOverTimeBreakdown,
@@ -165,6 +170,7 @@ async function fetchGa4TodayBundle(
     toSettled(getSessionsByDevice(range)),
     toSettled(getSessionsByDeviceBreakdown(range)),
     toSettled(getSessionsByLocation(range)),
+    toSettled(getSessionsByLocationBreakdown(range)),
     toSettled(getConversionFunnel(range)),
     toSettled(getConversionRateOverTime(range)),
     toSettled(getConversionRateOverTimeBreakdown(range)),
@@ -179,6 +185,7 @@ async function fetchGa4TodayBundle(
     sessionsByDevice,
     sessionsByDeviceBreakdown,
     sessionsByLocation,
+    sessionsByLocationBreakdown,
     conversionFunnel,
     conversionRateOverTime,
     conversionRateOverTimeBreakdown,
@@ -209,6 +216,9 @@ async function getGa4TodayBundle(
     sessionsByDevice: fromSettled(bundle.sessionsByDevice),
     sessionsByDeviceBreakdown: fromSettled(bundle.sessionsByDeviceBreakdown),
     sessionsByLocation: fromSettled(bundle.sessionsByLocation),
+    sessionsByLocationBreakdown: fromSettled(
+      bundle.sessionsByLocationBreakdown,
+    ),
     conversionFunnel: fromSettled(bundle.conversionFunnel),
     conversionRateOverTime: fromSettled(bundle.conversionRateOverTime),
     conversionRateOverTimeBreakdown: fromSettled(

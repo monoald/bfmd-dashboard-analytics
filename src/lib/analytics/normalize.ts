@@ -14,6 +14,7 @@ import type {
   SalesByProductBreakdownRow,
   SalesOverTimeBreakdownRow,
   SessionsByDeviceBreakdownRow,
+  SessionsByLocationBreakdownRow,
   SessionsOverTimeBreakdownRow,
   SessionsSummary,
   TimeSeriesData,
@@ -115,6 +116,7 @@ export interface RawPipelineResults {
   sessionsByDevice: NamedValue[] | Error;
   sessionsByDeviceBreakdown: SessionsByDeviceBreakdownRow[] | Error;
   sessionsByLocation: NamedValue[] | Error;
+  sessionsByLocationBreakdown: SessionsByLocationBreakdownRow[] | Error;
   conversionFunnel: FunnelStep[] | Error;
   conversionRateOverTime: TimeSeriesData[] | Error;
   conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[] | Error;
@@ -561,6 +563,11 @@ export function buildDashboardPayload(
       sessionsByLocation: unwrap(
         "sessionsByLocation",
         raw.sessionsByLocation,
+        [],
+      ),
+      sessionsByLocationBreakdown: unwrap(
+        "sessionsByLocation",
+        raw.sessionsByLocationBreakdown,
         [],
       ),
       totalSalesBySocialReferrer: unwrap(

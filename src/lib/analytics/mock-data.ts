@@ -441,6 +441,58 @@ export function buildMockDashboardPayload(
           previousValue: Math.round(sessionsPrevious * 0.033),
         },
       ],
+      // Same per-location session fractions as sessionsByLocation above, so
+      // the two agree exactly; visitors fractions are a bit lower than
+      // sessions, same reasoning as sessionsByDeviceBreakdown's comment.
+      sessionsByLocationBreakdown: [
+        {
+          country: "United States",
+          region: "Florida",
+          city: "Miami",
+          sessionsFraction: [0.06, 0.058],
+          visitorsFraction: [0.053, 0.051],
+        },
+        {
+          country: "United States",
+          region: "Illinois",
+          city: "Chicago",
+          sessionsFraction: [0.055, 0.062],
+          visitorsFraction: [0.048, 0.055],
+        },
+        {
+          country: "United States",
+          region: "Georgia",
+          city: "Atlanta",
+          sessionsFraction: [0.05, 0.045],
+          visitorsFraction: [0.044, 0.04],
+        },
+        {
+          country: "United States",
+          region: "Arizona",
+          city: "Phoenix",
+          sessionsFraction: [0.045, 0.05],
+          visitorsFraction: [0.04, 0.044],
+        },
+        {
+          country: "United States",
+          region: "Texas",
+          city: "Houston",
+          sessionsFraction: [0.04, 0.033],
+          visitorsFraction: [0.035, 0.029],
+        },
+      ].map(({ country, region, city, sessionsFraction, visitorsFraction }) => ({
+        country,
+        region,
+        city,
+        sessions: {
+          current: Math.round(sessionsCurrent * sessionsFraction[0]),
+          previous: Math.round(sessionsPrevious * sessionsFraction[1]),
+        },
+        onlineStoreVisitors: {
+          current: Math.round(sessionsCurrent * visitorsFraction[0]),
+          previous: Math.round(sessionsPrevious * visitorsFraction[1]),
+        },
+      })),
       totalSalesBySocialReferrer: [
         {
           name: "youtube",
