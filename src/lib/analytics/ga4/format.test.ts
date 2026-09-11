@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { alignSeries, formatBucketLabel, toIsoDate } from "./format";
+import {
+  alignedDateLabels,
+  alignSeries,
+  formatBucketLabel,
+  toIsoDate,
+} from "./format";
 
 describe("toIsoDate", () => {
   it("formats a Date as YYYY-MM-DD", () => {
@@ -130,5 +135,45 @@ describe("alignSeries", () => {
       currentPeriod: 0,
       previousPeriod: 0,
     });
+  });
+});
+
+describe("alignedDateLabels", () => {
+  it("pairs each bucket's current-period label with the corresponding previous-period label, using the same calendar alignment as alignSeries", () => {
+    const result = alignedDateLabels(
+      { start: new Date(2026, 7, 1), end: new Date(2026, 7, 3) },
+      { start: new Date(2026, 6, 25), end: new Date(2026, 6, 27) },
+      "day",
+    );
+
+    expect(result).toEqual([
+      { currentLabel: "Aug 1", previousLabel: "Jul 25" },
+      { currentLabel: "Aug 2", previousLabel: "Jul 26" },
+      { currentLabel: "Aug 3", previousLabel: "Jul 27" },
+    ]);
+  });
+
+  it("groups every 7 calendar days into one week-bucket, labeling by each period's first day", () => {
+    const result = alignedDateLabels(
+      { start: new Date(2026, 6, 1), end: new Date(2026, 6, 9) },
+      { start: new Date(2026, 5, 24), end: new Date(2026, 6, 2) },
+      "week",
+    );
+
+    expect(result).toHaveLength(2);
+    expect(result[0]).toEqual({ currentLabel: "Jul 1", previousLabel: "Jun 24" });
+    expect(result[1]).toEqual({ currentLabel: "Jul 8", previousLabel: "Jul 1" });
+  });
+
+  it("fills every hour of the day even when the periods are otherwise empty", () => {
+    const result = alignedDateLabels(
+      { start: new Date(2026, 7, 1), end: new Date(2026, 7, 1) },
+      { start: new Date(2026, 6, 4), end: new Date(2026, 6, 4) },
+      "hour",
+    );
+
+    expect(result).toHaveLength(24);
+    expect(result[0]).toEqual({ currentLabel: "12 AM", previousLabel: "12 AM" });
+    expect(result[13]).toEqual({ currentLabel: "1 PM", previousLabel: "1 PM" });
   });
 });

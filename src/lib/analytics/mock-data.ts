@@ -298,7 +298,8 @@ export function buildMockDashboardPayload(
           previous: Math.round(sessions.previous * 0.082),
         };
         return {
-          date: label,
+          currentDateLabel: label,
+          previousDateLabel: label,
           sessions,
           addedToCart,
           reachedCheckout,

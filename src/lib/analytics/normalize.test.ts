@@ -224,7 +224,8 @@ function baseRaw(): RawPipelineResults {
     ],
     conversionRateOverTimeBreakdown: [
       {
-        date: "Aug 1",
+        currentDateLabel: "Aug 1",
+        previousDateLabel: "Jul 25",
         sessions: { current: 100, previous: 80 },
         addedToCart: { current: 30, previous: 24 },
         reachedCheckout: { current: 15, previous: 12 },
@@ -514,7 +515,8 @@ describe("buildDashboardPayload", () => {
     ]);
     expect(payload.charts.conversionRateOverTimeBreakdown).toEqual([
       {
-        date: "Aug 1",
+        currentDateLabel: "Aug 1",
+        previousDateLabel: "Jul 25",
         sessions: { current: 100, previous: 80 },
         addedToCart: { current: 30, previous: 24 },
         reachedCheckout: { current: 15, previous: 12 },

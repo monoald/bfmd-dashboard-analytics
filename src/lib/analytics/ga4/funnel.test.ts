@@ -176,7 +176,10 @@ describe("getConversionRateOverTimeBreakdown", () => {
 
     expect(result).toHaveLength(7);
     expect(result[0]).toEqual({
-      date: "Aug 1",
+      // range.previous is exactly 7 days before range.current (Jul 25 vs
+      // Aug 1), so bucket 0's comparison date is Jul 25, not Aug 1.
+      currentDateLabel: "Aug 1",
+      previousDateLabel: "Jul 25",
       sessions: { current: 100, previous: 50 },
       addedToCart: { current: 40, previous: 15 },
       reachedCheckout: { current: 20, previous: 8 },
@@ -190,7 +193,8 @@ describe("getConversionRateOverTimeBreakdown", () => {
       conversionRate: { current: 10, previous: 10 },
     });
     expect(result[1]).toEqual({
-      date: "Aug 2",
+      currentDateLabel: "Aug 2",
+      previousDateLabel: "Jul 26",
       sessions: { current: 0, previous: 0 },
       addedToCart: { current: 0, previous: 0 },
       reachedCheckout: { current: 0, previous: 0 },

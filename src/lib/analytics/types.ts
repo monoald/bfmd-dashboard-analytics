@@ -68,14 +68,17 @@ export interface SessionsOverTimeBreakdownRow {
   sessions: { current: number; previous: number };
 }
 
-// One row of the "Conversion rate over time" report's detail table:
-// GA4's series is chronological (see SessionsOverTimeBreakdownRow), so only
-// one date label per row. `conversionRate` is computed per-bucket directly
-// from that bucket's raw completedCheckout/sessions counts, never by
-// averaging already-computed rate percentages across buckets (the class of
-// bug documented on weightedRate in normalize.ts).
+// One row of the "Conversion rate over time" report's detail table.
+// Unlike SessionsOverTimeBreakdownRow, this needs separate current/previous
+// date labels (see ga4/format.ts's alignedDateLabels) since every row shows
+// both periods' values side by side, not just the current one.
+// `conversionRate` is computed per-bucket directly from that bucket's raw
+// completedCheckout/sessions counts, never by averaging already-computed
+// rate percentages across buckets (the class of bug documented on
+// weightedRate in normalize.ts).
 export interface ConversionRateOverTimeBreakdownRow {
-  date: string;
+  currentDateLabel: string;
+  previousDateLabel: string;
   sessions: { current: number; previous: number };
   addedToCart: { current: number; previous: number };
   reachedCheckout: { current: number; previous: number };

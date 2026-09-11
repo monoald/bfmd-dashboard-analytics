@@ -112,6 +112,42 @@ function expectedKeysForPeriod(
   return keys;
 }
 
+// Same bucket alignment as alignSeries (reuses the same DST-safe
+// expectedKeysForPeriod walk), but for callers that need BOTH periods'
+// actual calendar date labels per bucket — e.g. a detail table row showing
+// "Sep 2, 2026" above "Aug 8, 2026" — rather than the single label
+// alignSeries keeps (it only needs one, for chart x-axis ticks, and
+// discards the previous-period key once the value lookup is done).
+export function alignedDateLabels(
+  currentPeriod: PeriodBounds,
+  previousPeriod: PeriodBounds,
+  interval: "hour" | "day" | "week",
+): { currentLabel: string; previousLabel: string }[] {
+  const currentKeys = expectedKeysForPeriod(currentPeriod, interval);
+  const previousKeys = expectedKeysForPeriod(previousPeriod, interval);
+  const bucketCount = Math.max(currentKeys.length, previousKeys.length);
+
+  const labels: { currentLabel: string; previousLabel: string }[] = [];
+  for (let i = 0; i < bucketCount; i++) {
+    const currentKey = currentKeys[i];
+    const previousKey = previousKeys[i];
+    labels.push({
+      currentLabel: currentKey ? formatBucketLabel(currentKey, interval) : "",
+      previousLabel: previousKey
+        ? formatBucketLabel(previousKey, interval)
+        : "",
+    });
+  }
+
+  if (interval !== "week") return labels;
+
+  const weekly: { currentLabel: string; previousLabel: string }[] = [];
+  for (let i = 0; i < labels.length; i += 7) {
+    weekly.push(labels[i]);
+  }
+  return weekly;
+}
+
 export function alignSeries(
   currentMap: Map<string, number>,
   previousMap: Map<string, number>,

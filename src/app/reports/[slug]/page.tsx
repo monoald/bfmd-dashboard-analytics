@@ -426,27 +426,39 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     }
 
     case "conversion-rate-breakdown": {
-      if (data.errors.conversionFunnel || data.errors.conversionRate) {
+      if (
+        data.errors.conversionFunnel ||
+        data.errors.conversionRate ||
+        data.errors.conversionRateOverTimeBreakdown
+      ) {
         return (
           <CardError
             title={config.title}
             message={
-              data.errors.conversionFunnel ?? data.errors.conversionRate!
+              data.errors.conversionFunnel ??
+              data.errors.conversionRate ??
+              data.errors.conversionRateOverTimeBreakdown!
             }
           />
         );
       }
       return (
-        <FunnelChart
-          title={config.title}
-          steps={data.charts.conversionFunnel}
-          height={REPORT_FUNNEL_HEIGHT}
-          headline={{
-            value: formatPercent(data.summaryCards.conversionRate.value),
-            changePercentage: data.summaryCards.conversionRate.changePercentage,
-            trend: data.summaryCards.conversionRate.trend,
-          }}
-        />
+        <div className="grid gap-3">
+          <FunnelChart
+            title={config.title}
+            steps={data.charts.conversionFunnel}
+            height={REPORT_FUNNEL_HEIGHT}
+            headline={{
+              value: formatPercent(data.summaryCards.conversionRate.value),
+              changePercentage:
+                data.summaryCards.conversionRate.changePercentage,
+              trend: data.summaryCards.conversionRate.trend,
+            }}
+          />
+          <ConversionRateOverTimeTable
+            data={data.charts.conversionRateOverTimeBreakdown}
+          />
+        </div>
       );
     }
 

@@ -1,5 +1,5 @@
 import { runGa4Report } from "./client";
-import { alignSeries, toIsoDate } from "./format";
+import { alignedDateLabels, alignSeries, toIsoDate } from "./format";
 import { computeChange } from "../normalize";
 import type {
   ChangeMetric,
@@ -205,10 +205,17 @@ export async function getConversionRateOverTimeBreakdown(
     return sessions === 0 ? 0 : Math.round((completed / sessions) * 1000) / 10;
   }
 
+  const dateLabels = alignedDateLabels(
+    range.current,
+    range.previous,
+    range.interval,
+  );
+
   return sessionsSeries.map((point, i) => {
     const completed = completedCheckoutSeries[i];
     return {
-      date: point.date,
+      currentDateLabel: dateLabels[i]?.currentLabel ?? "",
+      previousDateLabel: dateLabels[i]?.previousLabel ?? "",
       sessions: { current: point.currentPeriod, previous: point.previousPeriod },
       addedToCart: {
         current: addedToCartSeries[i].currentPeriod,

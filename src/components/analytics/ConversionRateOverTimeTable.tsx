@@ -114,7 +114,10 @@ export function ConversionRateOverTimeTable({
           <tr className="border-b border-(--analytics-border)">
             <td className="py-2 pr-4 align-top">
               <div className="font-extrabold text-(--analytics-t1)">
-                {data[0].date}
+                {data[0].currentDateLabel}
+              </div>
+              <div className="text-(--analytics-t2)">
+                {data[0].previousDateLabel}
               </div>
               <div className="mt-1 text-(--analytics-t2)">% Change</div>
             </td>
@@ -140,17 +143,27 @@ export function ConversionRateOverTimeTable({
           </tr>
           {data.map((r, i) => (
             <tr key={i} className="border-b border-(--analytics-border)">
-              <td className="py-2 pr-4 align-top text-(--analytics-t1)">
-                {r.date}
+              <td className="py-2 pr-4 align-top">
+                <div className="text-(--analytics-t1)">
+                  {r.currentDateLabel}
+                </div>
+                <div className="text-(--analytics-t2)">
+                  {r.previousDateLabel}
+                </div>
               </td>
               {columns.map((col) => {
-                const { current } = col.row(r);
+                const { current, previous } = col.row(r);
                 return (
                   <td
                     key={col.heading}
-                    className="py-2 pr-4 align-top tabular-nums font-semibold text-(--analytics-t1)"
+                    className="py-2 pr-4 align-top tabular-nums"
                   >
-                    {format(col, current)}
+                    <div className="font-semibold text-(--analytics-t1)">
+                      {format(col, current)}
+                    </div>
+                    <div className="text-(--analytics-t2)">
+                      {format(col, previous)}
+                    </div>
                   </td>
                 );
               })}
