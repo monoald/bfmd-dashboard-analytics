@@ -30,6 +30,7 @@ import { SalesByProductTable } from "@/components/analytics/SalesByProductTable"
 import { SessionsByDeviceTable } from "@/components/analytics/SessionsByDeviceTable";
 import { SessionsByLocationTable } from "@/components/analytics/SessionsByLocationTable";
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
+import { SocialReferrerRevenueTable } from "@/components/analytics/SocialReferrerRevenueTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
 import { TotalSalesBreakdownTable } from "@/components/analytics/TotalSalesBreakdownTable";
@@ -431,11 +432,16 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         );
       }
       return (
-        <RankedList
-          title={config.title}
-          items={data.charts.totalSalesBySocialReferrer}
-          formatValue={formatCurrency}
-        />
+        <div className="grid gap-3">
+          <RankedList
+            title={config.title}
+            items={data.charts.totalSalesBySocialReferrer}
+            formatValue={formatCurrency}
+          />
+          <SocialReferrerRevenueTable
+            data={data.charts.totalSalesBySocialReferrer}
+          />
+        </div>
       );
     }
 
