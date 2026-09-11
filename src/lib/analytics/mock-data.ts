@@ -364,6 +364,56 @@ export function buildMockDashboardPayload(
           previousValue: Math.round(sessionsPrevious * 0.0195),
         },
       ],
+      // Same per-device session fractions as sessionsByDevice above, so the
+      // two agree exactly; visitors fractions are a bit lower than sessions
+      // (a visitor can have multiple sessions), roughly matching the ~89%
+      // visitors/sessions ratio seen on this store's real GA4 data.
+      sessionsByDeviceBreakdown: [
+        {
+          deviceCategory: "Mobile",
+          sessions: {
+            current: Math.round(sessionsCurrent * 0.72),
+            previous: Math.round(sessionsPrevious * 0.79),
+          },
+          onlineStoreVisitors: {
+            current: Math.round(sessionsCurrent * 0.64),
+            previous: Math.round(sessionsPrevious * 0.7),
+          },
+        },
+        {
+          deviceCategory: "Desktop",
+          sessions: {
+            current: Math.round(sessionsCurrent * 0.26),
+            previous: Math.round(sessionsPrevious * 0.205),
+          },
+          onlineStoreVisitors: {
+            current: Math.round(sessionsCurrent * 0.22),
+            previous: Math.round(sessionsPrevious * 0.175),
+          },
+        },
+        {
+          deviceCategory: "Tablet",
+          sessions: {
+            current: Math.round(sessionsCurrent * 0.015),
+            previous: Math.round(sessionsPrevious * 0.0155),
+          },
+          onlineStoreVisitors: {
+            current: Math.round(sessionsCurrent * 0.0135),
+            previous: Math.round(sessionsPrevious * 0.014),
+          },
+        },
+        {
+          deviceCategory: "Other",
+          sessions: {
+            current: Math.round(sessionsCurrent * 0.005),
+            previous: Math.round(sessionsPrevious * 0.0195),
+          },
+          onlineStoreVisitors: {
+            current: Math.round(sessionsCurrent * 0.0045),
+            previous: Math.round(sessionsPrevious * 0.0176),
+          },
+        },
+      ],
       sessionsByLocation: [
         {
           name: "United States · Florida · Miami",

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedDateRange } from "../types";
 
 vi.mock("./client", () => ({ runGa4Report: vi.fn() }));
@@ -6,10 +6,15 @@ vi.mock("./client", () => ({ runGa4Report: vi.fn() }));
 import { runGa4Report } from "./client";
 import {
   getSessionsByDevice,
+  getSessionsByDeviceBreakdown,
   getSessionsByLocation,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
 } from "./sessions";
+
+afterEach(() => {
+  vi.resetAllMocks();
+});
 
 const range: ResolvedDateRange = {
   key: "7d",
@@ -111,6 +116,59 @@ describe("getSessionsByDevice", () => {
     const result = await getSessionsByDevice(range);
 
     expect(result).toEqual([{ name: "tablet", value: 5, previousValue: 0 }]);
+  });
+});
+
+describe("getSessionsByDeviceBreakdown", () => {
+  it("fetches sessions and totalUsers together per device, sorted by current sessions descending, joined by device name", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["desktop"], metricValues: [10, 8] },
+        { dimensionValues: ["mobile"], metricValues: [50, 40] },
+      ])
+      .mockResolvedValueOnce([
+        { dimensionValues: ["desktop"], metricValues: [9, 7] },
+        { dimensionValues: ["mobile"], metricValues: [60, 45] },
+      ]);
+
+    const result = await getSessionsByDeviceBreakdown(range);
+
+    expect(runGa4Report).toHaveBeenCalledWith(
+      expect.objectContaining({
+        dimensions: ["deviceCategory"],
+        metrics: ["sessions", "totalUsers"],
+      }),
+    );
+    expect(result).toEqual([
+      {
+        deviceCategory: "mobile",
+        sessions: { current: 50, previous: 60 },
+        onlineStoreVisitors: { current: 40, previous: 45 },
+      },
+      {
+        deviceCategory: "desktop",
+        sessions: { current: 10, previous: 9 },
+        onlineStoreVisitors: { current: 8, previous: 7 },
+      },
+    ]);
+  });
+
+  it("defaults previous-period values to 0 when a device is absent from the previous period", async () => {
+    vi.mocked(runGa4Report)
+      .mockResolvedValueOnce([
+        { dimensionValues: ["tablet"], metricValues: [5, 4] },
+      ])
+      .mockResolvedValueOnce([]);
+
+    const result = await getSessionsByDeviceBreakdown(range);
+
+    expect(result).toEqual([
+      {
+        deviceCategory: "tablet",
+        sessions: { current: 5, previous: 0 },
+        onlineStoreVisitors: { current: 4, previous: 0 },
+      },
+    ]);
   });
 });
 

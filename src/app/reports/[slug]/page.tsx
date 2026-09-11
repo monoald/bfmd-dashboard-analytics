@@ -27,6 +27,7 @@ import { RankedList } from "@/components/analytics/RankedList";
 import { ReturningCustomerRateOverTimeTable } from "@/components/analytics/ReturningCustomerRateOverTimeTable";
 import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTable";
 import { SalesByProductTable } from "@/components/analytics/SalesByProductTable";
+import { SessionsByDeviceTable } from "@/components/analytics/SessionsByDeviceTable";
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
@@ -382,11 +383,17 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         );
       }
       return (
-        <DonutBreakdown
-          title={config.title}
-          data={data.charts.sessionsByDevice}
-          size={REPORT_DONUT_SIZE}
-        />
+        <div className="grid gap-3">
+          <DonutBreakdown
+            title={config.title}
+            data={data.charts.sessionsByDevice}
+            size={REPORT_DONUT_SIZE}
+          />
+          <SessionsByDeviceTable
+            data={data.charts.sessionsByDeviceBreakdown}
+            summary={data.charts.sessionsOverTimeSummary}
+          />
+        </div>
       );
     }
 

@@ -29,7 +29,10 @@ export interface DonutBreakdownProps {
   size?: number;
 }
 
-const COLORS = [
+// Exported so other components rendering the same categories (e.g.
+// SessionsByDeviceTable's per-row dot) stay visually consistent with this
+// donut's slice colors.
+export const COLORS = [
   "var(--analytics-accent)",
   "var(--analytics-t2)",
   "var(--analytics-amber)",

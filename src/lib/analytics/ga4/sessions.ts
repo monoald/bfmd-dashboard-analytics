@@ -4,6 +4,7 @@ import type {
   NamedValue,
   PeriodBounds,
   ResolvedDateRange,
+  SessionsByDeviceBreakdownRow,
   SessionsOverTimeBreakdownRow,
   SessionsSummary,
   TimeSeriesData,
@@ -166,6 +167,48 @@ export async function getSessionsByDevice(
       previousValue: previousMap.get(name) ?? 0,
     }))
     .sort((a, b) => b.value - a.value);
+}
+
+async function fetchSessionsAndVisitorsByDeviceMap(
+  period: PeriodBounds,
+): Promise<{ sessions: Map<string, number>; visitors: Map<string, number> }> {
+  const rows = await runGa4Report({
+    dimensions: ["deviceCategory"],
+    metrics: ["sessions", "totalUsers"],
+    startDate: toIsoDate(period.start),
+    endDate: toIsoDate(period.end),
+  });
+
+  const sessions = new Map<string, number>();
+  const visitors = new Map<string, number>();
+  for (const row of rows) {
+    sessions.set(row.dimensionValues[0], row.metricValues[0]);
+    visitors.set(row.dimensionValues[0], row.metricValues[1]);
+  }
+  return { sessions, visitors };
+}
+
+export async function getSessionsByDeviceBreakdown(
+  range: ResolvedDateRange,
+): Promise<SessionsByDeviceBreakdownRow[]> {
+  const [current, previous] = await Promise.all([
+    fetchSessionsAndVisitorsByDeviceMap(range.current),
+    fetchSessionsAndVisitorsByDeviceMap(range.previous),
+  ]);
+
+  return [...current.sessions.keys()]
+    .map((deviceCategory) => ({
+      deviceCategory,
+      sessions: {
+        current: current.sessions.get(deviceCategory) ?? 0,
+        previous: previous.sessions.get(deviceCategory) ?? 0,
+      },
+      onlineStoreVisitors: {
+        current: current.visitors.get(deviceCategory) ?? 0,
+        previous: previous.visitors.get(deviceCategory) ?? 0,
+      },
+    }))
+    .sort((a, b) => b.sessions.current - a.sessions.current);
 }
 
 async function fetchSessionsByLocationMap(

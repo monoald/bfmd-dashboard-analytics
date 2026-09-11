@@ -30,6 +30,7 @@ vi.mock("./ga4/sessions", () => ({
   getSessionsOverTimeBreakdown: vi.fn(),
   getSessionsSummary: vi.fn(),
   getSessionsByDevice: vi.fn(),
+  getSessionsByDeviceBreakdown: vi.fn(),
   getSessionsByLocation: vi.fn(),
 }));
 vi.mock("./ga4/funnel", () => ({
@@ -75,6 +76,7 @@ import { getSocialReferrerRevenue } from "./ga4/referrers";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
 import {
   getSessionsByDevice,
+  getSessionsByDeviceBreakdown,
   getSessionsByLocation,
   getSessionsOverTime,
   getSessionsOverTimeBreakdown,
@@ -153,6 +155,7 @@ function mockHappyPath() {
     onlineStoreVisitors: { current: 0, previous: 0 },
   });
   vi.mocked(getSessionsByDevice).mockResolvedValue([]);
+  vi.mocked(getSessionsByDeviceBreakdown).mockResolvedValue([]);
   vi.mocked(getSessionsByLocation).mockResolvedValue([]);
   vi.mocked(getConversionFunnel).mockResolvedValue([]);
   vi.mocked(getConversionRateOverTime).mockResolvedValue([]);
@@ -248,6 +251,27 @@ describe("getDashboardData", () => {
     );
     expect(payload.errors.conversionRateOverTime).toBeUndefined();
     expect(payload.summaryCards.grossSales.value).toBe(100);
+  });
+
+  it("isolates a sessionsByDeviceBreakdown fetcher rejection to its own card, without affecting the sessionsByDevice donut", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getSessionsByDevice).mockResolvedValue([
+      { name: "mobile", value: 10 },
+    ]);
+    vi.mocked(getSessionsByDeviceBreakdown).mockRejectedValue(
+      new Error("GA4 quota exceeded"),
+    );
+
+    const payload = await getDashboardData("7d");
+
+    expect(payload.errors.sessionsByDevice).toBe(
+      "Unable to load data for this card. Please try again later.",
+    );
+    expect(payload.charts.sessionsByDeviceBreakdown).toEqual([]);
+    expect(payload.charts.sessionsByDevice).toEqual([
+      { name: "mobile", value: 10 },
+    ]);
   });
 
   it("isolates a salesByProductBreakdown fetcher rejection to its own card, without affecting the salesByProduct ranked list", async () => {

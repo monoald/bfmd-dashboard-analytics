@@ -217,6 +217,13 @@ function baseRaw(): RawPipelineResults {
       },
     ],
     sessionsByDevice: [{ name: "mobile", value: 10 }],
+    sessionsByDeviceBreakdown: [
+      {
+        deviceCategory: "mobile",
+        sessions: { current: 10, previous: 8 },
+        onlineStoreVisitors: { current: 7, previous: 6 },
+      },
+    ],
     sessionsByLocation: [{ name: "US · NY", value: 10 }],
     conversionFunnel: [{ step: "Sessions", sessions: 10, percentage: 100 }],
     conversionRateOverTime: [
@@ -459,6 +466,31 @@ describe("buildDashboardPayload", () => {
     expect(payload.charts.salesByProductBreakdown).toEqual([]);
     expect(payload.charts.salesByProduct).toEqual([
       { name: "Widget", value: 100 },
+    ]);
+  });
+
+  it("passes sessionsByDeviceBreakdown rows through unchanged", () => {
+    const payload = buildDashboardPayload(baseRaw());
+
+    expect(payload.charts.sessionsByDeviceBreakdown).toEqual([
+      {
+        deviceCategory: "mobile",
+        sessions: { current: 10, previous: 8 },
+        onlineStoreVisitors: { current: 7, previous: 6 },
+      },
+    ]);
+  });
+
+  it("isolates a sessionsByDeviceBreakdown failure to its own card, defaulting to an empty array, without affecting the sessionsByDevice donut", () => {
+    const raw = baseRaw();
+    raw.sessionsByDeviceBreakdown = new Error("GA4 quota exceeded");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.sessionsByDevice).toBe("GA4 quota exceeded");
+    expect(payload.charts.sessionsByDeviceBreakdown).toEqual([]);
+    expect(payload.charts.sessionsByDevice).toEqual([
+      { name: "mobile", value: 10 },
     ]);
   });
 

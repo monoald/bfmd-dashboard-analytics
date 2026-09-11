@@ -68,6 +68,20 @@ export interface SessionsOverTimeBreakdownRow {
   sessions: { current: number; previous: number };
 }
 
+// One row of the "Sessions by device" report's detail table. Unlike
+// ReturningCustomerRateBreakdownRow, sessions/visitors here ARE additive
+// across rows — GA4 attributes each session to exactly one deviceCategory —
+// so a table's summary row can safely sum these rows client-side rather
+// than needing a separate whole-period fetch. `deviceCategory` is GA4's raw
+// dimension value (e.g. "mobile"), left untransformed to match
+// getSessionsByDevice/DonutBreakdown on the same report page, which already
+// display it as-is.
+export interface SessionsByDeviceBreakdownRow {
+  deviceCategory: string;
+  onlineStoreVisitors: { current: number; previous: number };
+  sessions: { current: number; previous: number };
+}
+
 // One row of the "Conversion rate over time" report's detail table.
 // Unlike SessionsOverTimeBreakdownRow, this needs separate current/previous
 // date labels (see ga4/format.ts's alignedDateLabels) since every row shows
@@ -254,6 +268,7 @@ export interface DashboardPayload {
     conversionRateOverTimeBreakdown: ConversionRateOverTimeBreakdownRow[];
     conversionFunnel: FunnelStep[];
     sessionsByDevice: NamedValue[];
+    sessionsByDeviceBreakdown: SessionsByDeviceBreakdownRow[];
     sessionsByLocation: NamedValue[];
     totalSalesBySocialReferrer: NamedValue[];
     salesOverTime: TimeSeriesData[];
