@@ -188,6 +188,21 @@ function baseRaw(): RawPipelineResults {
       ],
     },
     salesByProduct: [{ name: "Widget", value: 100 }],
+    salesByProductBreakdown: [
+      {
+        productId: 1,
+        productTitle: "Widget",
+        productVendor: "Black Forest Supplements",
+        productType: "Simple",
+        netItemsSold: { current: 12, previous: 9 },
+        grossSales: null,
+        discounts: null,
+        salesReversals: null,
+        netSales: { current: 100, previous: 80 },
+        taxes: null,
+        totalSales: null,
+      },
+    ],
     salesByChannel: [{ name: "Online Store", value: 100 }],
     sessionsOverTime: [{ date: "Aug 1", currentPeriod: 10, previousPeriod: 8 }],
     sessionsSummary: {
@@ -411,6 +426,39 @@ describe("buildDashboardPayload", () => {
     expect(payload.errors.returningCustomerRate).toBe("WC API error");
     expect(payload.charts.returningCustomerRateBreakdown).toEqual([]);
     expect(payload.summaryCards.returningCustomerRate.value).toBe(50);
+  });
+
+  it("passes salesByProductBreakdown rows through unchanged", () => {
+    const payload = buildDashboardPayload(baseRaw());
+
+    expect(payload.charts.salesByProductBreakdown).toEqual([
+      {
+        productId: 1,
+        productTitle: "Widget",
+        productVendor: "Black Forest Supplements",
+        productType: "Simple",
+        netItemsSold: { current: 12, previous: 9 },
+        grossSales: null,
+        discounts: null,
+        salesReversals: null,
+        netSales: { current: 100, previous: 80 },
+        taxes: null,
+        totalSales: null,
+      },
+    ]);
+  });
+
+  it("isolates a salesByProductBreakdown failure to its own card, defaulting to an empty array, without affecting the salesByProduct ranked list", () => {
+    const raw = baseRaw();
+    raw.salesByProductBreakdown = new Error("WC API error");
+
+    const payload = buildDashboardPayload(raw);
+
+    expect(payload.errors.salesByProduct).toBe("WC API error");
+    expect(payload.charts.salesByProductBreakdown).toEqual([]);
+    expect(payload.charts.salesByProduct).toEqual([
+      { name: "Widget", value: 100 },
+    ]);
   });
 
   it("derives ordersOverTimeBreakdown rows from revenueStats (orders, AOV) plus itemsSoldOverTime (items per order), with reversedQuantity always zero (WC has no item-refund-quantity field)", () => {

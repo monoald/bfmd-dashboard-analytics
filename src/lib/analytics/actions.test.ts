@@ -20,7 +20,10 @@ vi.mock("./woocommerce/customers", () => ({
   getReturningCustomerRateBreakdown: vi.fn(),
 }));
 vi.mock("./ga4/realtime", () => ({ getLiveVisitorCount: vi.fn() }));
-vi.mock("./woocommerce/products", () => ({ getTopProductsByRevenue: vi.fn() }));
+vi.mock("./woocommerce/products", () => ({
+  getTopProductsByRevenue: vi.fn(),
+  getSalesByProductBreakdown: vi.fn(),
+}));
 vi.mock("./woocommerce/sales-channel", () => ({ getSalesByChannel: vi.fn() }));
 vi.mock("./ga4/sessions", () => ({
   getSessionsOverTime: vi.fn(),
@@ -64,7 +67,10 @@ import {
   getConversionRateSummary,
 } from "./ga4/funnel";
 import { getItemsSoldOverTime, getOrdersFulfilled } from "./woocommerce/orders";
-import { getTopProductsByRevenue } from "./woocommerce/products";
+import {
+  getSalesByProductBreakdown,
+  getTopProductsByRevenue,
+} from "./woocommerce/products";
 import { getSocialReferrerRevenue } from "./ga4/referrers";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
 import {
@@ -138,6 +144,7 @@ function mockHappyPath() {
     previous: [],
   });
   vi.mocked(getTopProductsByRevenue).mockResolvedValue([]);
+  vi.mocked(getSalesByProductBreakdown).mockResolvedValue([]);
   vi.mocked(getSalesByChannel).mockResolvedValue([]);
   vi.mocked(getSessionsOverTime).mockResolvedValue([]);
   vi.mocked(getSessionsOverTimeBreakdown).mockResolvedValue([]);
@@ -241,6 +248,27 @@ describe("getDashboardData", () => {
     );
     expect(payload.errors.conversionRateOverTime).toBeUndefined();
     expect(payload.summaryCards.grossSales.value).toBe(100);
+  });
+
+  it("isolates a salesByProductBreakdown fetcher rejection to its own card, without affecting the salesByProduct ranked list", async () => {
+    stubRealCredentials();
+    mockHappyPath();
+    vi.mocked(getTopProductsByRevenue).mockResolvedValue([
+      { name: "Widget", value: 100 },
+    ]);
+    vi.mocked(getSalesByProductBreakdown).mockRejectedValue(
+      new Error("WC API error"),
+    );
+
+    const payload = await getDashboardData("7d");
+
+    expect(payload.errors.salesByProduct).toBe(
+      "Unable to load data for this card. Please try again later.",
+    );
+    expect(payload.charts.salesByProductBreakdown).toEqual([]);
+    expect(payload.charts.salesByProduct).toEqual([
+      { name: "Widget", value: 100 },
+    ]);
   });
 
   it("resolves a custom start/end range and passes it to the mock data builder", async () => {

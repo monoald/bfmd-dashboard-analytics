@@ -11,6 +11,7 @@ import type {
   ReturningCustomerRateBreakdownRow,
   RevenueBreakdownRow,
   SalesBreakdownLine,
+  SalesByProductBreakdownRow,
   SalesOverTimeBreakdownRow,
   SessionsOverTimeBreakdownRow,
   SessionsSummary,
@@ -105,6 +106,7 @@ export interface RawPipelineResults {
     | { current: CustomerActivityInterval[]; previous: CustomerActivityInterval[] }
     | Error;
   salesByProduct: NamedValue[] | Error;
+  salesByProductBreakdown: SalesByProductBreakdownRow[] | Error;
   salesByChannel: NamedValue[] | Error;
   sessionsOverTime: TimeSeriesData[] | Error;
   sessionsOverTimeBreakdown: SessionsOverTimeBreakdownRow[] | Error;
@@ -599,6 +601,11 @@ export function buildDashboardPayload(
         },
       },
       salesByProduct: unwrap("salesByProduct", raw.salesByProduct, []),
+      salesByProductBreakdown: unwrap(
+        "salesByProduct",
+        raw.salesByProductBreakdown,
+        [],
+      ),
       customerCohortAnalysis: unwrap(
         "customerCohortAnalysis",
         raw.customerCohortAnalysis,

@@ -606,6 +606,68 @@ export function buildMockDashboardPayload(
           previousValue: Math.round(grossSalesPrevious * 0.019),
         },
       ],
+      // Same products/fractions as salesByProduct above, plus a plausible
+      // items-sold count (net sales / an assumed ~$45 average item price) —
+      // grossSales/discounts/salesReversals/taxes/totalSales are null here
+      // too, matching the real fetcher (see SalesByProductBreakdownRow's
+      // comment in types.ts: WC's products report doesn't expose them).
+      salesByProductBreakdown: [
+        {
+          productId: 1,
+          productTitle: "Supercharged Cocoa Flavanols + Flavonoids 1200mg",
+          netSales: {
+            current: Math.round(grossSalesCurrent * 0.316),
+            previous: Math.round(grossSalesPrevious * 0.29),
+          },
+        },
+        {
+          productId: 2,
+          productTitle: "Magnesium Sleep Aid 1695 MG | Melatonin-Free",
+          netSales: {
+            current: Math.round(grossSalesCurrent * 0.069),
+            previous: Math.round(grossSalesPrevious * 0.075),
+          },
+        },
+        {
+          productId: 3,
+          productTitle: "The Nattokinase 4-in-1 Cardio Complex 10,800 FU",
+          netSales: {
+            current: Math.round(grossSalesCurrent * 0.048),
+            previous: Math.round(grossSalesPrevious * 0.022),
+          },
+        },
+        {
+          productId: 4,
+          productTitle: "NMN 1000MG | Enhanced with BioPerine®",
+          netSales: {
+            current: Math.round(grossSalesCurrent * 0.032),
+            previous: Math.round(grossSalesPrevious * 0.03),
+          },
+        },
+        {
+          productId: 5,
+          productTitle: "Turkesterone Tongkat Ali 1000mg",
+          netSales: {
+            current: Math.round(grossSalesCurrent * 0.021),
+            previous: Math.round(grossSalesPrevious * 0.019),
+          },
+        },
+      ].map(({ productId, productTitle, netSales }) => ({
+        productId,
+        productTitle,
+        productVendor: "Black Forest Supplements",
+        productType: "Simple",
+        netItemsSold: {
+          current: Math.max(1, Math.round(netSales.current / 45)),
+          previous: Math.max(1, Math.round(netSales.previous / 45)),
+        },
+        grossSales: null,
+        discounts: null,
+        salesReversals: null,
+        netSales,
+        taxes: null,
+        totalSales: null,
+      })),
       customerCohortAnalysis: buildMockCohortRows(range.current.end),
     },
     errors: {},

@@ -1,10 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ResolvedDateRange } from "../types";
 
 vi.mock("./client", () => ({ fetchWc: vi.fn() }));
 
 import { fetchWc } from "./client";
-import { getTopProductsByRevenue } from "./products";
+import { getSalesByProductBreakdown, getTopProductsByRevenue } from "./products";
+
+afterEach(() => {
+  vi.resetAllMocks();
+});
 
 const range: ResolvedDateRange = {
   key: "7d",
@@ -68,5 +72,85 @@ describe("getTopProductsByRevenue", () => {
 
     expect(result[0].name).toBe("Unknown product");
     expect(result[0].previousValue).toBe(0);
+  });
+});
+
+describe("getSalesByProductBreakdown", () => {
+  it("maps product rows to breakdown rows with real items-sold/net-sales figures, a hardcoded vendor, and null for columns WC's products report doesn't expose", async () => {
+    vi.mocked(fetchWc)
+      .mockResolvedValueOnce([
+        {
+          product_id: 1,
+          extended_info: { name: "Cocoa Flavanols" },
+          net_revenue: 236.4567,
+          items_sold: 12,
+        },
+      ])
+      .mockResolvedValueOnce([
+        { product_id: 1, net_revenue: 200, items_sold: 9 },
+      ])
+      .mockResolvedValueOnce([{ id: 1, type: "simple" }]);
+
+    const result = await getSalesByProductBreakdown(range);
+
+    expect(result).toEqual([
+      {
+        productId: 1,
+        productTitle: "Cocoa Flavanols",
+        productVendor: "Black Forest Supplements",
+        productType: "Simple",
+        netItemsSold: { current: 12, previous: 9 },
+        grossSales: null,
+        discounts: null,
+        salesReversals: null,
+        netSales: { current: 236.46, previous: 200 },
+        taxes: null,
+        totalSales: null,
+      },
+    ]);
+  });
+
+  it("looks up product type via a single core REST call with comma-separated IDs", async () => {
+    vi.mocked(fetchWc)
+      .mockResolvedValueOnce([
+        { product_id: 1, extended_info: { name: "A" }, net_revenue: 10, items_sold: 1 },
+        { product_id: 2, extended_info: { name: "B" }, net_revenue: 5, items_sold: 1 },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([
+        { id: 1, type: "simple" },
+        { id: 2, type: "variable" },
+      ]);
+
+    const result = await getSalesByProductBreakdown(range);
+
+    expect(fetchWc).toHaveBeenNthCalledWith(
+      3,
+      "/wc/v3/products",
+      expect.objectContaining({ include: "1,2", per_page: "2" }),
+    );
+    expect(result[0].productType).toBe("Simple");
+    expect(result[1].productType).toBe("Variable");
+  });
+
+  it("falls back to 'Unknown' product type when a product is missing from the core lookup", async () => {
+    vi.mocked(fetchWc)
+      .mockResolvedValueOnce([
+        { product_id: 1, extended_info: { name: "A" }, net_revenue: 10, items_sold: 1 },
+      ])
+      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]);
+
+    const result = await getSalesByProductBreakdown(range);
+
+    expect(result[0].productType).toBe("Unknown");
+  });
+
+  it("returns an empty array when there are no product rows", async () => {
+    vi.mocked(fetchWc).mockResolvedValueOnce([]);
+
+    const result = await getSalesByProductBreakdown(range);
+
+    expect(result).toEqual([]);
   });
 });

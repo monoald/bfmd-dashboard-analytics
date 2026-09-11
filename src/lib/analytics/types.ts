@@ -184,6 +184,30 @@ export interface CohortRow {
   retentionByMonth: number[];
 }
 
+// One row of the "Total sales by product" report's detail table. Unlike
+// SalesOverTimeBreakdownRow's duties/additionalFees (always {current: 0,
+// previous: 0} because WooCommerce genuinely has no such concept),
+// grossSales/discounts/salesReversals/taxes/totalSales here are `null`, not
+// zero: WooCommerce's products report only exposes items_sold and
+// net_revenue per product (verified live — no gross/discount/refund/tax
+// fields on that endpoint), so these are truly unknown, not actually zero.
+// Rendered as "—" rather than a fabricated $0.00. `productVendor` is
+// hardcoded to the store name (this store has no vendor/brand taxonomy in
+// use — verified live via /wc/v3/products/brands returning zero brands).
+export interface SalesByProductBreakdownRow {
+  productId: number;
+  productTitle: string;
+  productVendor: string;
+  productType: string;
+  netItemsSold: { current: number; previous: number };
+  grossSales: { current: number; previous: number } | null;
+  discounts: { current: number; previous: number } | null;
+  salesReversals: { current: number; previous: number } | null;
+  netSales: { current: number; previous: number };
+  taxes: { current: number; previous: number } | null;
+  totalSales: { current: number; previous: number } | null;
+}
+
 export type CardKey =
   | "grossSales"
   | "conversionRate"
@@ -247,6 +271,7 @@ export interface DashboardPayload {
       returningCustomerRate: { current: number; previous: number };
     };
     salesByProduct: NamedValue[];
+    salesByProductBreakdown: SalesByProductBreakdownRow[];
     customerCohortAnalysis: CohortRow[];
   };
   errors: Partial<Record<CardKey, string>>;

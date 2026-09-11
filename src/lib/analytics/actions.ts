@@ -12,7 +12,10 @@ import {
   getNewAndReturningCustomerCounts,
   getReturningCustomerRateBreakdown,
 } from "./woocommerce/customers";
-import { getTopProductsByRevenue } from "./woocommerce/products";
+import {
+  getSalesByProductBreakdown,
+  getTopProductsByRevenue,
+} from "./woocommerce/products";
 import { getSalesByChannel } from "./woocommerce/sales-channel";
 import { getCustomerCohortAnalysis } from "./woocommerce/cohort";
 import { SHOW_CUSTOMER_COHORT_ANALYSIS } from "./report-config";
@@ -78,6 +81,10 @@ const cachedReturningCustomerRateBreakdown = withRangeCache(
 const cachedTopProducts = withRangeCache(
   getTopProductsByRevenue,
   "wc-top-products",
+);
+const cachedSalesByProductBreakdown = withRangeCache(
+  getSalesByProductBreakdown,
+  "wc-sales-by-product-breakdown",
 );
 const cachedSalesByChannel = withFixedCache(
   getSalesByChannel,
@@ -299,6 +306,7 @@ export async function getDashboardData(
     newAndReturningCustomerCounts,
     returningCustomerRateBreakdown,
     salesByProduct,
+    salesByProductBreakdown,
     salesByChannel,
     ga4Bundle,
     customerCohortAnalysis,
@@ -310,6 +318,7 @@ export async function getDashboardData(
     settle(cachedNewAndReturningCustomerCounts(range)),
     settle(cachedReturningCustomerRateBreakdown(range)),
     settle(cachedTopProducts(range)),
+    settle(cachedSalesByProductBreakdown(range)),
     settle(cachedSalesByChannel(range)),
     getGa4TodayBundle(range),
     customerCohortAnalysisPromise,
@@ -323,6 +332,7 @@ export async function getDashboardData(
     newAndReturningCustomerCounts,
     returningCustomerRateBreakdown,
     salesByProduct,
+    salesByProductBreakdown,
     salesByChannel,
     ...ga4Bundle,
     customerCohortAnalysis,

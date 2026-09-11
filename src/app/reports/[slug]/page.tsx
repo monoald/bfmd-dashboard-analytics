@@ -26,6 +26,7 @@ import { OrdersOverTimeTable } from "@/components/analytics/OrdersOverTimeTable"
 import { RankedList } from "@/components/analytics/RankedList";
 import { ReturningCustomerRateOverTimeTable } from "@/components/analytics/ReturningCustomerRateOverTimeTable";
 import { RevenueBreakdownTable } from "@/components/analytics/RevenueBreakdownTable";
+import { SalesByProductTable } from "@/components/analytics/SalesByProductTable";
 import { SessionsOverTimeTable } from "@/components/analytics/SessionsOverTimeTable";
 import { ThemeToggle } from "@/components/analytics/ThemeToggle";
 import { TimeSeriesChart } from "@/components/analytics/TimeSeriesChart";
@@ -360,11 +361,14 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
         );
       }
       return (
-        <RankedList
-          title={config.title}
-          items={data.charts.salesByProduct}
-          formatValue={formatCurrency}
-        />
+        <div className="grid gap-3">
+          <RankedList
+            title={config.title}
+            items={data.charts.salesByProduct}
+            formatValue={formatCurrency}
+          />
+          <SalesByProductTable data={data.charts.salesByProductBreakdown} />
+        </div>
       );
     }
 
