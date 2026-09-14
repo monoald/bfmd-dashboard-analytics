@@ -10,11 +10,16 @@ vi.mock("next/navigation", () => ({
 }));
 
 import { DashboardDateFilter } from "./DashboardDateFilter";
+import { RangeTransitionProvider } from "./RangeTransition";
 
 describe("DashboardDateFilter", () => {
   it("defaults to 'Today' as active and pushes ?range=7d when 'Last 7 Days' is clicked", () => {
     mockSearchParams = new URLSearchParams("");
-    render(<DashboardDateFilter />);
+    render(
+      <RangeTransitionProvider>
+        <DashboardDateFilter />
+      </RangeTransitionProvider>,
+    );
 
     const todayButton = screen.getByText("Today");
     expect(todayButton).toHaveClass("!bg-(--analytics-accent)");
@@ -32,7 +37,11 @@ describe("DashboardDateFilter", () => {
     mockSearchParams = new URLSearchParams(
       "range=custom&start=bogus&end=2026-07-15",
     );
-    render(<DashboardDateFilter />);
+    render(
+      <RangeTransitionProvider>
+        <DashboardDateFilter />
+      </RangeTransitionProvider>,
+    );
 
     const todayButton = screen.getByText("Today");
     expect(todayButton).toHaveClass("!bg-(--analytics-accent)");

@@ -10,6 +10,7 @@ import {
   resolveRangeSelection,
 } from "@/lib/analytics/date-range";
 import type { DateRangeKey } from "@/lib/analytics/types";
+import { useRangeTransition } from "./RangeTransition";
 import { CHIP_ACTIVE_CLASS, CHIP_CLASS } from "./theme";
 
 interface NamedPreset {
@@ -67,6 +68,7 @@ interface DraftRange {
 export function CustomDateRangePicker() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { startTransition } = useRangeTransition();
   const [open, setOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
   const [draftRange, setDraftRange] = useState<DraftRange | undefined>();
@@ -100,7 +102,7 @@ export function CustomDateRangePicker() {
       params.delete("start");
       params.delete("end");
     }
-    router.push(`?${params.toString()}`);
+    startTransition(() => router.push(`?${params.toString()}`));
   }
 
   function handleOpenChange(nextOpen: boolean) {

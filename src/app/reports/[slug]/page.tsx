@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { getDashboardData } from "@/lib/analytics/actions";
 import {
   buildRangeQueryParams,
@@ -14,8 +14,13 @@ import {
   SHOW_SALES_BY_CHANNEL,
   type ReportConfig,
 } from "@/lib/analytics/report-config";
-import type { DashboardPayload } from "@/lib/analytics/types";
+import type { DashboardPayload, DateRangeKey } from "@/lib/analytics/types";
 import { CardError } from "@/components/analytics/CardError";
+import {
+  RangeTransitionProvider,
+  RangeTransitionSwap,
+} from "@/components/analytics/RangeTransition";
+import { ReportSkeleton } from "@/components/analytics/skeletons/ReportSkeleton";
 import { ConversionRateOverTimeTable } from "@/components/analytics/ConversionRateOverTimeTable";
 import { CustomerCohortTable } from "@/components/analytics/CustomerCohortTable";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
@@ -206,7 +211,10 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     }
 
     case "sessions-over-time": {
-      if (data.errors.sessionsOverTime || data.errors.sessionsOverTimeBreakdown) {
+      if (
+        data.errors.sessionsOverTime ||
+        data.errors.sessionsOverTimeBreakdown
+      ) {
         return (
           <CardError
             title={config.title}
@@ -349,9 +357,7 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
           />
         );
       }
-      return (
-        <CustomerCohortTable rows={data.charts.customerCohortAnalysis} />
-      );
+      return <CustomerCohortTable rows={data.charts.customerCohortAnalysis} />;
     }
 
     case "total-sales-by-product": {
@@ -502,41 +508,69 @@ export default async function ReportPage({
 
   const { range, start, end } = await searchParams;
   const { rangeKey, customRange } = resolveRangeSelection(range, start, end);
-  const data = await getDashboardData(rangeKey, customRange ?? undefined);
   const rangeQuery = buildRangeQueryParams(rangeKey, customRange);
 
   return (
-    <div className="min-h-screen bg-(--analytics-bg) p-6">
-      <div className="md:w-[90%] mx-auto text-[13px] text-(--analytics-t1) space-y-3.5">
-        <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
-          <div className="flex items-center gap-2.5">
-            <Link
-              href={`/?${rangeQuery}`}
-              className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-(--analytics-accent) bg-(--analytics-accent-dim) text-[11px] font-extrabold tracking-[-0.5px] text-(--analytics-accent)"
-            >
-              BF
-            </Link>
-            <div>
-              <h1 className="text-sm font-bold tracking-tight">
-                {config.title}
-              </h1>
-              <div className="text-[11px] text-(--analytics-t2)">
-                Black Forest Supplements
+    <RangeTransitionProvider>
+      <div className="min-h-screen bg-(--analytics-bg) p-6">
+        <div className="md:w-[90%] mx-auto text-[13px] text-(--analytics-t1) space-y-3.5">
+          <div className="flex items-center justify-between border-b border-(--analytics-border) pb-4">
+            <div className="flex items-center gap-2.5">
+              <Link
+                href={`/?${rangeQuery}`}
+                className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-(--analytics-accent) bg-(--analytics-accent-dim) text-[11px] font-extrabold tracking-[-0.5px] text-(--analytics-accent)"
+              >
+                BF
+              </Link>
+              <div>
+                <h1 className="text-sm font-bold tracking-tight">
+                  {config.title}
+                </h1>
+                <div className="text-[11px] text-(--analytics-t2)">
+                  Black Forest Supplements
+                </div>
               </div>
             </div>
+            <div className="flex items-center gap-1.5">
+              <DashboardDateFilter />
+              <ThemeToggle />
+            </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <DashboardDateFilter />
-            <ThemeToggle />
-          </div>
-        </div>
 
-        <div
-          className={`grid ${config.shape === "donut" ? "max-w-xl" : "w-full"}`}
-        >
-          {renderReport(config, data)}
+          <div
+            className={`grid ${config.shape === "donut" ? "max-w-xl" : "w-full"}`}
+          >
+            {/* RangeTransitionSwap covers the range-change case (see the
+              matching comment in the dashboard page); Suspense still
+              covers the first-load case. */}
+            <RangeTransitionSwap
+              fallback={<ReportSkeleton shape={config.shape} />}
+            >
+              <Suspense fallback={<ReportSkeleton shape={config.shape} />}>
+                <ReportContent
+                  key={rangeQuery}
+                  config={config}
+                  rangeKey={rangeKey}
+                  customRange={customRange ?? undefined}
+                />
+              </Suspense>
+            </RangeTransitionSwap>
+          </div>
         </div>
       </div>
-    </div>
+    </RangeTransitionProvider>
   );
+}
+
+async function ReportContent({
+  config,
+  rangeKey,
+  customRange,
+}: {
+  config: ReportConfig;
+  rangeKey: DateRangeKey;
+  customRange?: { start: Date; end: Date };
+}) {
+  const data = await getDashboardData(rangeKey, customRange);
+  return renderReport(config, data);
 }
