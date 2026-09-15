@@ -15,12 +15,13 @@ import { FunnelChart } from "@/components/analytics/FunnelChart";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { RankedList } from "@/components/analytics/RankedList";
 import { CardError } from "@/components/analytics/CardError";
-import { CustomerCohortTable } from "@/components/analytics/CustomerCohortTable";
+import { CohortCard } from "@/components/analytics/CohortCard";
 import {
   RangeTransitionProvider,
   RangeTransitionSwap,
 } from "@/components/analytics/RangeTransition";
 import { DashboardSkeleton } from "@/components/analytics/skeletons/DashboardSkeleton";
+import { TableSkeleton } from "@/components/analytics/skeletons/TableSkeleton";
 import { CHIP_CLASS } from "@/components/analytics/theme";
 import {
   SHOW_CUSTOMER_COHORT_ANALYSIS,
@@ -66,6 +67,12 @@ export default async function AnalyticsPage({
               />
             </Suspense>
           </RangeTransitionSwap>
+
+          {SHOW_CUSTOMER_COHORT_ANALYSIS && (
+            <Suspense fallback={<TableSkeleton rows={4} columns={4} />}>
+              <CohortCard variant="preview" rangeQuery={rangeQuery} />
+            </Suspense>
+          )}
         </div>
       </div>
     </RangeTransitionProvider>
@@ -395,24 +402,6 @@ async function DashboardContent({
           </Link>
         )}
       </div>
-
-      {SHOW_CUSTOMER_COHORT_ANALYSIS &&
-        (data.errors.customerCohortAnalysis ? (
-          <CardError
-            title="Customer cohort analysis"
-            message={data.errors.customerCohortAnalysis}
-          />
-        ) : (
-          <Link
-            href={`/reports/customer-cohort-analysis?${rangeQuery}`}
-            className="block"
-          >
-            <CustomerCohortTable
-              rows={data.charts.customerCohortAnalysis}
-              variant="preview"
-            />
-          </Link>
-        ))}
     </>
   );
 }

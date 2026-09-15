@@ -1,12 +1,8 @@
-import {
-  SHOW_CUSTOMER_COHORT_ANALYSIS,
-  SHOW_SALES_BY_CHANNEL,
-} from "@/lib/analytics/report-config";
+import { SHOW_SALES_BY_CHANNEL } from "@/lib/analytics/report-config";
 import { ChartSkeleton } from "./ChartSkeleton";
 import { DonutSkeleton } from "./DonutSkeleton";
 import { ListSkeleton } from "./ListSkeleton";
 import { SummaryCardSkeleton } from "./SummaryCardSkeleton";
-import { TableSkeleton } from "./TableSkeleton";
 
 // Mirrors the grid structure of src/app/(with-sidebar)/page.tsx (minus the
 // header, which lives outside the Suspense boundary) so the fallback holds
@@ -39,8 +35,6 @@ export function DashboardSkeleton() {
         <ListSkeleton />
         <ListSkeleton />
       </div>
-
-      {SHOW_CUSTOMER_COHORT_ANALYSIS && <TableSkeleton rows={4} columns={4} />}
     </>
   );
 }
