@@ -364,12 +364,10 @@ describe("getDashboardData", () => {
 });
 
 describe("getCustomerCohortAnalysisCard", () => {
-  // getCustomerCohortAnalysis is a shared mock also exercised by the
-  // getDashboardData tests above (both consume the same underlying
-  // cachedCustomerCohortAnalysis). This suite has no global mock reset, so
-  // without clearing call history before each test here, the last enabled
-  // getDashboardData test's call would leak into this block's "not called"
-  // and call-count assertions.
+  // getCustomerCohortAnalysis is a shared vi.fn() mock, and this file has no
+  // file-level clearMocks/resetAllMocks, so without clearing call history
+  // before each test in this block, an earlier test's call here would leak
+  // into a later test's "not called" and call-count assertions.
   beforeEach(() => {
     vi.mocked(getCustomerCohortAnalysis).mockClear();
   });

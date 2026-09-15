@@ -70,28 +70,53 @@ export async function fetchWcCount(
 
 export const DEFAULT_PAGE_CONCURRENCY = 5;
 
-// Runs `fn` over every item in `items`, at most `limit` calls in flight at
-// once, preserving output order regardless of completion order.
+// Sanity ceiling on X-WP-TotalPages — a malformed or wildly inflated header
+// shouldn't be able to make this dispatch an unbounded number of requests
+// before the empty-page truncation logic (below) has a chance to catch up.
+// 1000 pages at the default page size of 100 is 100k rows, comfortably
+// above what this internal tool's store will ever have.
+const MAX_WC_PAGES = 1000;
+
+// Shared across every fetchWcAllPages call in this process — not
+// re-instantiated per call — so DEFAULT_PAGE_CONCURRENCY is a real ceiling
+// on simultaneous requests to the WooCommerce backend, not a per-call
+// allowance that multiplies when several cards' paginated fetches run
+// concurrently (e.g. inside getDashboardData's Promise.all, or alongside
+// the independently-fetched customer cohort analysis card).
+let activeWcPageRequests = 0;
+const wcPageRequestQueue: Array<() => void> = [];
+
+async function acquireWcPageRequestSlot(): Promise<void> {
+  if (activeWcPageRequests < DEFAULT_PAGE_CONCURRENCY) {
+    activeWcPageRequests += 1;
+    return;
+  }
+  await new Promise<void>((resolve) => wcPageRequestQueue.push(resolve));
+  activeWcPageRequests += 1;
+}
+
+function releaseWcPageRequestSlot(): void {
+  activeWcPageRequests -= 1;
+  wcPageRequestQueue.shift()?.();
+}
+
+// Runs `fn` over every item in `items`, at most DEFAULT_PAGE_CONCURRENCY
+// calls in flight across the whole process at once, preserving output
+// order regardless of completion order.
 async function mapWithConcurrencyLimit<T, R>(
   items: T[],
-  limit: number,
   fn: (item: T) => Promise<R>,
 ): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let nextIndex = 0;
-
-  async function worker(): Promise<void> {
-    while (nextIndex < items.length) {
-      const currentIndex = nextIndex;
-      nextIndex += 1;
-      results[currentIndex] = await fn(items[currentIndex]);
-    }
-  }
-
-  await Promise.all(
-    Array.from({ length: Math.min(limit, items.length) }, worker),
+  return Promise.all(
+    items.map(async (item) => {
+      await acquireWcPageRequestSlot();
+      try {
+        return await fn(item);
+      } finally {
+        releaseWcPageRequestSlot();
+      }
+    }),
   );
-  return results;
 }
 
 // Fetches every page of a listing endpoint rather than assuming the result
@@ -124,8 +149,9 @@ export async function fetchWcAllPages<T>(
     page: "1",
   });
   const firstPageRows = (await firstPageResponse.json()) as T[];
-  const totalPages = Number(
-    firstPageResponse.headers.get("X-WP-TotalPages") ?? "1",
+  const totalPages = Math.min(
+    Number(firstPageResponse.headers.get("X-WP-TotalPages") ?? "1"),
+    MAX_WC_PAGES,
   );
 
   if (totalPages <= 1 || firstPageRows.length === 0) {
@@ -138,7 +164,6 @@ export async function fetchWcAllPages<T>(
   );
   const remainingPages = await mapWithConcurrencyLimit(
     remainingPageNumbers,
-    DEFAULT_PAGE_CONCURRENCY,
     async (page) => {
       const response = await wcRequest(path, {
         ...params,

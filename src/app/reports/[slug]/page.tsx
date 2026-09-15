@@ -347,7 +347,9 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
     // component below). This case exists only to keep the switch
     // exhaustive over ReportSlug.
     case "customer-cohort-analysis": {
-      return null;
+      throw new Error(
+        "customer-cohort-analysis is handled directly in ReportPage before renderReport is called — this case should be unreachable",
+      );
     }
 
     case "total-sales-by-product": {
@@ -522,6 +524,9 @@ export default async function ReportPage({
               </div>
             </div>
             <div className="flex items-center gap-1.5">
+              {/* Rendered even for the cohort report, where changing the range
+                  has no visible effect — cohort analysis doesn't depend on the
+                  date range at all. Intentional, not a bug. */}
               <DashboardDateFilter />
               <ThemeToggle />
             </div>

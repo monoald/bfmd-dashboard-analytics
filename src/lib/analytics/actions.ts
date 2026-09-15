@@ -302,11 +302,22 @@ function hasRealCredentials(): boolean {
 // everything else meant one slow fetch blocked every other card from
 // rendering. Callers render this behind their own <Suspense> boundary,
 // independent of the range-dependent content.
+// Returns a raw Error instance (not a serialized string) on failure — safe
+// today only because every caller is a Server Component invoking this
+// directly, with no React Flight/RSC serialization boundary in between. If a
+// Client Component ever called this exported "use server" function, React
+// would reject returning a raw Error instance across that boundary.
 export async function getCustomerCohortAnalysisCard(): Promise<
   CohortRow[] | Error
 > {
   await requireSession();
 
+  // Credentials check intentionally runs before the feature-flag check: this
+  // matches the old buildMockDashboardPayload's behavior, where mock mode
+  // always included cohort mock data regardless of the flag (only the UI
+  // gated whether it was rendered). Don't swap the order to "fix" the
+  // flag-off/no-credentials case returning mock rows instead of [] — that's
+  // intentional.
   if (!hasRealCredentials()) {
     return buildMockCohortRows(new Date());
   }

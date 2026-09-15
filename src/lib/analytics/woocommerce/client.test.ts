@@ -199,9 +199,11 @@ describe("WooCommerce client", () => {
       const fetchMock = vi.fn().mockImplementation(async (url: string) => {
         inFlight += 1;
         maxInFlight = Math.max(maxInFlight, inFlight);
-        await new Promise((resolve) => setTimeout(resolve, 0));
-        inFlight -= 1;
         const page = new URL(url).searchParams.get("page");
+        await new Promise((resolve) =>
+          setTimeout(resolve, (TOTAL_PAGES - Number(page)) * 2),
+        );
+        inFlight -= 1;
         return {
           ok: true,
           json: async () => [{ id: `page-${page}` }],
@@ -210,12 +212,17 @@ describe("WooCommerce client", () => {
       });
       vi.stubGlobal("fetch", fetchMock);
 
-      const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
+      const rows = await fetchWcAllPages<{ id: string }>(
+        "/wc-analytics/reports/customers",
+      );
 
       expect(rows).toHaveLength(TOTAL_PAGES);
       expect(fetchMock).toHaveBeenCalledTimes(TOTAL_PAGES);
       expect(maxInFlight).toBeGreaterThan(1);
       expect(maxInFlight).toBeLessThanOrEqual(DEFAULT_PAGE_CONCURRENCY);
+      expect(rows.map((r) => r.id)).toEqual(
+        Array.from({ length: TOTAL_PAGES }, (_, i) => `page-${i + 1}`),
+      );
     });
   });
 });
