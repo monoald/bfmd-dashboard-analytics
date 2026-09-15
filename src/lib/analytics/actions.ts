@@ -41,6 +41,7 @@ import {
   type RawLiveViewResults,
 } from "./live-normalize";
 import {
+  buildMockCohortRows,
   buildMockDashboardPayload,
   buildMockLiveViewPayload,
 } from "./mock-data";
@@ -292,6 +293,27 @@ function hasRealCredentials(): boolean {
     process.env.GA4_CLIENT_EMAIL &&
     process.env.GA4_PRIVATE_KEY,
   );
+}
+
+// Standalone from getDashboardData: cohort analysis doesn't depend on the
+// dashboard's selected date range (see getCustomerCohortAnalysis's own
+// comment), and is by far the most expensive metric to compute (a 24-month
+// paginated order-history scan) — bundling it into the same Promise.all as
+// everything else meant one slow fetch blocked every other card from
+// rendering. Callers render this behind their own <Suspense> boundary,
+// independent of the range-dependent content.
+export async function getCustomerCohortAnalysisCard(): Promise<
+  CohortRow[] | Error
+> {
+  await requireSession();
+
+  if (!hasRealCredentials()) {
+    return buildMockCohortRows(new Date());
+  }
+  if (!SHOW_CUSTOMER_COHORT_ANALYSIS) {
+    return [];
+  }
+  return settle(cachedCustomerCohortAnalysis());
 }
 
 export async function getDashboardData(

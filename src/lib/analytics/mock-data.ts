@@ -116,7 +116,7 @@ function sum(
   return series.reduce((total, point) => total + point[key], 0);
 }
 
-function buildMockCohortRows(referenceDate: Date): CohortRow[] {
+export function buildMockCohortRows(referenceDate: Date): CohortRow[] {
   const currentMonth = dateToIsoMonth(referenceDate);
   const rows: CohortRow[] = [];
   for (let i = 12; i >= 1; i--) {

@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/lib/auth/require-session", () => ({
   requireSession: vi.fn().mockResolvedValue({ role: "admin" }),
@@ -88,6 +88,7 @@ import { getRevenueStats } from "./woocommerce/revenue";
 import { getCustomerCohortAnalysis } from "./woocommerce/cohort";
 import {
   getDashboardData,
+  getCustomerCohortAnalysisCard,
   getLiveViewData,
   fetchLiveVisitorCount,
 } from "./actions";
@@ -386,6 +387,69 @@ describe("getDashboardData", () => {
     expect(getCustomerCohortAnalysis).toHaveBeenCalledWith();
     expect(payload.charts.customerCohortAnalysis).toEqual(rows);
     expect(payload.errors.customerCohortAnalysis).toBeUndefined();
+  });
+});
+
+describe("getCustomerCohortAnalysisCard", () => {
+  // getCustomerCohortAnalysis is a shared mock also exercised by the
+  // getDashboardData tests above (both consume the same underlying
+  // cachedCustomerCohortAnalysis). This suite has no global mock reset, so
+  // without clearing call history before each test here, the last enabled
+  // getDashboardData test's call would leak into this block's "not called"
+  // and call-count assertions.
+  beforeEach(() => {
+    vi.mocked(getCustomerCohortAnalysis).mockClear();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    cohortFlag.enabled = false;
+  });
+
+  it("returns 12 mock cohort rows without calling the real fetcher when credentials are missing", async () => {
+    vi.unstubAllEnvs();
+
+    const result = await getCustomerCohortAnalysisCard();
+
+    expect(getCustomerCohortAnalysis).not.toHaveBeenCalled();
+    expect(Array.isArray(result) && result.length === 12).toBe(true);
+  });
+
+  it("does not fetch when the feature flag is disabled, returning an empty array", async () => {
+    cohortFlag.enabled = false;
+    stubRealCredentials();
+
+    const result = await getCustomerCohortAnalysisCard();
+
+    expect(getCustomerCohortAnalysis).not.toHaveBeenCalled();
+    expect(result).toEqual([]);
+  });
+
+  it("fetches and returns rows once the feature flag is enabled", async () => {
+    cohortFlag.enabled = true;
+    stubRealCredentials();
+    const rows = [
+      { cohortMonth: "2026-06", cohortSize: 2, retentionByMonth: [50] },
+    ];
+    vi.mocked(getCustomerCohortAnalysis).mockResolvedValue(rows);
+
+    const result = await getCustomerCohortAnalysisCard();
+
+    expect(getCustomerCohortAnalysis).toHaveBeenCalledTimes(1);
+    expect(getCustomerCohortAnalysis).toHaveBeenCalledWith();
+    expect(result).toEqual(rows);
+  });
+
+  it("settles a fetch failure into an Error rather than throwing", async () => {
+    cohortFlag.enabled = true;
+    stubRealCredentials();
+    vi.mocked(getCustomerCohortAnalysis).mockRejectedValue(
+      new Error("WooCommerce API error 500"),
+    );
+
+    const result = await getCustomerCohortAnalysisCard();
+
+    expect(result).toBeInstanceOf(Error);
   });
 });
 
