@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+  DEFAULT_PAGE_CONCURRENCY,
   fetchWc,
   fetchWcAllPages,
   fetchWcCount,
@@ -130,7 +131,31 @@ describe("WooCommerce client", () => {
       expect(fetchMock.mock.calls[2][0]).toContain("page=3");
     });
 
-    it("stops early if a page comes back empty, even if X-WP-TotalPages says more remain", async () => {
+    // Page 1 is always fetched first and read for X-WP-TotalPages before any
+    // other page is requested — this is what lets an empty page 1 (below)
+    // return an empty result without ever consulting the header.
+    it("returns no rows and fetches only once when page 1 is empty", async () => {
+      const fetchMock = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [],
+        headers: new Headers({ "X-WP-TotalPages": "5" }),
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
+
+      expect(rows).toEqual([]);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+    });
+
+    // The old sequential implementation stopped the instant it saw an empty
+    // page, even if X-WP-TotalPages claimed more remained (a real WC quirk).
+    // The new implementation can't stop mid-flight once pages 2+ are fetched
+    // in parallel, so it fetches them all and then truncates the combined
+    // result at the first empty page, discarding anything after it — same
+    // final result, at the cost of a few now-wasted requests in this rare
+    // case.
+    it("truncates at the first empty page even if later pages return rows and X-WP-TotalPages says more remain", async () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce({
@@ -142,13 +167,55 @@ describe("WooCommerce client", () => {
           ok: true,
           json: async () => [],
           headers: new Headers({ "X-WP-TotalPages": "5" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 3 }],
+          headers: new Headers({ "X-WP-TotalPages": "5" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 4 }],
+          headers: new Headers({ "X-WP-TotalPages": "5" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => [{ id: 5 }],
+          headers: new Headers({ "X-WP-TotalPages": "5" }),
         });
       vi.stubGlobal("fetch", fetchMock);
 
       const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
 
       expect(rows).toEqual([{ id: 1 }]);
-      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
+    });
+
+    it("never issues more than DEFAULT_PAGE_CONCURRENCY page requests at once", async () => {
+      const TOTAL_PAGES = 12;
+      let inFlight = 0;
+      let maxInFlight = 0;
+
+      const fetchMock = vi.fn().mockImplementation(async (url: string) => {
+        inFlight += 1;
+        maxInFlight = Math.max(maxInFlight, inFlight);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        inFlight -= 1;
+        const page = new URL(url).searchParams.get("page");
+        return {
+          ok: true,
+          json: async () => [{ id: `page-${page}` }],
+          headers: new Headers({ "X-WP-TotalPages": String(TOTAL_PAGES) }),
+        };
+      });
+      vi.stubGlobal("fetch", fetchMock);
+
+      const rows = await fetchWcAllPages("/wc-analytics/reports/customers");
+
+      expect(rows).toHaveLength(TOTAL_PAGES);
+      expect(fetchMock).toHaveBeenCalledTimes(TOTAL_PAGES);
+      expect(maxInFlight).toBeGreaterThan(1);
+      expect(maxInFlight).toBeLessThanOrEqual(DEFAULT_PAGE_CONCURRENCY);
     });
   });
 });
