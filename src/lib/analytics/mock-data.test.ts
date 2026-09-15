@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildMockCohortRows,
   buildMockDashboardPayload,
   buildMockLiveViewPayload,
 } from "./mock-data";
@@ -145,23 +146,20 @@ describe("buildMockDashboardPayload", () => {
   });
 });
 
-describe("buildMockDashboardPayload customer cohort analysis", () => {
+describe("buildMockCohortRows", () => {
   it("returns 12 cohort rows with Month-0-plus-elapsed-month lengths decreasing toward the most recent", () => {
-    const range = resolveDateRange("7d", NOW);
-    const payload = buildMockDashboardPayload(range);
+    const rows = buildMockCohortRows(NOW);
 
-    expect(payload.charts.customerCohortAnalysis).toHaveLength(12);
-    expect(
-      payload.charts.customerCohortAnalysis.map(
-        (row) => row.retentionByMonth.length,
-      ),
-    ).toEqual([13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2]);
+    expect(rows).toHaveLength(12);
+    expect(rows.map((row) => row.retentionByMonth.length)).toEqual([
+      13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2,
+    ]);
   });
 
   it("gives every cohort row a positive cohort size and every retention value a plausible percentage", () => {
-    const payload = buildMockDashboardPayload(resolveDateRange("7d", NOW));
+    const rows = buildMockCohortRows(NOW);
 
-    for (const row of payload.charts.customerCohortAnalysis) {
+    for (const row of rows) {
       expect(row.cohortSize).toBeGreaterThan(0);
       for (const value of row.retentionByMonth) {
         expect(value).toBeGreaterThanOrEqual(0);

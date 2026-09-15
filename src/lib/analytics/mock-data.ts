@@ -771,7 +771,6 @@ export function buildMockDashboardPayload(
         taxes: null,
         totalSales: null,
       })),
-      customerCohortAnalysis: buildMockCohortRows(range.current.end),
     },
     errors: {},
   };

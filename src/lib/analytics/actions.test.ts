@@ -170,7 +170,6 @@ function mockHappyPath() {
     trend: "up",
   });
   vi.mocked(getSocialReferrerRevenue).mockResolvedValue([]);
-  vi.mocked(getCustomerCohortAnalysis).mockResolvedValue([]);
   vi.mocked(getLiveVisitorCount).mockResolvedValue(7);
 }
 
@@ -362,32 +361,6 @@ describe("getDashboardData", () => {
     );
   });
 
-  it("does not fetch customer cohort analysis while its feature flag is disabled, defaulting the chart to an empty array", async () => {
-    cohortFlag.enabled = false;
-    stubRealCredentials();
-    mockHappyPath();
-
-    const payload = await getDashboardData("7d");
-
-    expect(getCustomerCohortAnalysis).not.toHaveBeenCalled();
-    expect(payload.charts.customerCohortAnalysis).toEqual([]);
-    expect(payload.errors.customerCohortAnalysis).toBeUndefined();
-  });
-
-  it("fetches and populates customer cohort analysis once its feature flag is enabled", async () => {
-    cohortFlag.enabled = true;
-    stubRealCredentials();
-    mockHappyPath();
-    const rows = [{ cohortMonth: "2026-06", cohortSize: 2, retentionByMonth: [50] }];
-    vi.mocked(getCustomerCohortAnalysis).mockResolvedValue(rows);
-
-    const payload = await getDashboardData("7d");
-
-    expect(getCustomerCohortAnalysis).toHaveBeenCalledTimes(1);
-    expect(getCustomerCohortAnalysis).toHaveBeenCalledWith();
-    expect(payload.charts.customerCohortAnalysis).toEqual(rows);
-    expect(payload.errors.customerCohortAnalysis).toBeUndefined();
-  });
 });
 
 describe("getCustomerCohortAnalysisCard", () => {

@@ -333,11 +333,6 @@ export async function getDashboardData(
     return buildMockDashboardPayload(range);
   }
 
-  const customerCohortAnalysisPromise: Promise<CohortRow[] | Error> =
-    SHOW_CUSTOMER_COHORT_ANALYSIS
-      ? settle(cachedCustomerCohortAnalysis())
-      : Promise.resolve<CohortRow[]>([]);
-
   const [
     revenueStats,
     ordersFulfilled,
@@ -349,7 +344,6 @@ export async function getDashboardData(
     salesByProductBreakdown,
     salesByChannel,
     ga4Bundle,
-    customerCohortAnalysis,
   ] = await Promise.all([
     settle(cachedRevenueStats(range)),
     settle(cachedOrdersFulfilled(range)),
@@ -361,7 +355,6 @@ export async function getDashboardData(
     settle(cachedSalesByProductBreakdown(range)),
     settle(cachedSalesByChannel(range)),
     getGa4TodayBundle(range),
-    customerCohortAnalysisPromise,
   ]);
 
   const raw: RawPipelineResults = {
@@ -375,7 +368,6 @@ export async function getDashboardData(
     salesByProductBreakdown,
     salesByChannel,
     ...ga4Bundle,
-    customerCohortAnalysis,
   };
 
   return buildDashboardPayload(raw, range.interval);
