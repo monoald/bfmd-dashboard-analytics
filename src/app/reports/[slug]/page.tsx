@@ -20,9 +20,9 @@ import {
   RangeTransitionProvider,
   RangeTransitionSwap,
 } from "@/components/analytics/RangeTransition";
+import { CohortCard } from "@/components/analytics/CohortCard";
 import { ReportSkeleton } from "@/components/analytics/skeletons/ReportSkeleton";
 import { ConversionRateOverTimeTable } from "@/components/analytics/ConversionRateOverTimeTable";
-import { CustomerCohortTable } from "@/components/analytics/CustomerCohortTable";
 import { DashboardDateFilter } from "@/components/analytics/DashboardDateFilter";
 import { DonutBreakdown } from "@/components/analytics/DonutBreakdown";
 import { FunnelChart } from "@/components/analytics/FunnelChart";
@@ -340,24 +340,14 @@ function renderReport(config: ReportConfig, data: DashboardPayload): ReactNode {
       );
     }
 
+    // Handled directly in ReportPage, before ReportContent/renderReport are
+    // invoked — cohort analysis doesn't depend on the dashboard's date
+    // range, so it bypasses this range-dependent
+    // getDashboardData/renderReport path entirely (see the ReportPage
+    // component below). This case exists only to keep the switch
+    // exhaustive over ReportSlug.
     case "customer-cohort-analysis": {
-      if (!SHOW_CUSTOMER_COHORT_ANALYSIS) {
-        return (
-          <CardError
-            title={config.title}
-            message="This report is temporarily disabled while its data is being verified."
-          />
-        );
-      }
-      if (data.errors.customerCohortAnalysis) {
-        return (
-          <CardError
-            title={config.title}
-            message={data.errors.customerCohortAnalysis}
-          />
-        );
-      }
-      return <CustomerCohortTable rows={data.charts.customerCohortAnalysis} />;
+      return null;
     }
 
     case "total-sales-by-product": {
@@ -540,21 +530,34 @@ export default async function ReportPage({
           <div
             className={`grid ${config.shape === "donut" ? "max-w-xl" : "w-full"}`}
           >
-            {/* RangeTransitionSwap covers the range-change case (see the
-              matching comment in the dashboard page); Suspense still
-              covers the first-load case. */}
-            <RangeTransitionSwap
-              fallback={<ReportSkeleton shape={config.shape} />}
-            >
-              <Suspense fallback={<ReportSkeleton shape={config.shape} />}>
-                <ReportContent
-                  key={rangeQuery}
-                  config={config}
-                  rangeKey={rangeKey}
-                  customRange={customRange ?? undefined}
+            {config.slug === "customer-cohort-analysis" ? (
+              SHOW_CUSTOMER_COHORT_ANALYSIS ? (
+                <Suspense fallback={<ReportSkeleton shape={config.shape} />}>
+                  <CohortCard variant="full" />
+                </Suspense>
+              ) : (
+                <CardError
+                  title={config.title}
+                  message="This report is temporarily disabled while its data is being verified."
                 />
-              </Suspense>
-            </RangeTransitionSwap>
+              )
+            ) : (
+              // RangeTransitionSwap covers the range-change case (see the
+              // matching comment in the dashboard page); Suspense still
+              // covers the first-load case.
+              <RangeTransitionSwap
+                fallback={<ReportSkeleton shape={config.shape} />}
+              >
+                <Suspense fallback={<ReportSkeleton shape={config.shape} />}>
+                  <ReportContent
+                    key={rangeQuery}
+                    config={config}
+                    rangeKey={rangeKey}
+                    customRange={customRange ?? undefined}
+                  />
+                </Suspense>
+              </RangeTransitionSwap>
+            )}
           </div>
         </div>
       </div>
